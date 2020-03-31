@@ -404,6 +404,8 @@ func autoConvert_v1beta1_ClusterConfiguration_To_kubeadm_ClusterConfiguration(in
 	out.UseHyperKubeImage = in.UseHyperKubeImage
 	out.FeatureGates = *(*map[string]bool)(unsafe.Pointer(&in.FeatureGates))
 	out.ClusterName = in.ClusterName
+	out.ApiServerUrl = in.ApiServerUrl
+	out.ApiServerCredential = in.ApiServerCredential
 	return nil
 }
 
@@ -440,6 +442,8 @@ func autoConvert_kubeadm_ClusterConfiguration_To_v1beta1_ClusterConfiguration(in
 	out.UseHyperKubeImage = in.UseHyperKubeImage
 	out.FeatureGates = *(*map[string]bool)(unsafe.Pointer(&in.FeatureGates))
 	out.ClusterName = in.ClusterName
+	out.ApiServerUrl = in.ApiServerUrl
+	out.ApiServerCredential = in.ApiServerCredential
 	return nil
 }
 
@@ -800,6 +804,8 @@ func autoConvert_v1beta1_Networking_To_kubeadm_Networking(in *Networking, out *k
 	out.ServiceSubnet = in.ServiceSubnet
 	out.PodSubnet = in.PodSubnet
 	out.DNSDomain = in.DNSDomain
+	out.Plugin = in.Plugin
+	out.Mode = in.Mode
 	return nil
 }
 
@@ -812,6 +818,8 @@ func autoConvert_kubeadm_Networking_To_v1beta1_Networking(in *kubeadm.Networking
 	out.ServiceSubnet = in.ServiceSubnet
 	out.PodSubnet = in.PodSubnet
 	out.DNSDomain = in.DNSDomain
+	out.Plugin = in.Plugin
+	out.Mode = in.Mode
 	return nil
 }
 
