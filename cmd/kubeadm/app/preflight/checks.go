@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"k8s.io/klog/v2"
 	"net"
 	"net/http"
 	"net/url"
@@ -42,17 +43,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/version"
 	versionutil "k8s.io/apimachinery/pkg/util/version"
 	kubeadmversion "k8s.io/component-base/version"
-	"k8s.io/klog/v2"
-	system "k8s.io/system-validators/validators"
-	utilsexec "k8s.io/utils/exec"
-	netutils "k8s.io/utils/net"
-
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/images"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/initsystem"
 	utilruntime "k8s.io/kubernetes/cmd/kubeadm/app/util/runtime"
+	system "k8s.io/system-validators/validators"
+	utilsexec "k8s.io/utils/exec"
+	netutils "k8s.io/utils/net"
 )
 
 const (
@@ -1044,8 +1043,6 @@ func addCommonChecks(execer utilsexec.Interface, k8sVersion string, nodeReg *kub
 	checks = append(checks,
 		SystemVerificationCheck{},
 		HostnameCheck{nodeName: nodeReg.Name},
-		KubeletVersionCheck{KubernetesVersion: k8sVersion, exec: execer},
-		ServiceCheck{Service: "kubelet", CheckIfActive: false},
 		PortOpenCheck{port: kubeadmconstants.KubeletPort})
 	return checks
 }

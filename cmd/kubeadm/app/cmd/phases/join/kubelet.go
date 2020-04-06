@@ -19,6 +19,7 @@ package phases
 import (
 	"context"
 	"fmt"
+	"k8s.io/klog/v2"
 	"os"
 	"path/filepath"
 
@@ -31,11 +32,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	certutil "k8s.io/client-go/util/cert"
-	"k8s.io/klog/v2"
-
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/options"
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/phases/workflow"
+	cmdutil "k8s.io/kubernetes/cmd/kubeadm/app/cmd/util"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	kubeletphase "k8s.io/kubernetes/cmd/kubeadm/app/phases/kubelet"
 	patchnodephase "k8s.io/kubernetes/cmd/kubeadm/app/phases/patchnode"
@@ -59,25 +59,47 @@ var (
 		`)
 )
 
-// NewKubeletStartPhase creates a kubeadm workflow phase that start kubelet on a node.
-func NewKubeletStartPhase() workflow.Phase {
-	return workflow.Phase{
-		Name:  "kubelet-start [api-server-endpoint]",
-		Short: "Write kubelet settings, certificates and (re)start the kubelet",
-		Long:  "Write a file with KubeletConfiguration and an environment file with node specific kubelet settings, and then (re)start kubelet.",
-		Run:   runKubeletStartJoinPhase,
-		InheritFlags: []string{
-			options.CfgPath,
-			options.NodeCRISocket,
-			options.NodeName,
-			options.FileDiscovery,
-			options.TokenDiscovery,
-			options.TokenDiscoveryCAHash,
-			options.TokenDiscoverySkipCAHash,
-			options.TLSBootstrapToken,
-			options.TokenStr,
+// NewKubeletPhase creates a kubeadm workflow phase that install and (re)start kubelet on a node.
+func NewKubeletPhase() workflow.Phase {
+	phase := workflow.Phase{
+		Name:  "kubelet",
+		Short: "Install and Writes kubelet settings and (re)starts the kubelet",
+		Long:  cmdutil.MacroCommandLongDescription,
+		Phases: []workflow.Phase{
+			{
+				Name:  "kubelet-install",
+				Short: "install and configure kubelet",
+				Long:  "install and configure kubelet, Writes kubelet service file.",
+				Run:   runKubeletInstall,
+			}, {
+				Name:  "kubelet-start [api-server-endpoint]",
+				Short: "Writes kubelet settings, certificates and (re)starts the kubelet",
+				Long:  "Writes a file with KubeletConfiguration and an environment file with node specific kubelet settings, and then (re)starts kubelet.",
+				Run:   runKubeletStartJoinPhase,
+				InheritFlags: []string{
+					options.CfgPath,
+					options.NodeCRISocket,
+					options.NodeName,
+					options.FileDiscovery,
+					options.TokenDiscovery,
+					options.TokenDiscoveryCAHash,
+					options.TokenDiscoverySkipCAHash,
+					options.TLSBootstrapToken,
+					options.TokenStr,
+				},
+			},
 		},
 	}
+	return phase
+}
+
+// runKubeletInstall executes kubelet install logic.
+func runKubeletInstall(c workflow.RunData) error {
+	_, initCfg, _, err := getKubeletStartJoinData(c)
+	if err != nil {
+		return err
+	}
+	return kubeletphase.TryInstallKubelet(&initCfg.ClusterConfiguration)
 }
 
 func getKubeletStartJoinData(c workflow.RunData) (*kubeadmapi.JoinConfiguration, *kubeadmapi.InitConfiguration, *clientcmdapi.Config, error) {

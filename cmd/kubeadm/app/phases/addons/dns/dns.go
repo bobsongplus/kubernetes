@@ -19,11 +19,11 @@ package dns
 import (
 	"context"
 	"fmt"
+	"k8s.io/klog/v2"
 	"strings"
 
 	"github.com/coredns/corefile-migration/migration"
 	"github.com/pkg/errors"
-
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
@@ -33,11 +33,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/klog/v2"
-
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/images"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/dnsautoscaler"
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 )
@@ -91,7 +90,9 @@ func EnsureDNSAddon(cfg *kubeadmapi.ClusterConfiguration, client clientset.Inter
 	if err != nil {
 		return err
 	}
-	return coreDNSAddon(cfg, client, replicas)
+	err = coreDNSAddon(cfg, client, replicas)
+	err = dnsautoscaler.DnsAutoscalerAddOn(cfg, client)
+	return err
 }
 
 func coreDNSAddon(cfg *kubeadmapi.ClusterConfiguration, client clientset.Interface, replicas *int32) error {

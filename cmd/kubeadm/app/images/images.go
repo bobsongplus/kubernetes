@@ -18,6 +18,7 @@ package images
 
 import (
 	"fmt"
+	"runtime"
 
 	"k8s.io/klog/v2"
 
@@ -37,6 +38,7 @@ func GetGenericImage(prefix, image, tag string) string {
 func GetKubernetesImage(image string, cfg *kubeadmapi.ClusterConfiguration) string {
 	repoPrefix := cfg.GetControlPlaneImageRepository()
 	kubernetesImageTag := kubeadmutil.KubernetesVersionToImageTag(cfg.KubernetesVersion)
+	image = fmt.Sprintf("%s-%s", image, runtime.GOARCH)
 	return GetGenericImage(repoPrefix, image, kubernetesImageTag)
 }
 
@@ -59,7 +61,9 @@ func GetDNSImage(cfg *kubeadmapi.ClusterConfiguration) string {
 	if cfg.DNS.ImageTag != "" {
 		dnsImageTag = cfg.DNS.ImageTag
 	}
-	return GetGenericImage(dnsImageRepository, constants.CoreDNSImageName, dnsImageTag)
+
+	imageName := fmt.Sprintf("%s-%s", constants.CoreDNSImageName, runtime.GOARCH)
+	return GetGenericImage(dnsImageRepository, imageName, dnsImageTag)
 }
 
 // GetEtcdImage generates and returns the image for etcd
@@ -83,7 +87,7 @@ func GetEtcdImage(cfg *kubeadmapi.ClusterConfiguration) string {
 	if cfg.Etcd.Local != nil && cfg.Etcd.Local.ImageTag != "" {
 		etcdImageTag = cfg.Etcd.Local.ImageTag
 	}
-	return GetGenericImage(etcdImageRepository, constants.Etcd, etcdImageTag)
+	return GetGenericImage(etcdImageRepository, fmt.Sprintf("%s-%s", constants.Etcd, runtime.GOARCH), etcdImageTag)
 }
 
 // GetControlPlaneImages returns a list of container images kubeadm expects to use on a control plane node
