@@ -30,7 +30,6 @@ import (
 	versionutil "k8s.io/apimachinery/pkg/util/version"
 	pkgversion "k8s.io/component-base/version"
 	"k8s.io/klog/v2"
-	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
 )
 
 const (
@@ -75,55 +74,11 @@ func kubernetesReleaseVersion(version string, fetcher func(string, time.Duration
 		return ver, nil
 	}
 
-	bucketURL, versionLabel, err := splitVersion(version)
+	body, err := kubeadmVersion(pkgversion.Get().String())
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("could not fetch a Kubernetes version from the kubeadm [%v]", err)
 	}
-
-	// revalidate, if exact build from e.g. CI bucket requested.
-	ver = normalizedBuildVersion(versionLabel)
-	if len(ver) != 0 {
-		return ver, nil
-	}
-
-	// kubeReleaseLabelRegex matches labels such as: latest, latest-1, latest-1.10
-	if kubeReleaseLabelRegex.MatchString(versionLabel) {
-		// Try to obtain a client version.
-		// pkgversion.Get().String() should always return a correct version added by the golang
-		// linker and the build system. The version can still be missing when doing unit tests
-		// on individual packages.
-		clientVersion, clientVersionErr := kubeadmVersion(pkgversion.Get().String())
-		// Fetch version from the internet.
-		url := fmt.Sprintf("%s/%s.txt", bucketURL, versionLabel)
-		body, err := fetcher(url, getReleaseVersionTimeout)
-		if err != nil {
-			if clientVersionErr == nil {
-				// Handle air-gapped environments by falling back to the client version.
-				klog.Warningf("could not fetch a Kubernetes version from the internet: %v", err)
-				klog.Warningf("falling back to the local client version: %s", clientVersion)
-				return kubernetesReleaseVersion(clientVersion, fetcher)
-			}
-		}
-
-		if clientVersionErr != nil {
-			if err != nil {
-				klog.Warningf("could not obtain neither client nor remote version; fall back to: %s", constants.CurrentKubernetesVersion)
-				return kubernetesReleaseVersion(constants.CurrentKubernetesVersion.String(), fetcher)
-			}
-
-			klog.Warningf("could not obtain client version; using remote version: %s", body)
-			return kubernetesReleaseVersion(body, fetcher)
-		}
-
-		// both the client and the remote version are obtained; validate them and pick a stable version
-		body, err = validateStableVersion(body, clientVersion)
-		if err != nil {
-			return "", err
-		}
-		// Re-validate received version and return.
-		return kubernetesReleaseVersion(body, fetcher)
-	}
-	return "", errors.Errorf("version %q doesn't match patterns for neither semantic version nor labels (stable, latest, ...)", version)
+	return body, nil
 }
 
 // KubernetesVersionToImageTag is helper function that replaces all

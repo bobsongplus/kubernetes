@@ -1018,7 +1018,7 @@ func addCommonChecks(execer utilsexec.Interface, k8sVersion string, nodeReg *kub
 			// Linux only
 			// TODO: support other CRIs for this check eventually
 			// https://github.com/kubernetes/kubeadm/issues/874
-			checks = append(checks, IsDockerSystemdCheck{})
+			//checks = append(checks, IsDockerSystemdCheck{})
 		}
 	}
 
@@ -1035,18 +1035,16 @@ func addCommonChecks(execer utilsexec.Interface, k8sVersion string, nodeReg *kub
 			InPathCheck{executable: "ip", mandatory: true, exec: execer},
 			InPathCheck{executable: "iptables", mandatory: true, exec: execer},
 			InPathCheck{executable: "mount", mandatory: true, exec: execer},
-			InPathCheck{executable: "nsenter", mandatory: true, exec: execer},
+			//InPathCheck{executable: "nsenter", mandatory: true, exec: execer},
 			InPathCheck{executable: "ebtables", mandatory: false, exec: execer},
 			InPathCheck{executable: "ethtool", mandatory: false, exec: execer},
-			InPathCheck{executable: "socat", mandatory: false, exec: execer},
+			//InPathCheck{executable: "socat", mandatory: false, exec: execer},
 			InPathCheck{executable: "tc", mandatory: false, exec: execer},
 			InPathCheck{executable: "touch", mandatory: false, exec: execer})
 	}
 	checks = append(checks,
 		SystemVerificationCheck{IsDocker: isDocker},
 		HostnameCheck{nodeName: nodeReg.Name},
-		KubeletVersionCheck{KubernetesVersion: k8sVersion, exec: execer},
-		ServiceCheck{Service: "kubelet", CheckIfActive: false},
 		PortOpenCheck{port: kubeadmconstants.KubeletPort})
 	return checks
 }

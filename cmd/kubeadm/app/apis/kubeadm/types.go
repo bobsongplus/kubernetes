@@ -77,6 +77,9 @@ type ClusterConfiguration struct {
 	// KubernetesVersion is the target version of the control plane.
 	KubernetesVersion string
 
+	// Arch is the arch will be instead kubernetes.
+	Arch string
+
 	// ControlPlaneEndpoint sets a stable IP address or DNS name for the control plane; it
 	// can be a valid IP address or a RFC-1123 DNS subdomain, both with optional TCP port.
 	// In case the ControlPlaneEndpoint is not specified, the AdvertiseAddress + BindPort

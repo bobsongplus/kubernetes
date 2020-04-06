@@ -18,6 +18,7 @@ package images
 
 import (
 	"fmt"
+	"runtime"
 
 	"k8s.io/klog/v2"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
@@ -41,6 +42,7 @@ func GetKubernetesImage(image string, cfg *kubeadmapi.ClusterConfiguration) stri
 	}
 	repoPrefix := cfg.GetControlPlaneImageRepository()
 	kubernetesImageTag := kubeadmutil.KubernetesVersionToImageTag(cfg.KubernetesVersion)
+	image = fmt.Sprintf("%s-%s", image, runtime.GOARCH)
 	return GetGenericImage(repoPrefix, image, kubernetesImageTag)
 }
 
@@ -60,6 +62,8 @@ func GetDNSImage(cfg *kubeadmapi.ClusterConfiguration, imageName string) string 
 	if cfg.DNS.ImageTag != "" {
 		dnsImageTag = cfg.DNS.ImageTag
 	}
+
+	imageName = fmt.Sprintf("%s-%s", imageName, runtime.GOARCH)
 	return GetGenericImage(dnsImageRepository, imageName, dnsImageTag)
 }
 
@@ -84,7 +88,7 @@ func GetEtcdImage(cfg *kubeadmapi.ClusterConfiguration) string {
 	if cfg.Etcd.Local != nil && cfg.Etcd.Local.ImageTag != "" {
 		etcdImageTag = cfg.Etcd.Local.ImageTag
 	}
-	return GetGenericImage(etcdImageRepository, constants.Etcd, etcdImageTag)
+	return GetGenericImage(etcdImageRepository, fmt.Sprintf("%s-%s", constants.Etcd, runtime.GOARCH), etcdImageTag)
 }
 
 // GetControlPlaneImages returns a list of container images kubeadm expects to use on a control plane node
@@ -110,7 +114,6 @@ func GetControlPlaneImages(cfg *kubeadmapi.ClusterConfiguration) []string {
 		imgs = append(imgs, GetEtcdImage(cfg))
 	}
 
-	// Append the appropriate DNS images
 	if cfg.DNS.Type == kubeadmapi.CoreDNS {
 		imgs = append(imgs, GetDNSImage(cfg, constants.CoreDNSImageName))
 	} else {

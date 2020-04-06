@@ -253,8 +253,9 @@ func getEtcdCommand(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmapi.A
 		etcdLocalhostAddress = "::1"
 	}
 	defaultArguments := map[string]string{
-		"name":                        nodeName,
-		"listen-client-urls":          fmt.Sprintf("%s,%s", etcdutil.GetClientURLByIP(etcdLocalhostAddress), etcdutil.GetClientURL(endpoint)),
+		"name": nodeName,
+		// "listen-client-urls":          fmt.Sprintf("%s,%s", etcdutil.GetClientURLByIP(etcdLocalhostAddress), etcdutil.GetClientURL(endpoint)),
+		"listen-client-urls":          etcdutil.GetUnsupportClientURL(endpoint),
 		"advertise-client-urls":       etcdutil.GetClientURL(endpoint),
 		"listen-peer-urls":            etcdutil.GetPeerURL(endpoint),
 		"initial-advertise-peer-urls": etcdutil.GetPeerURL(endpoint),

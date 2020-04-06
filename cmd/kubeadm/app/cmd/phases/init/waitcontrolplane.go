@@ -97,7 +97,7 @@ func runWaitControlPlanePhase(c workflow.RunData) error {
 		return errors.Wrap(err, "error creating waiter")
 	}
 
-	fmt.Printf("[wait-control-plane] Waiting for the kubelet to boot up the control plane as static Pods from directory %q. This can take up to %v\n", data.ManifestDir(), timeout)
+	fmt.Printf("[wait-control-plane] Waiting for the kubelet to boot up the control plane. This can take up to %v\n", timeout)
 
 	if err := waiter.WaitForKubeletAndFunc(waiter.WaitForAPI); err != nil {
 		context := struct {

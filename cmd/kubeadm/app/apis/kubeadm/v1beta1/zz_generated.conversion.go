@@ -386,6 +386,7 @@ func autoConvert_v1beta1_ClusterConfiguration_To_kubeadm_ClusterConfiguration(in
 		return err
 	}
 	out.KubernetesVersion = in.KubernetesVersion
+	out.Arch = in.Arch
 	out.ControlPlaneEndpoint = in.ControlPlaneEndpoint
 	if err := Convert_v1beta1_APIServer_To_kubeadm_APIServer(&in.APIServer, &out.APIServer, s); err != nil {
 		return err
@@ -423,6 +424,7 @@ func autoConvert_kubeadm_ClusterConfiguration_To_v1beta1_ClusterConfiguration(in
 		return err
 	}
 	out.KubernetesVersion = in.KubernetesVersion
+	out.Arch = in.Arch
 	out.ControlPlaneEndpoint = in.ControlPlaneEndpoint
 	if err := Convert_kubeadm_APIServer_To_v1beta1_APIServer(&in.APIServer, &out.APIServer, s); err != nil {
 		return err
@@ -675,6 +677,7 @@ func autoConvert_v1beta1_InitConfiguration_To_kubeadm_InitConfiguration(in *Init
 	if err := Convert_v1beta1_APIEndpoint_To_kubeadm_APIEndpoint(&in.LocalAPIEndpoint, &out.LocalAPIEndpoint, s); err != nil {
 		return err
 	}
+	out.CertificateKey = in.CertificateKey
 	return nil
 }
 
@@ -694,7 +697,7 @@ func autoConvert_kubeadm_InitConfiguration_To_v1beta1_InitConfiguration(in *kube
 	if err := Convert_kubeadm_APIEndpoint_To_v1beta1_APIEndpoint(&in.LocalAPIEndpoint, &out.LocalAPIEndpoint, s); err != nil {
 		return err
 	}
-	// WARNING: in.CertificateKey requires manual conversion: does not exist in peer-type
+	out.CertificateKey = in.CertificateKey
 	return nil
 }
 

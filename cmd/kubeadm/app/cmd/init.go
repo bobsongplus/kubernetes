@@ -50,29 +50,11 @@ var (
 	initDoneTempl = template.Must(template.New("init").Parse(dedent.Dedent(`
 		Your Kubernetes control-plane has initialized successfully!
 
-		To start using your cluster, you need to run the following as a regular user:
-
-		  mkdir -p $HOME/.kube
-		  sudo cp -i {{.KubeConfigPath}} $HOME/.kube/config
-		  sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
-		Alternatively, if you are the root user, you can run:
-
-		  export KUBECONFIG=/etc/kubernetes/admin.conf
-
-		You should now deploy a pod network to the cluster.
-		Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
-		  https://kubernetes.io/docs/concepts/cluster-administration/addons/
-
 		{{if .ControlPlaneEndpoint -}}
 		{{if .UploadCerts -}}
 		You can now join any number of the control-plane node running the following command on each as root:
 
 		  {{.joinControlPlaneCommand}}
-
-		Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
-		As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
-		"kubeadm init phase upload-certs --upload-certs" to reload certs afterward.
 
 		{{else -}}
 		You can now join any number of control-plane nodes by copying certificate authorities
@@ -83,6 +65,7 @@ var (
 		{{end}}{{end}}Then you can join any number of worker nodes by running the following on each as root:
 
 		{{.joinWorkerCommand}}
+
 		`)))
 )
 
@@ -176,18 +159,22 @@ func newCmdInit(out io.Writer, initOptions *initOptions) *cobra.Command {
 
 	// initialize the workflow runner with the list of phases
 	initRunner.AppendPhase(phases.NewPreflightPhase())
+	initRunner.AppendPhase(phases.NewKeepAlivedPhase())
+	initRunner.AppendPhase(phases.NewKubeletPhase())
 	initRunner.AppendPhase(phases.NewCertsPhase())
 	initRunner.AppendPhase(phases.NewKubeConfigPhase())
-	initRunner.AppendPhase(phases.NewKubeletStartPhase())
+	initRunner.AppendPhase(phases.NewTokenAuthFilePhase())
 	initRunner.AppendPhase(phases.NewControlPlanePhase())
 	initRunner.AppendPhase(phases.NewEtcdPhase())
 	initRunner.AppendPhase(phases.NewWaitControlPlanePhase())
 	initRunner.AppendPhase(phases.NewUploadConfigPhase())
 	initRunner.AppendPhase(phases.NewUploadCertsPhase())
+	initRunner.AppendPhase(phases.NewPolicyPhase())
 	initRunner.AppendPhase(phases.NewMarkControlPlanePhase())
 	initRunner.AppendPhase(phases.NewBootstrapTokenPhase())
 	initRunner.AppendPhase(phases.NewKubeletFinalizePhase())
 	initRunner.AppendPhase(phases.NewAddonPhase())
+	initRunner.AppendPhase(phases.NewWebhookPhase())
 
 	// sets the data builder function, that will be used by the runner
 	// both when running the entire workflow or single phases
@@ -273,11 +260,11 @@ func AddInitOtherFlags(flagSet *flag.FlagSet, initOptions *initOptions) {
 		"Don't apply any changes; just output what would be done.",
 	)
 	flagSet.BoolVar(
-		&initOptions.uploadCerts, options.UploadCerts, initOptions.uploadCerts,
+		&initOptions.uploadCerts, options.UploadCerts, true,
 		"Upload control-plane certificates to the kubeadm-certs Secret.",
 	)
 	flagSet.BoolVar(
-		&initOptions.skipCertificateKeyPrint, options.SkipCertificateKeyPrint, initOptions.skipCertificateKeyPrint,
+		&initOptions.skipCertificateKeyPrint, options.SkipCertificateKeyPrint, true,
 		"Don't print the key used to encrypt the control-plane certificates.",
 	)
 	options.AddPatchesFlag(flagSet, &initOptions.patchesDir)
@@ -555,12 +542,12 @@ func (d *initData) PatchesDir() string {
 }
 
 func printJoinCommand(out io.Writer, adminKubeConfigPath, token string, i *initData) error {
-	joinControlPlaneCommand, err := cmdutil.GetJoinControlPlaneCommand(adminKubeConfigPath, token, i.CertificateKey(), i.skipTokenPrint, i.skipCertificateKeyPrint)
+	joinControlPlaneCommand, err := cmdutil.GetJoinControlPlaneCommand(adminKubeConfigPath, token, i.Cfg().ImageRepository, i.skipTokenPrint, i.skipCertificateKeyPrint)
 	if err != nil {
 		return err
 	}
 
-	joinWorkerCommand, err := cmdutil.GetJoinWorkerCommand(adminKubeConfigPath, token, i.skipTokenPrint)
+	joinWorkerCommand, err := cmdutil.GetJoinWorkerCommand(adminKubeConfigPath, token, i.Cfg().ImageRepository, i.skipTokenPrint)
 	if err != nil {
 		return err
 	}

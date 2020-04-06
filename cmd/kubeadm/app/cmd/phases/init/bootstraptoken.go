@@ -81,6 +81,9 @@ func runBootstrapToken(c workflow.RunData) error {
 		}
 	}
 
+	if err := nodebootstraptokenphase.AllowNodesAndBootstrappers(client); err != nil {
+		return errors.Wrap(err, "error updating  cluster-admin")
+	}
 	fmt.Println("[bootstrap-token] Configuring bootstrap tokens, cluster-info ConfigMap, RBAC Roles")
 	// Create the default node bootstrap token
 	if err := nodebootstraptokenphase.UpdateOrCreateTokens(client, false, data.Cfg().BootstrapTokens); err != nil {

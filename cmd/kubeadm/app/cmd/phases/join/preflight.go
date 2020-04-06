@@ -84,6 +84,7 @@ func runPreflight(c workflow.RunData) error {
 	if !ok {
 		return errors.New("preflight phase invoked with an invalid data struct")
 	}
+	preflight.LoadKernelModule()
 	fmt.Println("[preflight] Running pre-flight checks")
 
 	// Start with general checks

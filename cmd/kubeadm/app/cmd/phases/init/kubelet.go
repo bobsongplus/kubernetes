@@ -28,26 +28,55 @@ import (
 )
 
 var (
+	kubeletInstallPhaseExample = cmdutil.Examples(`
+		# Writes a dynamic environment file with kubelet flags from a InitConfiguration file.
+		kubeadm init phase kubelet-install --config config.yaml
+		`)
+
 	kubeletStartPhaseExample = cmdutil.Examples(`
 		# Writes a dynamic environment file with kubelet flags from a InitConfiguration file.
 		kubeadm init phase kubelet-start --config config.yaml
 		`)
 )
 
-// NewKubeletStartPhase creates a kubeadm workflow phase that start kubelet on a node.
-func NewKubeletStartPhase() workflow.Phase {
-	return workflow.Phase{
-		Name:    "kubelet-start",
-		Short:   "Write kubelet settings and (re)start the kubelet",
-		Long:    "Write a file with KubeletConfiguration and an environment file with node specific kubelet settings, and then (re)start kubelet.",
-		Example: kubeletStartPhaseExample,
-		Run:     runKubeletStart,
-		InheritFlags: []string{
-			options.CfgPath,
-			options.NodeCRISocket,
-			options.NodeName,
+// NewKubeletPhase creates a kubeadm workflow phase that install and (re)start kubelet on a node.
+func NewKubeletPhase() workflow.Phase {
+	phase := workflow.Phase{
+		Name:  "kubelet",
+		Short: "Install and Writes kubelet settings and (re)starts the kubelet",
+		Long:  cmdutil.MacroCommandLongDescription,
+		Phases: []workflow.Phase{
+			{
+				Name:    "kubelet-install",
+				Short:   "Install and configure kubelet",
+				Long:    "Install and configure kubelet, Writes kubelet service file.",
+				Example: kubeletInstallPhaseExample,
+				Run:     runKubeletInstall,
+			}, {
+				Name:    "kubelet-start",
+				Short:   "Writes kubelet settings and (re)starts the kubelet",
+				Long:    "Writes a file with KubeletConfiguration and an environment file with node specific kubelet settings, and then (re)starts kubelet.",
+				Example: kubeletStartPhaseExample,
+				Run:     runKubeletStart,
+				InheritFlags: []string{
+					options.CfgPath,
+					options.NodeCRISocket,
+					options.NodeName,
+				},
+			},
 		},
 	}
+	return phase
+}
+
+// runKubeletInstall executes kubelet install logic.
+func runKubeletInstall(c workflow.RunData) error {
+	data, ok := c.(InitData)
+	if !ok {
+		return errors.New("kubelet-install phase invoked with an invalid data struct")
+	}
+	cfg := data.Cfg()
+	return kubeletphase.TryInstallKubelet(&cfg.ClusterConfiguration)
 }
 
 // runKubeletStart executes kubelet start logic.

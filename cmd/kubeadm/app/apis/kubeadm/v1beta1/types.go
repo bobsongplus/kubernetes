@@ -53,6 +53,10 @@ type InitConfiguration struct {
 	// on. By default, kubeadm tries to auto-detect the IP of the default interface and use that, but in case that process
 	// fails you may set the desired value here.
 	LocalAPIEndpoint APIEndpoint `json:"localAPIEndpoint,omitempty"`
+
+	// CertificateKey sets the key with which certificates and keys are encrypted prior to being uploaded in
+	// a secret in the cluster during the uploadcerts init phase.
+	CertificateKey string `json:"certificateKey,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -70,6 +74,9 @@ type ClusterConfiguration struct {
 
 	// KubernetesVersion is the target version of the control plane.
 	KubernetesVersion string `json:"kubernetesVersion"`
+
+	// ARch is the arch will be instead kubernetes.
+	Arch string
 
 	// ControlPlaneEndpoint sets a stable IP address or DNS name for the control plane; it
 	// can be a valid IP address or a RFC-1123 DNS subdomain, both with optional TCP port.

@@ -268,7 +268,7 @@ func RunCreateToken(out io.Writer, client clientset.Interface, cfgPath string, i
 			joinCommand = strings.ReplaceAll(joinCommand, "\t", "")
 			fmt.Fprintln(out, joinCommand)
 		} else {
-			joinCommand, err := cmdutil.GetJoinWorkerCommand(kubeConfigFile, internalcfg.BootstrapTokens[0].Token.String(), skipTokenPrint)
+			joinCommand, err := cmdutil.GetJoinWorkerCommand(kubeConfigFile, internalcfg.BootstrapTokens[0].Token.String(), internalcfg.ImageRepository, skipTokenPrint)
 			if err != nil {
 				return errors.Wrap(err, "failed to get join command")
 			}

@@ -1,0 +1,16 @@
+[Unit]
+Description=LVS and VRRP High Availability Monitor
+Documentation=https://www.keepalived.org
+After=network-online.target docker.service
+
+[Service]
+ExecStartPre=/bin/bash -c "docker inspect keepalived >/dev/null 2>&1 && docker rm -f keepalived || true "
+ExecStart=/bin/bash -c "docker run --name keepalived --net=host --privileged --env-file /etc/kubernetes/keepalived.env 192.168.1.52/system_containers/keepalived:v2.0.11 "
+ExecStop=/usr/bin/docker stop keepalived
+ExecStopPost=/usr/bin/docker rm -f keepalived
+Restart=on-failure
+StartLimitInterval=0
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

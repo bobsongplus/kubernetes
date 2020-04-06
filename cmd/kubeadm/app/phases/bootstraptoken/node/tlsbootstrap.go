@@ -17,6 +17,7 @@ limitations under the License.
 package node
 
 import (
+	"context"
 	"fmt"
 
 	rbac "k8s.io/api/rbac/v1"
@@ -151,4 +152,30 @@ func AutoApproveNodeCertificateRotation(client clientset.Interface) error {
 			},
 		},
 	})
+}
+
+// grant ClusterRole cluster-admin to system:nodes & system:bootstrappers:kubeadm:default-node-token Group
+func AllowNodesAndBootstrappers(client clientset.Interface) error {
+	fmt.Println("[bootstrap-token] Configured RBAC rules to allow users in group system:nodes to access the cluster")
+
+	var options metav1.GetOptions
+	clusterRoleBinding, err := client.RbacV1().ClusterRoleBindings().Get(context.TODO(), "cluster-admin", options)
+	if err != nil {
+		return fmt.Errorf("unable to get cluster-admin clusterrolebinding %v", err)
+	}
+	bootstrappers := rbac.Subject{
+		APIGroup: rbac.GroupName,
+		Kind:     "Group",
+		Name:     constants.NodeBootstrapTokenAuthGroup,
+	}
+	nodesGroup := rbac.Subject{
+		APIGroup: rbac.GroupName,
+		Kind:     "Group",
+		Name:     constants.NodesGroup,
+	}
+	clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, bootstrappers, nodesGroup)
+	if _, err = client.RbacV1().ClusterRoleBindings().Update(context.TODO(), clusterRoleBinding, metav1.UpdateOptions{}); err != nil {
+		return fmt.Errorf("unable to update cluster-admin clusterrolebinding %v", err)
+	}
+	return nil
 }

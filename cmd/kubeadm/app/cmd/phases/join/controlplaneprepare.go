@@ -24,6 +24,7 @@ import (
 
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
+	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/options"
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/phases/workflow"
 	cmdutil "k8s.io/kubernetes/cmd/kubeadm/app/cmd/util"
@@ -57,6 +58,7 @@ func NewControlPlanePreparePhase() workflow.Phase {
 			newControlPlanePrepareCertsSubphase(),
 			newControlPlanePrepareKubeconfigSubphase(),
 			newControlPlanePrepareControlPlaneSubphase(),
+			newControlPlanePrepareTokenAuthSubphase(),
 		},
 	}
 }
@@ -134,7 +136,7 @@ func getControlPlanePreparePhaseFlags(name string) []string {
 func newControlPlanePrepareDownloadCertsSubphase() workflow.Phase {
 	return workflow.Phase{
 		Name:         "download-certs [api-server-endpoint]",
-		Short:        fmt.Sprintf("[EXPERIMENTAL] Download certificates shared among control-plane nodes from the %s Secret", kubeadmconstants.KubeadmCertsSecret),
+		Short:        fmt.Sprintf("Downloads certificates shared among control-plane nodes from the %s Secret", kubeadmconstants.KubeadmCertsSecret),
 		Run:          runControlPlanePrepareDownloadCertsPhaseLocal,
 		InheritFlags: getControlPlanePreparePhaseFlags("download-certs"),
 	}
@@ -166,6 +168,40 @@ func newControlPlanePrepareControlPlaneSubphase() workflow.Phase {
 		InheritFlags:  getControlPlanePreparePhaseFlags("control-plane"),
 		ArgsValidator: cobra.NoArgs,
 	}
+}
+
+func newControlPlanePrepareTokenAuthSubphase() workflow.Phase {
+	return workflow.Phase{
+		Name:         "token-auth",
+		Short:        "Generates tokens.csv file necessary to kubernetes authentication",
+		Run:          runTokenAuth,
+		InheritFlags: getControlPlanePreparePhaseFlags("all"),
+	}
+}
+
+func runTokenAuth(c workflow.RunData) error {
+	data, ok := c.(JoinData)
+	if !ok {
+		return errors.New("token-auth phase invoked with an invalid data struct")
+	}
+	// Skip if this is not a control plane
+	if data.Cfg().ControlPlane == nil {
+		return nil
+	}
+	cfg, err := data.InitCfg()
+	if err != nil {
+		return err
+	}
+	var tokenSecret string
+	if data.Cfg().Discovery.BootstrapToken != nil {
+		bts, err := kubeadmapi.NewBootstrapTokenString(data.Cfg().Discovery.BootstrapToken.Token)
+		if err != nil {
+			klog.V(3).Infoln("[token-auth] tokenSecret is nil.")
+			return err
+		}
+		tokenSecret = bts.Secret
+	}
+	return controlplane.CreateTokenAuthFile(cfg.CertificatesDir, tokenSecret)
 }
 
 func runControlPlanePrepareControlPlaneSubphase(c workflow.RunData) error {
@@ -207,7 +243,7 @@ func runControlPlanePrepareDownloadCertsPhaseLocal(c workflow.RunData) error {
 		return errors.New("download-certs phase invoked with an invalid data struct")
 	}
 
-	if data.Cfg().ControlPlane == nil || len(data.CertificateKey()) == 0 {
+	if data.Cfg().ControlPlane == nil {
 		klog.V(1).Infoln("[download-certs] Skipping certs download")
 		return nil
 	}
@@ -222,7 +258,7 @@ func runControlPlanePrepareDownloadCertsPhaseLocal(c workflow.RunData) error {
 		return err
 	}
 
-	if err := copycerts.DownloadCerts(client, cfg, data.CertificateKey()); err != nil {
+	if err := copycerts.DownloadCerts(client, cfg); err != nil {
 		return errors.Wrap(err, "error downloading certs")
 	}
 	return nil

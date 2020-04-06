@@ -23,6 +23,8 @@ import (
 	"net"
 	"strings"
 
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/dnsautoscaler"
+
 	"github.com/caddyserver/caddy/caddyfile"
 	"github.com/coredns/corefile-migration/migration"
 	"github.com/pkg/errors"
@@ -100,18 +102,22 @@ func deployedDNSReplicas(client clientset.Interface, replicas int32) (*int32, er
 
 // EnsureDNSAddon creates the kube-dns or CoreDNS addon
 func EnsureDNSAddon(cfg *kubeadmapi.ClusterConfiguration, client clientset.Interface) error {
-	if cfg.DNS.Type == kubeadmapi.CoreDNS {
+	var err error
+	if cfg.DNS.Type == kubeadmapi.KubeDNS {
+		replicas, err := deployedDNSReplicas(client, kubeDNSReplicas)
+		if err != nil {
+			return err
+		}
+		err = kubeDNSAddon(cfg, client, replicas)
+	} else {
 		replicas, err := deployedDNSReplicas(client, coreDNSReplicas)
 		if err != nil {
 			return err
 		}
-		return coreDNSAddon(cfg, client, replicas)
+		err = coreDNSAddon(cfg, client, replicas)
 	}
-	replicas, err := deployedDNSReplicas(client, kubeDNSReplicas)
-	if err != nil {
-		return err
-	}
-	return kubeDNSAddon(cfg, client, replicas)
+	err = dnsautoscaler.DnsAutoscalerAddOn(cfg, client)
+	return err
 }
 
 func kubeDNSAddon(cfg *kubeadmapi.ClusterConfiguration, client clientset.Interface, replicas *int32) error {

@@ -25,7 +25,10 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/phases/workflow"
 	cmdutil "k8s.io/kubernetes/cmd/kubeadm/app/cmd/util"
 	dnsaddon "k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/dns"
+	networkaddon "k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network"
 	proxyaddon "k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/proxy"
+	serviceproxyaddon "k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/serviceproxy"
+	terminaladdon "k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/terminal"
 )
 
 var (
@@ -36,6 +39,18 @@ var (
 
 	kubeProxyAddonLongDesc = cmdutil.LongDesc(`
 		Install the kube-proxy addon components via the API server.
+		`)
+
+	terminalAddonLongDesc = cmdutil.LongDesc(`
+		Installs the web-terminal addon components via the API server.
+		`)
+
+	networkAddonLongDesc = cmdutil.LongDesc(`
+		Installs the network addon components via the API server.
+		`)
+
+	storageAddonLongDesc = cmdutil.LongDesc(`
+		Installs the storage addon components via the API server.
 		`)
 )
 
@@ -65,6 +80,27 @@ func NewAddonPhase() workflow.Phase {
 				Long:         kubeProxyAddonLongDesc,
 				InheritFlags: getAddonPhaseFlags("kube-proxy"),
 				Run:          runKubeProxyAddon,
+			},
+			{
+				Name:         "terminal",
+				Short:        "Installs the web-terminal addon to a Kubernetes cluster",
+				Long:         terminalAddonLongDesc,
+				InheritFlags: getAddonPhaseFlags("terminal"),
+				Run:          runTerminalAddon,
+			},
+			{
+				Name:         "network",
+				Short:        "Installs the network addon to a Kubernetes cluster",
+				Long:         networkAddonLongDesc,
+				InheritFlags: getAddonPhaseFlags("network"),
+				Run:          runNetworkAddon,
+			},
+			{
+				Name:         "storage",
+				Short:        "Installs the storage addon to a Kubernetes cluster",
+				Long:         storageAddonLongDesc,
+				InheritFlags: getAddonPhaseFlags("storage"),
+				Run:          runStorageAddon,
 			},
 		},
 	}
@@ -99,6 +135,34 @@ func runKubeProxyAddon(c workflow.RunData) error {
 		return err
 	}
 	return proxyaddon.EnsureProxyAddon(&cfg.ClusterConfiguration, &cfg.LocalAPIEndpoint, client)
+}
+
+// runNetworkAddon installs network addon to a Kubernetes cluster
+func runTerminalAddon(c workflow.RunData) error {
+	cfg, client, err := getInitData(c)
+	if err != nil {
+		return err
+	}
+	return terminaladdon.EnsureTerminalAddon(&cfg.ClusterConfiguration, client)
+}
+
+// runNetworkAddon installs network addon to a Kubernetes cluster
+func runNetworkAddon(c workflow.RunData) error {
+	cfg, client, err := getInitData(c)
+	if err != nil {
+		return err
+	}
+	err = serviceproxyaddon.EnsureServiceProxyAddon(&cfg.ClusterConfiguration, client)
+	if err != nil {
+		return err
+	}
+	return networkaddon.EnsureNetworkAddons(cfg, client)
+}
+
+// runStorageAddon installs storage addon to a Kubernetes cluster
+func runStorageAddon(c workflow.RunData) error {
+	//TODO: FIXME
+	return nil
 }
 
 func getAddonPhaseFlags(name string) []string {
