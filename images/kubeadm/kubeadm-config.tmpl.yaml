@@ -32,8 +32,10 @@ dns:
 {{apiServerUrl}}
 {{apiServerCredential}}
 {{clusterName}}
+{{loadBalances}}
+{{masters}}
 networking:
-  plugin: {{networkPlugin}}
+  Plugin: {{networkPlugin}}
   {{networkMode}}
   {{podSubnet}}
   {{serviceSubnet}}

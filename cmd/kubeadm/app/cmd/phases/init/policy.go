@@ -22,17 +22,12 @@ func NewPolicyPhase() workflow.Phase {
 }
 
 func runPolicy(c workflow.RunData) error {
-	cfg, client, err := getInitData(c)
+	_, client, err := getInitData(c)
 	if err != nil {
 		return err
 	}
 	if err := controlplane.CreateSchedulerPolicy(client); err != nil {
 		return err
-	}
-	if cfg.ControlPlaneEndpoint != "" {
-		if err := controlplane.UploadEnvs(client); err != nil {
-			return err
-		}
 	}
 	return controlplane.CreateDefaultPodSecurityPolicy(client)
 }

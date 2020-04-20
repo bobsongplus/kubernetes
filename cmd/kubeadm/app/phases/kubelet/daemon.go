@@ -86,7 +86,7 @@ WantedBy=multi-user.target
 	buf = bytes.Buffer{}
 	buf.WriteString("[Service]\n")
 	buf.WriteString("Environment=\"KUBELET_KUBECONFIG_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf \"\n")
-	buf.WriteString("Environment=\"KUBELET_PODINFRA_ARGS=--pod-infra-container-image=" + fmt.Sprintf("%s/pause:3.2", imageRepository) + "\"\n")
+	buf.WriteString("Environment=\"KUBELET_PODINFRA_ARGS=--pod-infra-container-image=" + fmt.Sprintf("%s/pause-%s:3.2", imageRepository, runtime.GOARCH) + "\"\n")
 	buf.WriteString("Environment=\"KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml  \"\n")
 	buf.WriteString("EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env \n")
 	buf.WriteString("ExecStartPre=/usr/bin/docker run --rm -v /opt/tmp/bin/:/opt/tmp/bin/   ")
