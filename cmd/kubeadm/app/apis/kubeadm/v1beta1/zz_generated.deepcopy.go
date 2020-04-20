@@ -163,6 +163,16 @@ func (in *ClusterConfiguration) DeepCopyInto(out *ClusterConfiguration) {
 			(*out)[key] = val
 		}
 	}
+	if in.LoadBalances != nil {
+		in, out := &in.LoadBalances, &out.LoadBalances
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.Masters != nil {
+		in, out := &in.Masters, &out.Masters
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 

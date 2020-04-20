@@ -151,7 +151,7 @@ func (w *KubeWaiter) WaitForHealthyKubelet(initialTimeout time.Duration, healthz
 			return errors.New("the kubelet healthz endpoint is unhealthy")
 		}
 		return nil
-	}, 5) // a failureThreshold of five means waiting for a total of 155 seconds
+	}, 10) // a failureThreshold of ten means waiting for a total of 310 seconds
 }
 
 // WaitForKubeletAndFunc waits primarily for the function f to execute, even though it might take some time. If that takes a long time, and the kubelet

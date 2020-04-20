@@ -120,6 +120,12 @@ type ClusterConfiguration struct {
 
 	// Credential to access TenxCloud Enterprise Server
 	ApiServerCredential string
+
+	//loadbalances haproxy loadbalances ip list, jsut add haproxy static pod on master
+	LoadBalances []string
+
+	//master ip list, will create configmap in kube-system, if loadbalances if empty, will add haproxy static pod on each master
+	Masters []string
 }
 
 // ControlPlaneComponent holds settings common to control plane component of the cluster

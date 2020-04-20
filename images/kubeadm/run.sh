@@ -1,11 +1,11 @@
 #!/bin/bash
 REGISTRY_SERVER="index.tenxcloud.com"
-# REGISTRY_USER="system_containers"
-REGISTRY_USER="k8s.gcr.io"
+REGISTRY_USER="system_containers"
 K8S_VERSION="v1.18.0"
 ETCD_VERSION="3.4.3-0"
 CALICO_VERSION="v3.13.2"
-DEFAULT_BINDPORT="6443"
+HA_BINDPORT="16443"
+MASTER_BINDPORT="6443"
 _ARCH="amd64"
 kubeadm_dir="."
 tmp_dir="/tmp"
@@ -119,12 +119,12 @@ EOF
 
 #Deploy kubernetes master
 kubeadm_init_configure() {
-    localAPIEndpoint="
-localAPIEndpoint:
-  bindPort: {{BINDPORT}}
-"
     local advertiseAddress=""
-    local BINDPORT="6443"
+    local BINDPORT="${SINGLE_MASTER_BINDPORT}"
+    if [[ -n "${MASTERS}" ]];then
+        BINDPORT="${HA_BINDPORT}"
+    fi
+
     if [[ -n "${ADDRESS}" ]]; then
         advertiseAddress="advertiseAddress: ${ADDRESS}"
     fi
@@ -170,7 +170,7 @@ kubeadm_configure() {
     fi
 
     if [[ -n "${VIP}" ]]; then
-        controlPlaneEndpoint='controlPlaneEndpoint: '"${VIP}"
+        controlPlaneEndpoint='controlPlaneEndpoint: '"${VIP}:${MASTER_BINDPORT}"
         if [[ -n "${serverCertSANs}" ]]; then
             serverCertSANs+=",\"${VIP}"\"
         else
@@ -191,7 +191,7 @@ kubeadm_configure() {
     fi
 
     if [[ -n "${NETWORK_MODE}" ]]; then
-        networkMode="mode: ${NETWORK_MODE}"
+        networkMode="Mode: ${NETWORK_MODE}"
     fi
 
     if [[ -n "${POD_CIDR}" ]]; then
@@ -207,6 +207,29 @@ kubeadm_configure() {
     if [[ -n "${NETWORK_PLUGIN}" ]]; then
         networkPlugin="${NETWORK_PLUGIN}"
     fi
+    if [[ -n "${MASTERS}" ]];then
+        masters+="Masters: ["
+        delim=""
+        sans=${MASTERS//,/ }
+        for san in ${sans}; do
+            tmp="${delim}\"${san}"\"
+            masters+="${tmp}"
+            delim=","
+        done
+        masters+="]"
+    fi
+    if [[ -n "${LOADBALANCES}" ]];then
+        loadbalances+="LoadBalances: ["
+        delim=""
+        sans=${LOADBALANCES//,/ }
+        for san in ${sans}; do
+            tmp="${delim}\"${san}"\"
+            loadbalances+="${tmp}"
+            delim=","
+        done
+        loadbalances+="]"
+    fi
+
 
     sed -i -e "s@{{K8S_VERSION}}@${K8S_VERSION}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{ARCH}}@${_ARCH}@g" "${kubeadm_config_file}"
@@ -223,6 +246,8 @@ kubeadm_configure() {
     sed -i -e "s@{{serviceSubnet}}@${serviceSubnet}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{dnsDomain}}@${dnsDomain}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{networkPlugin}}@${networkPlugin}@g" "${kubeadm_config_file}"
+    sed -i -e "s@{{masters}}@${masters}@g" "${kubeadm_config_file}"
+    sed -i -e "s@{{loadBalances}}@${loadbalances}@g" "${kubeadm_config_file}"
 }
 
 kubeadm_init() {
@@ -232,7 +257,6 @@ $(welcome)
 welcome
 ${Clean}
 Clean
-#cat "${tmp_file}"
 /usr/bin/kubeadm init  ${KUBEADM_ARGS} --config "${tmp_file}"
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"
@@ -295,14 +319,11 @@ Node(){
 Join() {
   #copy kubeadm from containers to /tmp
   cp /kubeadm  /tmp/ > /dev/null 2>&1
-  local controlPlaneEndpoint=""
-  if [[ -n "${MASTER}" ]]; then
-    if [[ -z "${BINDPORT}" ]]; then
-      controlPlaneEndpoint=${MASTER}:${DEFAULT_BINDPORT}
-    else
-      controlPlaneEndpoint=${MASTER}:${BINDPORT}
-    fi
+  controlPlaneEndpoint=${MASTER}:${MASTER_BINDPORT}
+  if [[ -n "${BINDPORT}" ]]; then
+    controlPlaneEndpoint=${MASTER}:${BINDPORT}
   fi
+
 
   if [[ -z "${K8S_TOKEN}" ]]; then
     cat <<EOF
@@ -329,11 +350,12 @@ EOF
   fi
   local apiServerBindPort=""
   if [[ -n "${BINDPORT}" ]]; then
-     apiServerBindPort="--apiserver-bind-port ${BINDPORT}"
+      apiServerBindPort="--apiserver-bind-port ${BINDPORT}"
+  else
+      apiServerBindPort="--apiserver-bind-port ${HA_BINDPORT}"
   fi
 
 
-  echo "welcome before join ...."
 
   cat <<EOF
 #!/bin/bash

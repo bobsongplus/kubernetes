@@ -202,7 +202,7 @@ const (
 	PullImageRetry = 5
 
 	// DefaultControlPlaneTimeout specifies the default control plane (actually API Server) timeout for use by kubeadm
-	DefaultControlPlaneTimeout = 4 * time.Minute
+	DefaultControlPlaneTimeout = 10 * time.Minute
 
 	// MinimumAddressesInServiceSubnet defines minimum amount of nodes the Service subnet should allow.
 	// We need at least ten, because the DNS service is always at the tenth cluster clusterIP
