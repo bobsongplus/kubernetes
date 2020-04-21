@@ -57,7 +57,7 @@ listen stats
   stats   uri       /stats
   stats   refresh   30s
   stats   realm     Haproxy\ Statistics
-  stats   auth      Admin:Password
+  stats   auth      admin:haproxy-ha
 
 frontend k8s-api
   bind *:6443
@@ -65,6 +65,22 @@ frontend k8s-api
   option tcplog
   tcp-request inspect-delay 5s
   default_backend k8s-api
+
+frontend etcd
+  bind *:12379
+  mode tcp
+  option tcplog
+  tcp-request inspect-delay 5s
+  default_backend etcd
+
+backend etcd
+  mode tcp
+  option tcplog
+  option tcp-check
+  balance roundrobin
+  default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100
+  {{range .}}server {{ .Name }} {{ .IP }}:2379 check
+  {{end}}
 
 backend k8s-api
   mode tcp

@@ -50,13 +50,20 @@ func runKeepAlived(c workflow.RunData) error {
 		klog.Error(err)
 		return err
 	}
-	loadBalances := strings.Split(lbconfig.Data["loadBalances"], ",")
-	masters := strings.Split(lbconfig.Data["masters"], ",")
-	vip := lbconfig.Data["vip"]
-	if loadBalances == nil {
-		loadBalances = masters
+	var loadBalances []string
+
+	if lbconfig.Data["masters"] != "" {
+		loadBalances = strings.Split(lbconfig.Data["masters"], ",")
+	}
+	if lbconfig.Data["loadBalances"] != "" {
+		loadBalances = strings.Split(lbconfig.Data["loadBalances"], ",")
 	}
 
+	if loadBalances == nil {
+		fmt.Println("[keepalived] Skipping Kubernetes High Availability Cluster, becasue loadBalances is nil")
+		return nil
+	}
+	vip := lbconfig.Data["vip"]
 	if err := os.MkdirAll(filepath.Join(kubeadmconstants.KubernetesDir, kpphase.DefaultKeepalivedDir), 0700); err != nil {
 		return errors.Wrapf(err, "failed to create keepalived directory %q", kpphase.DefaultKeepalivedDir)
 	}
