@@ -67,11 +67,16 @@ func runHaproxyPhaseLocal() func(c workflow.RunData) error {
 			klog.Error(err)
 			return err
 		}
-		loadBalances := strings.Split(lbconfig.Data["loadBalances"], ",")
-		masters := strings.Split(lbconfig.Data["masters"], ",")
-		if loadBalances == nil {
-			loadBalances = masters
+
+		var loadBalances []string
+
+		if lbconfig.Data["masters"] != "" {
+			loadBalances = strings.Split(lbconfig.Data["masters"], ",")
 		}
+		if lbconfig.Data["loadBalances"] != "" {
+			loadBalances = strings.Split(lbconfig.Data["loadBalances"], ",")
+		}
+
 		if loadBalances != nil {
 			if err := os.MkdirAll(filepath.Join(kubeadmconstants.KubernetesDir, haproxyphase.DefaultHaproxyDir), 0700); err != nil {
 				return errors.Wrapf(err, "failed to create haproxy directory %q", haproxyphase.DefaultHaproxyDir)
