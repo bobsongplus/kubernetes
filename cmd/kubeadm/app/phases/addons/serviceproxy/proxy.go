@@ -7,6 +7,7 @@ package serviceproxy
 
 import (
 	"fmt"
+	"runtime"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -33,7 +34,7 @@ func EnsureServiceProxyAddon(cfg *kubeadmapi.ClusterConfiguration, client client
 
 	tenxProxyDaemonSetBytes, err := kubeadmutil.ParseTemplate(TenxProxyDaemonSet, struct{ ImageRepository, Arch, TenxProxyVersion, HarpoxyExporterVersion string }{
 		ImageRepository:        cfg.GetControlPlaneImageRepository(),
-		Arch:                   cfg.Arch,
+		Arch:                   runtime.GOARCH,
 		TenxProxyVersion:       TenxProxyVersion,
 		HarpoxyExporterVersion: HarpoxyExporterVersion,
 	})
@@ -56,6 +57,21 @@ func createTenxProxy(certsConfigMapBytes, configMapBytes, daemonSetBytes []byte,
 	}
 	// Create the ConfigMap for Calico CNI or update it in case it already exists
 	if err := apiclient.CreateOrUpdateConfigMap(client, certsConfigMap); err != nil {
+		return err
+	}
+
+	proxyTempl := &v1.ConfigMap{}
+	tenxProxyTemplateBytes, err := kubeadmutil.ParseTemplate(TenxProxyTemplate, nil)
+	if err != nil {
+		return fmt.Errorf("error when parsing service-proxy serviceproxytempl configmap template: %v", err)
+	}
+
+	if err := kuberuntime.DecodeInto(scheme.Codecs.UniversalDecoder(), tenxProxyTemplateBytes, proxyTempl); err != nil {
+		return fmt.Errorf("unable to decode tenx-proxy kube-certs configmap %v", err)
+	}
+
+	// Create the ConfigMap for Calico CNI or update it in case it already exists
+	if err := apiclient.CreateOrUpdateConfigMap(client, proxyTempl); err != nil {
 		return err
 	}
 
