@@ -92,26 +92,26 @@ func UploadCerts(client clientset.Interface, cfg *kubeadmapi.InitConfiguration, 
 	if err != nil {
 		return errors.Wrap(err, "error decoding certificate key")
 	}
-	tokenID, err := createShortLivedBootstrapToken(client)
-	if err != nil {
-		return err
-	}
 
 	secretData, err := getDataFromDisk(cfg, decodedKey)
 	if err != nil {
 		return err
 	}
-	ref, err := getSecretOwnerRef(client, tokenID)
-	if err != nil {
-		return err
-	}
+	// tokenID, err := createShortLivedBootstrapToken(client)
+	// if err != nil {
+	// 	return err
+	// }
+	// ref, err := getSecretOwnerRef(client, tokenID)
+	// if err != nil {
+	// 	return err
+	// }
 
 	err = apiclient.CreateOrUpdateSecret(client, &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            kubeadmconstants.KubeadmCertsSecret,
-			Namespace:       metav1.NamespaceSystem,
-			OwnerReferences: ref,
-			Annotations:     map[string]string{ certificateKey: key },
+			Name:      kubeadmconstants.KubeadmCertsSecret,
+			Namespace: metav1.NamespaceSystem,
+			// OwnerReferences: ref,
+			Annotations: map[string]string{certificateKey: key},
 		},
 		Data: secretData,
 	})
