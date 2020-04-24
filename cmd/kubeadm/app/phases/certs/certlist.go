@@ -230,6 +230,7 @@ func GetDefaultCertList() Certificates {
 		KubeadmCertEtcdHealthcheck(),
 		KubeadmCertEtcdAPIClient(),
 		KubeadmCertEtcdClient(),
+		KubeadmCertEtcdMetricClient(),
 	}
 }
 
@@ -425,6 +426,22 @@ func KubeadmCertEtcdClient() *KubeadmCert {
 		config: pkiutil.CertConfig{
 			Config: certutil.Config{
 				CommonName:   kubeadmconstants.EtcdClientCertCommonName,
+				Organization: []string{kubeadmconstants.SystemPrivilegedGroup},
+				Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+			},
+		},
+	}
+}
+
+func KubeadmCertEtcdMetricClient() *KubeadmCert {
+	return &KubeadmCert{
+		Name:     "etcd-metric-client",
+		LongName: "prometheus client uses to access etcd",
+		BaseName: kubeadmconstants.EtcdMetricClientCertAndKeyBaseName,
+		CAName:   "etcd-ca",
+		config: pkiutil.CertConfig{
+			Config: certutil.Config{
+				CommonName:   kubeadmconstants.EtcdMetricClientCertCommonName,
 				Organization: []string{kubeadmconstants.SystemPrivilegedGroup},
 				Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 			},
