@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"crypto/x509"
 	"html/template"
+	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -36,7 +37,7 @@ var joinCommandTemplate = template.Must(template.New("join").Parse(`` +
 ))
 
 var joinCommandCustomTemplate = template.Must(template.New("join").Parse(`` +
-	`sudo bash -c "$(docker run --rm -v /tmp:/tmp {{.ImageRepository}}/tde:v4.2.0 --registry {{.ImageRepositoryHost}} --token {{.Token}} {{range $h := .CAPubKeyPins}} --ca-cert-hash {{$h}} {{end}} {{if .ControlPlane}} --control-plane {{end}} Join {{.ControlPlaneHost}})"`,
+	`sudo bash -c "$(docker run --rm -v /tmp:/tmp {{.ImageRepository}}/tde-{{.Arch}}:v4.2.0 --registry {{.ImageRepositoryHost}} --token {{.Token}} {{range $h := .CAPubKeyPins}} --ca-cert-hash {{$h}} {{end}} {{if .ControlPlane}} --control-plane {{end}} Join {{.ControlPlaneHost}})"`,
 ))
 
 // GetJoinWorkerCommand returns the kubeadm join command for a given token and
@@ -97,6 +98,7 @@ func getJoinCommand(kubeConfigFile, token, imageRepository string, controlPlane,
 		"ImageRepositoryHost": strings.Split(imageRepository, "/")[0],
 		"ControlPlaneHost":    controlPlaneHost,
 		"ControlPlane":        controlPlane,
+		"Arch":                runtime.GOARCH,
 	}
 
 	if skipTokenPrint {

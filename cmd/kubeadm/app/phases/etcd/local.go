@@ -21,6 +21,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -209,6 +210,18 @@ func CreateStackedEtcdStaticPodManifestFile(client clientset.Interface, manifest
 	return nil
 }
 
+func etcdUnsupportedArchEnvs() []v1.EnvVar {
+	var arch string
+	if arch = runtime.GOARCH; arch == "amd64" || arch == "ppc64le" {
+		// https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/supported-platform.md#32-bit-and-other-unsupported-systems
+		return nil
+	}
+	return []v1.EnvVar{{
+		Name:  "ETCD_UNSUPPORTED_ARCH",
+		Value: arch,
+	}}
+}
+
 // GetEtcdPodSpec returns the etcd static Pod actualized to the context of the current configuration
 // NB. GetEtcdPodSpec methods holds the information about how kubeadm creates etcd static pod manifests.
 func GetEtcdPodSpec(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmapi.APIEndpoint, nodeName string, initialCluster []etcdutil.Member) v1.Pod {
@@ -225,6 +238,7 @@ func GetEtcdPodSpec(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmapi.A
 			Command:         getEtcdCommand(cfg, endpoint, nodeName, initialCluster),
 			Image:           images.GetEtcdImage(cfg),
 			ImagePullPolicy: v1.PullIfNotPresent,
+			Env:             etcdUnsupportedArchEnvs(),
 			// Mount the etcd datadir path read-write so etcd can store data in a more persistent manner
 			VolumeMounts: []v1.VolumeMount{
 				staticpodutil.NewVolumeMount(etcdVolumeName, cfg.Etcd.Local.DataDir, false),
