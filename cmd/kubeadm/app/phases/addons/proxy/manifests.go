@@ -79,6 +79,7 @@ spec:
         - /usr/local/bin/kube-proxy
         - --config=/var/lib/kube-proxy/{{ .ProxyConfigMapKey }}
         - --hostname-override=$(NODE_NAME)
+        - --cleanup
         securityContext:
           privileged: true
         volumeMounts:

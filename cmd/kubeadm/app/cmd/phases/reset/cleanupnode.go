@@ -98,7 +98,7 @@ func runCleanupNode(c workflow.RunData) error {
 
 	// TODO: remove the dockershim directory cleanup in 1.25
 	// https://github.com/kubernetes/kubeadm/issues/2626
-	r.AddDirsToClean("/var/lib/dockershim", "/var/run/kubernetes", "/var/lib/cni")
+	r.AddDirsToClean("/var/lib/dockershim", "/var/run/kubernetes", "/var/lib/cni", "/etc/cni/net.d", "/var/lib/calico")
 
 	// Remove contents from the config and pki directories
 	if certsDir != kubeadmapiv1.DefaultCertificatesDir {
@@ -169,6 +169,8 @@ func resetConfigDir(configPathDir, pkiPathDir string, isDryRun bool) {
 		filepath.Join(configPathDir, kubeadmconstants.KubeletBootstrapKubeConfigFileName),
 		filepath.Join(configPathDir, kubeadmconstants.ControllerManagerKubeConfigFileName),
 		filepath.Join(configPathDir, kubeadmconstants.SchedulerKubeConfigFileName),
+		filepath.Join(configPathDir, kubeadmconstants.KeepalivedDirectory),
+		filepath.Join(configPathDir, kubeadmconstants.HaproxyDirectory),
 	}
 
 	if !isDryRun {
