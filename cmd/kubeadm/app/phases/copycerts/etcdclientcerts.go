@@ -8,6 +8,7 @@ import (
 	"path"
 
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/cert"
@@ -15,6 +16,7 @@ import (
 	"k8s.io/klog"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
+	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/pkiutil"
 )
 
@@ -84,4 +86,39 @@ func certsToPath(cfg *kubeadmapi.InitConfiguration) map[string]string {
 		certs[kubeadmconstants.EtcdCAKeyName] = path.Join(certsDir, kubeadmconstants.EtcdCAKeyName)
 	}
 	return certs
+}
+
+// UploadEtcdMetricClientCerts load the certificates from the disk and upload to a Secret.Needed by prometheus plugins to get etcd metric.
+func UploadEtcdMetricClientCerts(client clientset.Interface, cfg *kubeadmapi.InitConfiguration) error {
+	certsDir := cfg.CertificatesDir
+
+	rootCrt, _, err := pkiutil.TryLoadCertAndKeyFromDisk(certsDir, kubeadmconstants.EtcdCACertAndKeyBaseName)
+	if err != nil {
+		return fmt.Errorf("[upload-etcd-metric-certs] unable to load etcd-ca in path %s", certsDir, err)
+	}
+	rootCrtEncoded := pkiutil.EncodeCertPEM(rootCrt)
+
+	clientCrt, clientKey, err := pkiutil.TryLoadCertAndKeyFromDisk(certsDir, kubeadmconstants.EtcdMetricClientCertAndKeyBaseName)
+	if err != nil {
+		return fmt.Errorf("[upload-etcd-metric-certs] unable to load etcd-metric-crt in path %s", certsDir, err)
+	}
+	crtEncoded := pkiutil.EncodeCertPEM(clientCrt)
+	keyEncoded, err := keyutil.MarshalPrivateKeyToPEM(clientKey)
+
+	PrometheusSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: metav1.NamespaceSystem,
+			Name:      kubeadmconstants.KubeadmEtcdMetricCertsSecret,
+		},
+		Data: map[string][]byte{
+			"ca.crt":     rootCrtEncoded,
+			"client.crt": crtEncoded,
+			"client.key": keyEncoded,
+		},
+	}
+	if err = apiclient.CreateOrUpdateSecret(client, PrometheusSecret); err != nil {
+		return fmt.Errorf("[upload-etcd-metric-certs] unable to create prometheus secret %s: %v", PrometheusSecret.Name, err)
+	}
+	fmt.Printf("[upload-etcd-metric-certs] create prometheus secret %s in the %q Namespace\n", PrometheusSecret.Name, metav1.NamespaceSystem)
+	return nil
 }
