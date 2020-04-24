@@ -185,6 +185,9 @@ kube::util::host_arch() {
     ppc64le*)
       host_arch=ppc64le
       ;;
+    mips64*)
+      host_arch=mips64le
+      ;;
     *)
       kube::log::error "Unsupported host arch. Must be x86_64, 386, arm, arm64, s390x or ppc64le."
       exit 1
