@@ -166,6 +166,9 @@ const (
 	// SchedulerKubeConfigFileName defines the file name for the scheduler's kubeconfig file
 	SchedulerKubeConfigFileName = "scheduler.conf"
 
+	KeepalivedDirectory = "keepalived"
+	HaproxyDirectory    = "haproxy"
+
 	// Some well-known users and groups in the core Kubernetes authorization system
 
 	// ControllerManagerUser defines the well-known user the controller-manager should be authenticated as

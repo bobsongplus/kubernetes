@@ -373,6 +373,10 @@ if [[ \$? -eq 0  ]];then
 else
    echo "Kubernetes Enterprise Edition cluster deployed  failed!"
 fi
+mkdir -p $HOME/.kube
+if [[ -f $HOME/.kube/config ]];then rm -rf $HOME/.kube/config;fi
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
 EOF
    exit 0
     #join control plane end

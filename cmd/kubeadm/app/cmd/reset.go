@@ -184,9 +184,9 @@ func newCmdReset(in io.Reader, out io.Writer, resetOptions *resetOptions) *cobra
 			cleanDirs(data)
 
 			// output help text instructing user how to remove cni folders
-			fmt.Print(cniCleanupInstructions)
+			// fmt.Print(cniCleanupInstructions)
 			// Output help text instructing user how to remove iptables rules
-			fmt.Print(iptablesCleanupInstructions)
+			// fmt.Print(iptablesCleanupInstructions)
 			return nil
 		},
 	}
@@ -194,6 +194,7 @@ func newCmdReset(in io.Reader, out io.Writer, resetOptions *resetOptions) *cobra
 	AddResetFlags(cmd.Flags(), resetOptions)
 
 	// initialize the workflow runner with the list of phases
+	// TODO: should remove vip automaticaly
 	resetRunner.AppendPhase(phases.NewPreflightPhase())
 	resetRunner.AppendPhase(phases.NewUpdateClusterStatus())
 	resetRunner.AppendPhase(phases.NewRemoveETCDMemberPhase())

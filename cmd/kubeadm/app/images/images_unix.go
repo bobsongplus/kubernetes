@@ -19,11 +19,14 @@ limitations under the License.
 package images
 
 import (
+	"fmt"
+	"runtime"
+
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
 )
 
 // GetPauseImage returns the image for the "pause" container
 func GetPauseImage(cfg *kubeadmapi.ClusterConfiguration) string {
-	return GetGenericImage(cfg.ImageRepository, "pause", constants.PauseVersion)
+	return GetGenericImage(cfg.ImageRepository, fmt.Sprintf("pause-%s", runtime.GOARCH), constants.PauseVersion)
 }
