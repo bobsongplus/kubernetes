@@ -3,7 +3,9 @@ package network
 import (
 	"fmt"
 
+	"k8s.io/klog"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/ovn"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/weavenet"
 
 	clientset "k8s.io/client-go/kubernetes"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
@@ -28,35 +30,40 @@ const (
 
 	Ovn string = "ovn"
 
+	WeaveNet string = "weavenet"
+
 	Multus string = "multus"
 )
 
 func EnsureNetworkAddons(cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
-	//network plugin(calico,flannel,canal,macvlan)
-	if cfg.Networking.Plugin == Calico || cfg.Networking.Plugin == "" {
+
+	switch cfg.Networking.Plugin {
+	case Calico:
 		if err := calico.CreateCalicoAddon(cfg, client); err != nil {
 			return fmt.Errorf("error setup calico addon: %v", err)
 		}
-	} else if cfg.Networking.Plugin == Flannel {
+	case Flannel:
 		if err := flannel.CreateFlannelAddon(cfg, client); err != nil {
 			return fmt.Errorf("error setup flannel addon: %v", err)
 		}
-	} else if cfg.Networking.Plugin == Canal {
+	case Canal:
 		if err := canal.CreateCanalAddon(cfg, client); err != nil {
 			return fmt.Errorf("error setup canal addon: %v", err)
 		}
-	} else if cfg.Networking.Plugin == Ovn {
+	case Ovn:
 		if err := ovn.CreateOvnAddon(cfg, client); err != nil {
 			return fmt.Errorf("error setup ovn addon: %v", err)
 		}
-	} else if cfg.Networking.Plugin == Macvlan {
-		//TODO: FIXME
-	} else if cfg.Networking.Plugin == Cilium {
-		//TODO: FIXME
-	} else if cfg.Networking.Plugin == Multus {
-		//TODO: FIXME
-	} else {
-		fmt.Errorf("[addons] Unsupported Network Plugin: %s !\n", cfg.Networking.Plugin)
+	case WeaveNet:
+		if err := weavenet.CreateWeaveNetAddon(cfg, client); err != nil {
+			klog.Error(err)
+			return fmt.Errorf("error setup weavenet addon: %v", err)
+		}
+	default:
+		fmt.Printf("Network Plugin Setting: %s, no support, setting calico by default.\n", cfg.Networking.Plugin)
+		if err := calico.CreateCalicoAddon(cfg, client); err != nil {
+			return fmt.Errorf("error setup calico addon: %v", err)
+		}
 	}
 	return nil
 }
