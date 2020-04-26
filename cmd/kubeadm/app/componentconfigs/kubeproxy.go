@@ -26,7 +26,6 @@ import (
 	kubeadmapiv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/features"
-	"k8s.io/kubernetes/pkg/util/ipvs"
 )
 
 const (
@@ -94,7 +93,6 @@ func (kp *kubeProxyConfig) Default(cfg *kubeadmapi.ClusterConfiguration, localAP
 		kp.config.FeatureGates = map[string]bool{}
 	}
 
-	kp.config.Mode = kubeproxyconfig.ProxyMode(ipvs.IPVSProxyMode)
 	defaultBindAddress := kubeProxyDefaultBindAddress(localAPIEndpoint.AdvertiseAddress)
 	if kp.config.BindAddress == "" {
 		kp.config.BindAddress = defaultBindAddress
