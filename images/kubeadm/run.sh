@@ -6,6 +6,7 @@ ETCD_VERSION="3.4.3-0"
 CALICO_VERSION="v3.13.2"
 HA_BINDPORT="16443"
 MASTER_BINDPORT="6443"
+KUBE_PROXY_MODE="ipvs"
 _ARCH="amd64"
 kubeadm_dir="."
 tmp_dir="/tmp"
@@ -230,6 +231,10 @@ kubeadm_configure() {
         loadbalances+="]"
     fi
 
+    if [[ -n "${PROXY_MODE}" ]];then
+        KUBE_PROXY_MODE="${PROXY_MODE}"
+    fi
+
 
     sed -i -e "s@{{K8S_VERSION}}@${K8S_VERSION}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{ARCH}}@${_ARCH}@g" "${kubeadm_config_file}"
@@ -248,6 +253,7 @@ kubeadm_configure() {
     sed -i -e "s@{{networkPlugin}}@${networkPlugin}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{masters}}@${masters}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{loadBalances}}@${loadbalances}@g" "${kubeadm_config_file}"
+    sed -i -e "s@{{kubeProxMode}}@${KUBE_PROXY_MODE}@g" "${kubeadm_config_file}"
 }
 
 kubeadm_init() {
