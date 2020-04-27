@@ -9,13 +9,13 @@ package flannel
  */
 
 const (
-	Version = "v0.11.0"
+	Version = "v0.12.0"
 
 	ConfigMap = `
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: flannel
+  name: kube-flannel-cfg
   namespace: kube-system
   labels:
     tier: node
@@ -29,7 +29,13 @@ data:
         {
           "type": "flannel",
           "delegate": {
+            "hairpinMode": true,
             "isDefaultGateway": true
+          }
+        },{
+          "type": "portmap",
+          "capabilities": {
+            "portMappings": true
           }
         },{
            "type": "tuning",
@@ -46,9 +52,9 @@ data:
     }
   net-conf.json: |
     {
-      "Network": {{ .PodSubnet }},
+      "Network": "{{ .PodSubnet }}",
       "Backend": {
-        "Type": {{ .Backend }}
+        "Type": "{{ .Backend }}"
       }
     }`
 
@@ -56,34 +62,41 @@ data:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: flannel
+  name: kube-flannel-ds-amd64
   namespace: kube-system
   labels:
     tier: node
     app: flannel
-    component: flannel
 spec:
   selector:
     matchLabels:
-      tier: node
       app: flannel
-      component: flannel
   template:
     metadata:
       labels:
         tier: node
         app: flannel
-        component: flannel
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
       hostNetwork: true
       nodeSelector:
-        beta.kubernetes.io/arch: amd64
+        beta.kubernetes.io/arch: {{.Arch}}
         beta.kubernetes.io/os: linux
       tolerations:
-        - effect: NoSchedule
-          operator: Exists
-        - effect: NoExecute
-          operator: Exists
+      - operator: Exists
+        effect: NoSchedule
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
@@ -97,19 +110,16 @@ spec:
         volumeMounts:
         - name: cni
           mountPath: /etc/cni/net.d
-        - name: config
+        - name: flannel-cfg
           mountPath: /etc/kube-flannel/
       containers:
-      - name: flannel
+      - name: kube-flannel
         image: {{ .ImageRepository }}/flannel-{{.Arch}}:{{ .Version }}
         command:
         - /opt/bin/flanneld
         args:
-        - --etcd-endpoints={{ .EtcdEndPoints }}
-        - --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt
-        - --etcd-certfile=/etc/kubernetes/pki/etcd/client.crt
-        - --etcd-keyfile=/etc/kubernetes/pki/etcd/client.key
         - --ip-masq
+        - --kube-subnet-mgr
         resources:
           requests:
             cpu: "100m"
@@ -118,7 +128,9 @@ spec:
             cpu: "100m"
             memory: "50Mi"
         securityContext:
-          privileged: true
+          privileged: false
+          capabilities:
+            add: ["NET_ADMIN"]
         env:
         - name: POD_NAME
           valueFrom:
@@ -130,82 +142,26 @@ spec:
               fieldPath: metadata.namespace
         volumeMounts:
         - name: run
-          mountPath: /run
-        - name: config
+          mountPath: /run/flannel
+        - name: flannel-cfg
           mountPath: /etc/kube-flannel/
-        - name: pki
-          mountPath: /etc/kubernetes/pki
-          readOnly: true
         - name: etc-resolv-conf
           mountPath: /etc/resolv.conf
           readOnly: true
       volumes:
         - name: run
           hostPath:
-            path: /run
-            type: DirectoryOrCreate
+            path: /run/flannel
         - name: cni
           hostPath:
             path: /etc/cni/net.d
-            type: DirectoryOrCreate
-        - name: pki
-          hostPath:
-            path: /etc/kubernetes/pki
-            type: DirectoryOrCreate
+        - name: flannel-cfg
+          configMap:
+            name: kube-flannel-cfg
         - name: etc-resolv-conf
           hostPath:
             path: /etc/resolv.conf
             type: FileOrCreate
-        - name: config
-          configMap:
-            name: flannel
-`
-
-	//This manifest deploys a Job which performs one time configuration of flannel.
-	Job = `
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: configure-flannel
-  namespace: kube-system
-  labels:
-    k8s-app: flannel
-spec:
-  template:
-    metadata:
-      name: configure-flannel
-    spec:
-      hostNetwork: true
-      restartPolicy: OnFailure
-      nodeSelector:
-        node-role.kubernetes.io/master: ""
-      tolerations:
-        - effect: NoSchedule
-          operator: Exists
-        - effect: NoExecute
-          operator: Exists
-      containers:
-      - name: configure-flannel
-        image: {{ .Image }}
-        command:
-        - "etcdctl"
-        - "--endpoints=https://127.0.0.1:2379"
-        - "--ca-file=/etc/kubernetes/pki/etcd/ca.crt"
-        - "--cert-file=/etc/kubernetes/pki/etcd/client.crt"
-        - "--key-file=/etc/kubernetes/pki/etcd/client.key"
-        - "--no-sync"
-        - "set"
-        - "/coreos.com/network/config"
-        - '{ "Network": "{{ .PodSubnet }}", "Backend": {"Type": "vxlan"} }'
-        volumeMounts:
-        - name: pki
-          mountPath: /etc/kubernetes/pki
-          readOnly: true
-      volumes:
-      - name: pki
-        hostPath:
-          path: /etc/kubernetes/pki
-          type: DirectoryOrCreate
 `
 
 	// for flannel
@@ -219,9 +175,9 @@ metadata:
 
 	ClusterRole = `
 kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: system:flannel
+  name: flannel
 rules:
   - apiGroups:
       - ""
@@ -242,20 +198,72 @@ rules:
       - nodes/status
     verbs:
       - patch
+  - apiGroups: ["policy","extensions"]
+    resourceNames: ["system"]
+    resources: ["podsecuritypolicies"]
+    verbs: ["use"]
 `
 
 	ClusterRoleBinding = `
 kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: system:flannel
-subjects:
-  - kind: ServiceAccount
-    name: flannel
-    namespace: kube-system
+  name: flannel
 roleRef:
-  kind: ClusterRole
-  name: system:flannel
   apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: flannel
+subjects:
+- kind: ServiceAccount
+  name: flannel
+  namespace: kube-system
+`
+	PodSecurityPolicy = `
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: psp.flannel.unprivileged
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: docker/default
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: docker/default
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: runtime/default
+    apparmor.security.beta.kubernetes.io/defaultProfileName: runtime/default
+spec:
+  privileged: false
+  volumes:
+    - configMap
+    - secret
+    - emptyDir
+    - hostPath
+  allowedHostPaths:
+    - pathPrefix: "/etc/cni/net.d"
+    - pathPrefix: "/etc/kube-flannel"
+    - pathPrefix: "/run/flannel"
+  readOnlyRootFilesystem: false
+  # Users and groups
+  runAsUser:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  fsGroup:
+    rule: RunAsAny
+  # Privilege Escalation
+  allowPrivilegeEscalation: false
+  defaultAllowPrivilegeEscalation: false
+  # Capabilities
+  allowedCapabilities: ['NET_ADMIN']
+  defaultAddCapabilities: []
+  requiredDropCapabilities: []
+  # Host namespaces
+  hostPID: false
+  hostIPC: false
+  hostNetwork: true
+  hostPorts:
+  - min: 0
+    max: 65535
+  # SELinux
+  seLinux:
+    # SELinux is unused in CaaSP
+    rule: 'RunAsAny'
 `
 )
