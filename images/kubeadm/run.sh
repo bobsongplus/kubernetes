@@ -184,8 +184,8 @@ kubeadm_configure() {
     fi
 
     if [[ -n "${SERVER_URL}" ]] && [[ -n "${CREDENTIAL}" ]]; then
-        apiServerUrl+="apiServerUrl: ${SERVER_URL}"
-        apiServerCredential+="apiServerCredential: ${CREDENTIAL}"
+        apiServerUrl+="ApiServerUrl: ${SERVER_URL}"
+        apiServerCredential+="ApiServerCredential: ${CREDENTIAL}"
     fi
     if [[ -n "${CLUSTERID}" ]]; then
         clusterName+="clusterName": "${CLUSTERID}"
@@ -373,7 +373,7 @@ Clean
 ${PullImage}
 PullImage ${REGISTRY_SERVER} ${REGISTRY_USER}  "node"
 mv /tmp/kubeadm /usr/bin/ > /dev/null 2>&1
-/usr/bin/kubeadm join ${controlPlaneEndpoint}  ${apiServerAdvertiseAddress}  ${apiServerBindPort}   --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH}  --control-plane --certificate-key areyoukidingme ${KUBEADM_ARGS}
+/usr/bin/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint}  ${apiServerAdvertiseAddress}  ${apiServerBindPort}   --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH}  --control-plane --certificate-key areyoukidingme ${KUBEADM_ARGS}
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"
 else
@@ -400,7 +400,7 @@ ${PullImage}
 PullImage ${REGISTRY_SERVER} ${REGISTRY_USER}  "node"
 fi
 mv /tmp/kubeadm /usr/bin/ > /dev/null 2>&1
-/usr/bin/kubeadm join ${controlPlaneEndpoint} --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH} ${KUBEADM_ARGS}
+/usr/bin/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint} --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH} ${KUBEADM_ARGS}
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"
 else
