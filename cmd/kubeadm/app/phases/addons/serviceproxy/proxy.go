@@ -61,12 +61,7 @@ func createTenxProxy(certsConfigMapBytes, configMapBytes, daemonSetBytes []byte,
 	}
 
 	proxyTempl := &v1.ConfigMap{}
-	tenxProxyTemplateBytes, err := kubeadmutil.ParseTemplate(TenxProxyTemplate, nil)
-	if err != nil {
-		return fmt.Errorf("error when parsing service-proxy serviceproxytempl configmap template: %v", err)
-	}
-
-	if err := kuberuntime.DecodeInto(scheme.Codecs.UniversalDecoder(), tenxProxyTemplateBytes, proxyTempl); err != nil {
+	if err := kuberuntime.DecodeInto(scheme.Codecs.UniversalDecoder(), []byte(TenxProxyTemplate), proxyTempl); err != nil {
 		return fmt.Errorf("unable to decode tenx-proxy kube-certs configmap %v", err)
 	}
 
