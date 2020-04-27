@@ -103,7 +103,7 @@ data:
     [ $reload_status -ne 0 ] && exit $reload_status
 kind: ConfigMap
 metadata:
-  name: serviceproxytmpl
+  name: service-proxy-tmpl
   namespace: kube-system
 `
 	TenxProxyDomainConfigMap = `

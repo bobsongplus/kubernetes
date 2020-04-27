@@ -69,6 +69,7 @@ func CreateOvnAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Interfac
 	if err := createOvnController(daemonSetBytes, client); err != nil {
 		return err
 	}
+	fmt.Println("[addons] Applied essential addon: ovn")
 	return nil
 }
 
