@@ -14,24 +14,11 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
-	"k8s.io/kubernetes/cmd/kubeadm/app/images"
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 )
 
 func CreateFlannelAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
-	//PHASE 1: create  etcdctl job to configure flannel ip pool
-	ctlJobBytes, err := kubeadmutil.ParseTemplate(Job, struct{ Image, PodSubnet string }{
-		Image:     images.GetEtcdImage(&cfg.ClusterConfiguration),
-		PodSubnet: cfg.Networking.PodSubnet,
-	})
-	if err != nil {
-		return fmt.Errorf("error when parsing etcdctl job template: %v", err)
-	}
-	if err := createEtcdCtl(ctlJobBytes, client); err != nil {
-		return err
-	}
-
 	//PHASE 2: create flannel containers
 	// Generate ControlPlane Endpoints
 	controlPlaneEndpoint, err := kubeadmutil.GetControlPlaneEndpoint(cfg.ControlPlaneEndpoint, &cfg.LocalAPIEndpoint)
