@@ -1,3 +1,8 @@
+/*
+ * Licensed Materials - Property of tenxcloud.com
+ * (C) Copyright 2020 TenxCloud. All Rights Reserved.
+ * 2020  @author tenxcloud
+ */
 package weavenet
 
 const (
