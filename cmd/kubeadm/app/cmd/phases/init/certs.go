@@ -113,6 +113,15 @@ func newCertSubPhases() []workflow.Phase {
 
 	subPhases = append(subPhases, saPhase)
 
+	encryptPhase := workflow.Phase{
+		Name:         "encryption",
+		Short:        "Generate encryption at rest token and config file for local cluster",
+		Long:         cmdutil.MacroCommandLongDescription,
+		Run:          runEncryption,
+		InheritFlags: []string{options.CertificatesDir},
+	}
+	subPhases = append(subPhases, encryptPhase)
+
 	return subPhases
 }
 
@@ -298,4 +307,20 @@ func runCertPhase(cert *certsphase.KubeadmCert, caCert *certsphase.KubeadmCert) 
 		// create the new certificate (or use existing)
 		return certsphase.CreateCertAndKeyFilesWithCA(cert, caCert, cfg)
 	}
+}
+
+func runEncryption(c workflow.RunData) error {
+	data, ok := c.(InitData)
+	if !ok {
+		return errors.New("certs phase invoked with an invalid data struct")
+	}
+
+	// if external CA mode, skip encryption token and config file generation
+	if data.ExternalCA() {
+		fmt.Printf("[certs] Using existing sa keys\n")
+		return nil
+	}
+
+	// create the new encryption token and config file (or use existing)
+	return certsphase.CreateEncryptionTokenAndConfig(data.CertificateWriteDir())
 }

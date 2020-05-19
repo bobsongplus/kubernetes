@@ -56,6 +56,7 @@ func NewControlPlanePreparePhase() workflow.Phase {
 			},
 			newControlPlanePrepareDownloadCertsSubphase(),
 			newControlPlanePrepareCertsSubphase(),
+			newControlPlanePrepareCreateEncryptphase(),
 			newControlPlanePrepareKubeconfigSubphase(),
 			newControlPlanePrepareControlPlaneSubphase(),
 			newControlPlanePrepareTokenAuthSubphase(),
@@ -176,6 +177,16 @@ func newControlPlanePrepareTokenAuthSubphase() workflow.Phase {
 		Short:        "Generates tokens.csv file necessary to kubernetes authentication",
 		Run:          runTokenAuth,
 		InheritFlags: getControlPlanePreparePhaseFlags("all"),
+	}
+}
+
+func newControlPlanePrepareCreateEncryptphase() workflow.Phase {
+	//getControlPlanePreparePhaseFlags("certs"),
+	return workflow.Phase{
+		Name:         "encryption",
+		Short:        "Generate encryption at rest token and config file for local cluster",
+		Run:          runEncryption,
+		InheritFlags: []string{options.CertificatesDir},
 	}
 }
 
@@ -313,6 +324,26 @@ func runControlPlanePrepareKubeconfigPhaseLocal(c workflow.RunData) error {
 	}
 
 	return nil
+}
+
+func runEncryption(c workflow.RunData) error {
+	data, ok := c.(JoinData)
+	if !ok {
+		return errors.New("control-plane-prepare phase invoked with an invalid data struct")
+	}
+
+	// Skip if this is not a control plane
+	if data.Cfg().ControlPlane == nil {
+		return nil
+	}
+
+	cfg, err := data.InitCfg()
+	if err != nil {
+		return err
+	}
+
+	// create the new encryption token and config file (or use existing)
+	return certsphase.CreateEncryptionTokenAndConfig(cfg.CertificatesDir)
 }
 
 func bootstrapClient(data JoinData) (clientset.Interface, error) {
