@@ -176,7 +176,7 @@ func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint 
 		"proxy-client-key-file":              filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyClientKeyName),
 	}
 	if certphase.UseEncryption {
-		defaultArguments["experimental-encryption-provider-config"] = filepath.Join(cfg.CertificatesDir, kubeadmconstants.EncryptionConfigFileName)
+		defaultArguments["encryption-provider-config"] = filepath.Join(cfg.CertificatesDir, kubeadmconstants.EncryptionConfigFileName)
 	}
 
 	command := []string{"kube-apiserver"}
