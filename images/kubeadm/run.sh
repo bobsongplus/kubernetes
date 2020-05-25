@@ -1,7 +1,7 @@
 #!/bin/bash
 REGISTRY_SERVER="index.tenxcloud.com"
 REGISTRY_USER="system_containers"
-K8S_VERSION="v1.18.0"
+K8S_VERSION=${K8S_VERSION_VAR}
 ETCD_VERSION="3.4.3-0"
 CALICO_VERSION="v3.13.2"
 HA_BINDPORT="16443"
@@ -360,7 +360,7 @@ EOF
   else
       apiServerBindPort="--apiserver-bind-port ${HA_BINDPORT}"
   fi
-
+  InstallBinary
 
 
   cat <<EOF

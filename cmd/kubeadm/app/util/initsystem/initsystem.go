@@ -38,4 +38,7 @@ type InitSystem interface {
 
 	// ServiceIsActive ensures the service is running, or attempting to run. (crash looping in the case of kubelet)
 	ServiceIsActive(service string) bool
+
+	// ServiceEnable  the service is enabled to start on each boot.
+	ServiceEnable(service string) bool
 }
