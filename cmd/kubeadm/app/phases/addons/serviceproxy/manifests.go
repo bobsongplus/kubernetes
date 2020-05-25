@@ -83,27 +83,9 @@ data:
     {{with .Backend}}{{range .}}
     backend {{.BackendName}}{{$port := .Port}}{{range .Pods}}
         server {{.Name}} {{.IP}}:{{$port}} cookie {{.Name}} check maxconn 5000{{end}}{{end}}{{end}}
-  reload_haproxy.sh: |
-    #!/bin/bash
-    config_file=/etc/haproxy/haproxy.cfg
-    pid_file=/var/run/haproxy.pid
-
-    old_pids=$(ps -A -opid,args | grep haproxy | egrep -v -e 'grep|reload_haproxy' | awk '{print $1}' | tr '\n' ' ')
-
-    reload_status=0
-    if [ -n "$old_pids" ]; then
-      # /usr/sbin/haproxy -f $config_file -p $pid_file -x /var/run/haproxy/admin.sock -sf $old_pids
-      /usr/sbin/haproxy -f $config_file -p $pid_file -sf $old_pids
-      reload_status=$?
-    else
-      /usr/sbin/haproxy -f $config_file -p $pid_file
-      reload_status=$?
-    fi
-
-    [ $reload_status -ne 0 ] && exit $reload_status
 kind: ConfigMap
 metadata:
-  name: service-proxy-tmpl
+  name: service-proxy-template
   namespace: kube-system
 `
 	TenxProxyDomainConfigMap = `
@@ -159,8 +141,9 @@ spec:
           name: kube-config
         - mountPath: /etc/sslkeys/certs
           name: kube-cert
-        - mountPath: /etc/default/hafolder
-          name: serviceproxytmpl
+        - mountPath: /etc/default/hafolder/haproxy.tpl
+          name: service-proxy-template
+          subPath: haproxy.tpl
         - mountPath: /run/haproxy
           name: haproxy-sock
       - command:
@@ -196,8 +179,8 @@ spec:
         name: kube-config
       - configMap:
           defaultMode: 420
-          name: serviceproxytmpl
-        name: serviceproxytmpl
+          name: service-proxy-template
+        name: service-proxy-template
       - configMap:
           defaultMode: 420
           name: kube-certs
