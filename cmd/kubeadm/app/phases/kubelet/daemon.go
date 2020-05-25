@@ -45,10 +45,13 @@ func TryInstallKubelet(cfg *kubeadmapi.ClusterConfiguration) error {
 			fmt.Printf("[kubelet-install] WARNING: Unable to start the kubelet service: [%v]\n", err)
 			fmt.Println("[kubelet-install] WARNING: Please ensure kubelet is running manually.")
 			return err
-		} else {
-			if !init.ServiceIsEnabled(ServiceName) {
-				init.EnableCommand(ServiceName)
-				//fmt.Println("[kubelet-install] kubelet service is enabled.")
+		}
+
+		if !init.ServiceIsEnabled(ServiceName) {
+			if init.ServiceEnable(ServiceName) {
+				fmt.Println("[kubelet-install] kubelet service is enabled.")
+			} else {
+				fmt.Println("[kubelet-install] kubelet service enabled failed: enable command: %v.", init.EnableCommand(ServiceName))
 			}
 		}
 	}

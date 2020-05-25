@@ -75,6 +75,10 @@ func (openrc OpenRCInitSystem) EnableCommand(service string) string {
 	return fmt.Sprintf("rc-update add %s default", service)
 }
 
+func (sysd OpenRCInitSystem) ServiceEnable(service string) bool {
+	return true
+}
+
 // SystemdInitSystem defines systemd
 type SystemdInitSystem struct{}
 
@@ -144,6 +148,15 @@ func (sysd SystemdInitSystem) ServiceIsActive(service string) bool {
 		return true
 	}
 	return false
+}
+
+func (sysd SystemdInitSystem) ServiceEnable(service string) bool {
+	args := []string{"enable", service}
+	_, err := exec.Command("systemctl", args...).Output()
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 // GetInitSystem returns an InitSystem for the current system, or nil
