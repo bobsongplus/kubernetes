@@ -260,7 +260,7 @@ func RunCreateToken(out io.Writer, client clientset.Interface, cfgPath string, i
 		skipTokenPrint := false
 		if certificateKey != "" {
 			skipCertificateKeyPrint := false
-			joinCommand, err := cmdutil.GetJoinControlPlaneCommand(kubeConfigFile, internalcfg.BootstrapTokens[0].Token.String(), certificateKey, clusterCfg.KubernetesVersion, skipTokenPrint, skipCertificateKeyPrint)
+			joinCommand, err := cmdutil.GetJoinControlPlaneCommand(kubeConfigFile, internalcfg.BootstrapTokens[0].Token.String(), certificateKey, skipTokenPrint, skipCertificateKeyPrint)
 			if err != nil {
 				return errors.Wrap(err, "failed to get join command")
 			}
@@ -268,7 +268,7 @@ func RunCreateToken(out io.Writer, client clientset.Interface, cfgPath string, i
 			joinCommand = strings.ReplaceAll(joinCommand, "\t", "")
 			fmt.Fprintln(out, joinCommand)
 		} else {
-			joinCommand, err := cmdutil.GetJoinWorkerCommand(kubeConfigFile, internalcfg.BootstrapTokens[0].Token.String(), internalcfg.ImageRepository, clusterCfg.KubernetesVersion, skipTokenPrint)
+			joinCommand, err := cmdutil.GetJoinWorkerCommand(kubeConfigFile, internalcfg.BootstrapTokens[0].Token.String(), internalcfg.ImageRepository, skipTokenPrint)
 			if err != nil {
 				return errors.Wrap(err, "failed to get join command")
 			}

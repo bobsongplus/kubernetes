@@ -1,4 +1,4 @@
-K8S_VERSION=1.18.3
+K8S_VERSION=v1.18.3
 Version=v5.0
 
 all: tde

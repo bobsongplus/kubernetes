@@ -43,17 +43,17 @@ var joinCommandCustomTemplate = template.Must(template.New("join").Parse(`` +
 // GetJoinWorkerCommand returns the kubeadm join command for a given token and
 // and Kubernetes cluster (the current cluster in the kubeconfig file)\
 //TODO
-func GetJoinWorkerCommand(kubeConfigFile, token, imageRepository, kubernetesVersion string, skipTokenPrint bool) (string, error) {
-	return getJoinCommand(kubeConfigFile, token, imageRepository, kubernetesVersion, false, skipTokenPrint, false)
+func GetJoinWorkerCommand(kubeConfigFile, token, imageRepository string, skipTokenPrint bool) (string, error) {
+	return getJoinCommand(kubeConfigFile, token, imageRepository, false, skipTokenPrint, false)
 }
 
 // GetJoinControlPlaneCommand returns the kubeadm join command for a given token and
 // and Kubernetes cluster (the current cluster in the kubeconfig file)
-func GetJoinControlPlaneCommand(kubeConfigFile, token, imageRepository, kubernetesVersion string, skipTokenPrint, skipCertificateKeyPrint bool) (string, error) {
-	return getJoinCommand(kubeConfigFile, token, imageRepository, kubernetesVersion, true, skipTokenPrint, false)
+func GetJoinControlPlaneCommand(kubeConfigFile, token, imageRepository string, skipTokenPrint, skipCertificateKeyPrint bool) (string, error) {
+	return getJoinCommand(kubeConfigFile, token, imageRepository, true, skipTokenPrint, false)
 }
 
-func getJoinCommand(kubeConfigFile, token, imageRepository, kubernetesVersion string, controlPlane, skipTokenPrint, skipCertificateKeyPrint bool) (string, error) {
+func getJoinCommand(kubeConfigFile, token, imageRepository string, controlPlane, skipTokenPrint, skipCertificateKeyPrint bool) (string, error) {
 	// load the kubeconfig file to get the CA certificate and endpoint
 	config, err := clientcmd.LoadFromFile(kubeConfigFile)
 	if err != nil {
@@ -99,7 +99,6 @@ func getJoinCommand(kubeConfigFile, token, imageRepository, kubernetesVersion st
 		"ControlPlaneHost":    controlPlaneHost,
 		"ControlPlane":        controlPlane,
 		"Arch":                runtime.GOARCH,
-		"KubernetesVersion":   kubernetesVersion,
 	}
 
 	if skipTokenPrint {

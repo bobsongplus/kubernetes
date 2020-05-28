@@ -139,6 +139,8 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.nodeName
+            - name: NO_MASQ_LOCAL
+              value: "1"
           image: {{ .ImageRepository }}/weave-kube-{{ .Arch }}:{{ .Version }}
           readinessProbe:
             httpGet:
