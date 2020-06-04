@@ -262,9 +262,9 @@ func GetEtcdPodSpec(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmapi.A
 // getEtcdCommand builds the right etcd command from the given config object
 func getEtcdCommand(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmapi.APIEndpoint, nodeName string, initialCluster []etcdutil.Member) []string {
 	// localhost IP family should be the same that the AdvertiseAddress
-	etcdLocalhostAddress := "127.0.0.1"
+	etcdMetricsAddress := "0.0.0.0"
 	if utilsnet.IsIPv6String(endpoint.AdvertiseAddress) {
-		etcdLocalhostAddress = "::1"
+		etcdMetricsAddress = "::"
 	}
 	defaultArguments := map[string]string{
 		"name": nodeName,
@@ -283,7 +283,7 @@ func getEtcdCommand(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmapi.A
 		"peer-trusted-ca-file":        filepath.Join(cfg.CertificatesDir, kubeadmconstants.EtcdCACertName),
 		"peer-client-cert-auth":       "true",
 		"snapshot-count":              "10000",
-		"listen-metrics-urls":         fmt.Sprintf("http://%s", net.JoinHostPort(etcdLocalhostAddress, strconv.Itoa(kubeadmconstants.EtcdMetricsPort))),
+		"listen-metrics-urls":         fmt.Sprintf("http://%s", net.JoinHostPort(etcdMetricsAddress, strconv.Itoa(kubeadmconstants.EtcdMetricsPort))),
 	}
 
 	if len(initialCluster) == 0 {
