@@ -28,6 +28,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/vishvananda/netlink"
 	utilnode "k8s.io/kubernetes/pkg/util/node"
 
 	"github.com/fsnotify/fsnotify"
@@ -871,4 +872,48 @@ func nodeIPTuple(bindAddress string) [2]net.IP {
 	}
 
 	return nodes
+}
+
+func nodeIPTupleEx(bindAddress string) (nodeIPs [2]net.IP, err error) {
+
+	var routes []netlink.Route
+	if routes, err = netlink.RouteList(nil, netlink.FAMILY_ALL); err != nil {
+		return
+	}
+
+	var defaultRoute *netlink.Route
+	for i, route := range routes {
+		if route.Dst == nil {
+			defaultRoute = &(routes[i])
+			break
+		}
+	}
+
+	if defaultRoute == nil {
+		nodeIPs = nodeIPTuple(bindAddress)
+		return
+	}
+
+	var link netlink.Link
+	if link, err = netlink.LinkByIndex(defaultRoute.LinkIndex); err != nil {
+		return
+	}
+
+	var addrs []netlink.Addr
+	if addrs, err = netlink.AddrList(link, netlink.FAMILY_ALL); err != nil {
+		return
+	}
+
+	for _, addr := range addrs {
+		if netlink.Scope(addr.Scope) != netlink.SCOPE_UNIVERSE {
+			continue
+		}
+		if ip := addr.IP; utilsnet.IsIPv6(ip) {
+			nodeIPs[1] = ip
+		} else {
+			nodeIPs[0] = ip
+		}
+	}
+
+	return
 }
