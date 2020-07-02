@@ -138,19 +138,9 @@ func CreateStaticPodFiles(manifestDir, patchesDir string, cfg *kubeadmapi.Cluste
 
 // getAPIServerCommand builds the right API server command from the given config object and version
 func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint *kubeadmapi.APIEndpoint) []string {
-	var insecureBindAddress string
-	if cfg.Networking.Mode == kubeadmconstants.NetworkIPV6Mode || cfg.Networking.Mode == kubeadmconstants.NetworkDualStackMode {
-		//insecureBindAddress = "::1"
-		//TODO: FIXME when ipv6 only
-		insecureBindAddress = "127.0.0.1"
-	} else {
-		insecureBindAddress = "127.0.0.1"
-	}
 	defaultArguments := map[string]string{
 		"advertise-address":               localAPIEndpoint.AdvertiseAddress,
-		"insecure-port":                   "8080",
-		"insecure-bind-address":           insecureBindAddress,
-		"enable-admission-plugins":        "NodeRestriction,PodSecurityPolicy",
+		"enable-admission-plugins":        "NodeRestriction,PodSecurityPolicy,DefaultTolerationSeconds",
 		"service-cluster-ip-range":        cfg.Networking.ServiceSubnet,
 		"service-account-key-file":        filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPublicKeyName),
 		"service-account-signing-key-file": filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),
@@ -167,13 +157,21 @@ func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint 
 		"kubelet-preferred-address-types": "InternalIP,ExternalIP,Hostname",
 		// add options to configure the front proxy.  Without the generated client cert, this will never be useable
 		// so add it unconditionally with recommended values
-		"requestheader-username-headers":     "X-Remote-User",
-		"requestheader-group-headers":        "X-Remote-Group",
-		"requestheader-extra-headers-prefix": "X-Remote-Extra-",
-		"requestheader-client-ca-file":       filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyCACertName),
-		"requestheader-allowed-names":        "front-proxy-client",
-		"proxy-client-cert-file":             filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyClientCertName),
-		"proxy-client-key-file":              filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyClientKeyName),
+		"requestheader-username-headers":         "X-Remote-User",
+		"requestheader-group-headers":            "X-Remote-Group",
+		"requestheader-extra-headers-prefix":     "X-Remote-Extra-",
+		"requestheader-client-ca-file":           filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyCACertName),
+		"requestheader-allowed-names":            "front-proxy-client",
+		"proxy-client-cert-file":                 filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyClientCertName),
+		"proxy-client-key-file":                  filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyClientKeyName),
+		"watch-cache":                            "true",
+		"default-watch-cache-size":               "1500",
+		"event-ttl":                              "1h0m0s",
+		"max-requests-inflight":                  "800",
+		"max-mutating-requests-inflight":         "400",
+		"kubelet-timeout":                        "5s",
+		"default-not-ready-toleration-seconds":   "60",
+		"default-unreachable-toleration-seconds": "60",
 	}
 	if certphase.UseEncryption {
 		defaultArguments["encryption-provider-config"] = filepath.Join(cfg.CertificatesDir, kubeadmconstants.EncryptionConfigFileName)
@@ -299,20 +297,32 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 	caFile := filepath.Join(cfg.CertificatesDir, kubeadmconstants.CACertName)
 
 	defaultArguments := map[string]string{
-		"port":                             "0",
-		"bind-address":                     "127.0.0.1",
-		"leader-elect":                     "true",
-		"kubeconfig":                       kubeconfigFile,
-		"authentication-kubeconfig":        kubeconfigFile,
-		"authorization-kubeconfig":         kubeconfigFile,
-		"client-ca-file":                   caFile,
-		"requestheader-client-ca-file":     filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyCACertName),
-		"root-ca-file":                     caFile,
-		"service-account-private-key-file": filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),
-		"cluster-signing-cert-file":        caFile,
-		"cluster-signing-key-file":         filepath.Join(cfg.CertificatesDir, kubeadmconstants.CAKeyName),
-		"use-service-account-credentials":  "true",
-		"controllers":                      "*,bootstrapsigner,tokencleaner",
+		"bind-address":                          "127.0.0.1",
+		"leader-elect":                          "true",
+		"kubeconfig":                            kubeconfigFile,
+		"authentication-kubeconfig":             kubeconfigFile,
+		"authorization-kubeconfig":              kubeconfigFile,
+		"client-ca-file":                        caFile,
+		"requestheader-client-ca-file":          filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyCACertName),
+		"root-ca-file":                          caFile,
+		"service-account-private-key-file":      filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),
+		"cluster-signing-cert-file":             caFile,
+		"cluster-signing-key-file":              filepath.Join(cfg.CertificatesDir, kubeadmconstants.CAKeyName),
+		"use-service-account-credentials":       "true",
+		"controllers":                           "*,bootstrapsigner,tokencleaner",
+		"node-monitor-period":                   "5s",
+		"node-monitor-grace-period":             "20s",
+		"node-startup-grace-period":             "30s",
+		"pod-eviction-timeout":                  "1m",
+		"concurrent-deployment-syncs":           "5",
+		"concurrent-endpoint-syncs":             "5",
+		"concurrent-gc-syncs":                   "20",
+		"concurrent-namespace-syncs":            "10",
+		"concurrent-replicaset-syncs":           "5",
+		"concurrent-service-syncs":              "1",
+		"concurrent-serviceaccount-token-syncs": "5",
+		"deployment-controller-sync-period":     "30s",
+		"pvclaimbinder-sync-period":             "15s",
 	}
 
 	// If using external CA, pass empty string to controller manager instead of ca.key/ca.crt path,
@@ -354,7 +364,6 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 	kubeconfigFile := filepath.Join(kubeadmconstants.KubernetesDir, kubeadmconstants.SchedulerKubeConfigFileName)
 	defaultArguments := map[string]string{
-		"port":                      "0",
 		"bind-address":              "127.0.0.1",
 		"leader-elect":              "true",
 		"kubeconfig":                kubeconfigFile,

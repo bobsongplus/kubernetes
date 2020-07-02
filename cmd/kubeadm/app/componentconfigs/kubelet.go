@@ -18,6 +18,7 @@ package componentconfigs
 
 import (
 	"path/filepath"
+	"time"
 
 	"k8s.io/apimachinery/pkg/util/version"
 	clientset "k8s.io/client-go/kubernetes"
@@ -27,6 +28,7 @@ import (
 	utilsexec "k8s.io/utils/exec"
 	utilpointer "k8s.io/utils/pointer"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmapiv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
@@ -192,6 +194,52 @@ func (kc *kubeletConfig) Default(cfg *kubeadmapi.ClusterConfiguration, _ *kubead
 	// We cannot show a warning for RotateCertificates==false and we must hardcode it to true.
 	// There is no way to determine if the user has set this or not, given the field is a non-pointer.
 	kc.config.RotateCertificates = kubeletRotateCertificates
+
+	//
+	kc.config.MaxOpenFiles = 2000000
+	kc.config.SyncFrequency = metav1.Duration{Duration: 3 * time.Second}
+	kc.config.KubeAPIBurst = 30
+	var kubeAPIQPS int32 = 15
+	kc.config.KubeAPIQPS = &kubeAPIQPS
+	serializeImagePulls := false
+	kc.config.SerializeImagePulls = &serializeImagePulls
+	var registryPullQPS int32 = 0
+	kc.config.RegistryPullQPS = &registryPullQPS
+	systemReserved := map[string]string{
+		"cpu":               "500m",
+		"memory":            "512Mi",
+		"ephemeral-storage": "1Gi",
+	}
+	kc.config.SystemReserved = systemReserved
+	kubeReserved := map[string]string{
+		"cpu":               "1",
+		"memory":            "1Gi",
+		"ephemeral-storage": "1Gi",
+	}
+	kc.config.KubeReserved = kubeReserved
+	evictionSoft := map[string]string{
+		"memory.available":  "512Mi",
+		"nodefs.available":  "15%",
+		"imagefs.available": "20%",
+		"nodefs.inodesFree": "10%",
+	}
+	kc.config.EvictionSoft = evictionSoft
+	evictionHard := map[string]string{
+		"memory.available":  "300Mi",
+		"nodefs.available":  "10%",
+		"imagefs.available": "15%",
+		"nodefs.inodesFree": "5%",
+	}
+	kc.config.EvictionHard = evictionHard
+	evictionSoftGracePeriod := map[string]string{
+		"memory.available":  "1m30s",
+		"nodefs.available":  "1m30s",
+		"imagefs.available": "1m30s",
+		"nodefs.inodesFree": "1m30s",
+	}
+	kc.config.EvictionSoftGracePeriod = evictionSoftGracePeriod
+	kc.config.EvictionMaxPodGracePeriod = 30
+	kc.config.EvictionPressureTransitionPeriod = metav1.Duration{30 * time.Second}
 
 	// TODO: Conditionally set CgroupDriver to either `systemd` or `cgroupfs` for CRI other than Docker
 	if nodeRegOpts.CRISocket == constants.DefaultDockerCRISocket {

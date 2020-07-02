@@ -105,7 +105,7 @@ WantedBy=multi-user.target
 	buf.WriteString("-v /srv/kubernetes:/srv/kubernetes:ro ")
 	buf.WriteString(fmt.Sprintf("%s/hyperkube-%s:%s", imageRepository, runtime.GOARCH, kubernetesVersion))
 	buf.WriteString(" nsenter --target=1 --mount --wd=./ -- ./hyperkube")
-	buf.WriteString(" $KUBELET_KUBECONFIG_ARGS  $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS \" \n")
+	buf.WriteString(" $KUBELET_KUBECONFIG_ARGS  $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS --network-plugin-mtu 1500 --housekeeping-interval 10s\" \n")
 	buf.WriteString("ExecStop=/usr/bin/docker stop kubelet \n")
 	buf.WriteString("ExecStopPost=/usr/bin/docker rm -f kubelet \n")
 	buf.WriteString("Restart=on-failure \n")
