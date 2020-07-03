@@ -194,8 +194,6 @@ func (kc *kubeletConfig) Default(cfg *kubeadmapi.ClusterConfiguration, _ *kubead
 	// We cannot show a warning for RotateCertificates==false and we must hardcode it to true.
 	// There is no way to determine if the user has set this or not, given the field is a non-pointer.
 	kc.config.RotateCertificates = kubeletRotateCertificates
-
-	//
 	kc.config.MaxOpenFiles = 2000000
 	kc.config.SyncFrequency = metav1.Duration{Duration: 3 * time.Second}
 	kc.config.KubeAPIBurst = 30
@@ -240,6 +238,16 @@ func (kc *kubeletConfig) Default(cfg *kubeadmapi.ClusterConfiguration, _ *kubead
 	kc.config.EvictionSoftGracePeriod = evictionSoftGracePeriod
 	kc.config.EvictionMaxPodGracePeriod = 30
 	kc.config.EvictionPressureTransitionPeriod = metav1.Duration{30 * time.Second}
+	TLSCipherSuites := []string{
+		"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+		"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+		"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305", "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+		"TLS_RSA_WITH_AES_256_GCM_SHA384", "TLS_RSA_WITH_AES_128_GCM_SHA256",
+	}
+	kc.config.TLSCipherSuites = TLSCipherSuites
+	kc.config.ProtectKernelDefaults = true
+	var eventQps int32 = 0
+	kc.config.EventRecordQPS = &eventQps
 
 	// TODO: Conditionally set CgroupDriver to either `systemd` or `cgroupfs` for CRI other than Docker
 	if nodeRegOpts.CRISocket == constants.DefaultDockerCRISocket {

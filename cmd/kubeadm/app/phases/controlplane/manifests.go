@@ -18,6 +18,7 @@ package controlplane
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -129,7 +130,10 @@ func CreateStaticPodFiles(manifestDir, patchesDir string, cfg *kubeadmapi.Cluste
 		if err := staticpodutil.WriteStaticPodToDisk(componentName, manifestDir, spec); err != nil {
 			return errors.Wrapf(err, "failed to create static pod manifest file for %q", componentName)
 		}
-
+		// write the AuditPolicyFile to disk
+		if err := WriteAuditPolicyToDisk(cfg); err != nil {
+			return errors.Wrapf(err, "failed to create audit policy file to disk")
+		}
 		klog.V(1).Infof("[control-plane] wrote static Pod manifest for component %q to %q\n", componentName, kubeadmconstants.GetStaticPodFilepath(componentName, manifestDir))
 	}
 
@@ -138,9 +142,11 @@ func CreateStaticPodFiles(manifestDir, patchesDir string, cfg *kubeadmapi.Cluste
 
 // getAPIServerCommand builds the right API server command from the given config object and version
 func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint *kubeadmapi.APIEndpoint) []string {
+	auditPolicyFile := filepath.Join(cfg.CertificatesDir, kubeadmconstants.AuditPolicyConfigFileName)
+	auditLogFile := filepath.Join(kubeadmconstants.AuditVolumePath, kubeadmconstants.AuditLogFileName)
 	defaultArguments := map[string]string{
 		"advertise-address":               localAPIEndpoint.AdvertiseAddress,
-		"enable-admission-plugins":        "NodeRestriction,PodSecurityPolicy,DefaultTolerationSeconds",
+		"enable-admission-plugins":        "NodeRestriction,PodSecurityPolicy,DefaultTolerationSeconds,SecurityContextDeny",
 		"service-cluster-ip-range":        cfg.Networking.ServiceSubnet,
 		"service-account-key-file":        filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPublicKeyName),
 		"service-account-signing-key-file": filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),
@@ -172,6 +178,14 @@ func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint 
 		"kubelet-timeout":                        "5s",
 		"default-not-ready-toleration-seconds":   "60",
 		"default-unreachable-toleration-seconds": "60",
+		// "anonymous-auth":                     "false",
+		"tls-cipher-suites":   "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256",
+		"audit-policy-file":   auditPolicyFile,
+		"audit-log-format":    "json",
+		"audit-log-path":      auditLogFile,
+		"audit-log-maxage":    "30",
+		"audit-log-maxbackup": "10",
+		"audit-log-maxsize":   "100",
 	}
 	if certphase.UseEncryption {
 		defaultArguments["encryption-provider-config"] = filepath.Join(cfg.CertificatesDir, kubeadmconstants.EncryptionConfigFileName)
@@ -323,6 +337,7 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 		"concurrent-serviceaccount-token-syncs": "5",
 		"deployment-controller-sync-period":     "30s",
 		"pvclaimbinder-sync-period":             "15s",
+		"terminated-pod-gc-threshold":           "10",
 	}
 
 	// If using external CA, pass empty string to controller manager instead of ca.key/ca.crt path,
@@ -381,4 +396,63 @@ func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 	command := []string{"kube-scheduler"}
 	command = append(command, kubeadmutil.BuildArgumentListFromMap(defaultArguments, cfg.Scheduler.ExtraArgs)...)
 	return command
+}
+
+const (
+	AuditPolicy = `
+apiVersion: audit.k8s.io/v1beta1
+kind: Policy
+omitStages:
+- "RequestReceived"
+rules:
+  - level: RequestResponse
+    resources:
+    - group: ""
+      resources: ["pods"]
+  - level: Metadata
+    resources:
+    - group: ""
+      resources: ["pods/log", "pods/status"]
+  - level: None
+    resources:
+    - group: ""
+      resources: ["configmaps"]
+      resourceNames: ["controller-leader"]
+  - level: None
+    users: ["system:kube-proxy"]
+    verbs: ["watch"]
+    resources:
+    - group: ""
+      resources: ["endpoints", "services"]
+  - level: None
+    userGroups: ["system:authenticated"]
+    nonResourceURLs:
+    - "/api*"
+    - "/version"
+  - level: Request
+    resources:
+    - group: ""
+      resources: ["configmaps"]
+      namespaces: ["kube-system"]
+  - level: Metadata
+    resources:
+    - group: ""
+      resources: ["secrets", "configmaps"]
+  - level: Request
+    resources:
+    - group: ""
+    - group: "extensions"
+  - level: Metadata
+    omitStages:
+    - "RequestReceived"
+`
+)
+
+func WriteAuditPolicyToDisk(cfg *kubeadmapi.ClusterConfiguration) error {
+	// creates /var/log/apiserver audit log folder if not already exists
+	if err := os.MkdirAll(kubeadmconstants.AuditVolumePath, 0700); err != nil {
+		return errors.Wrapf(err, "Failed to create audit log directory %q", kubeadmconstants.AuditVolumePath)
+	}
+	fileName := filepath.Join(cfg.CertificatesDir, kubeadmconstants.AuditPolicyConfigFileName)
+	return ioutil.WriteFile(fileName, []byte(AuditPolicy), os.FileMode(0600))
 }

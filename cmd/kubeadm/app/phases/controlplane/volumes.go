@@ -98,6 +98,8 @@ func getHostPathVolumesForTheControlPlane(cfg *kubeadmapi.ClusterConfiguration) 
 	mounts.AddExtraHostPathMounts(kubeadmconstants.KubeControllerManager, cfg.ControllerManager.ExtraVolumes)
 	mounts.AddExtraHostPathMounts(kubeadmconstants.KubeScheduler, cfg.Scheduler.ExtraVolumes)
 
+	// Mount for the audit log (/var/log/apiserver) directory
+	mounts.NewHostPathMount(kubeadmconstants.KubeAPIServer, kubeadmconstants.AuditVolumeName, kubeadmconstants.AuditVolumePath, kubeadmconstants.AuditVolumePath, false, &hostPathDirectoryOrCreate)
 	return mounts
 }
 

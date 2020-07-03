@@ -454,6 +454,18 @@ const (
 
 	// EncryptionConfigFileName is config file for Encrypting Secret Data at Rest.
 	EncryptionConfigFileName string = "encryption-config.yaml"
+
+	// audit-policy.yaml specifies the name for config file that is used for audit the API Server
+	AuditPolicyConfigFileName string = "audit-policy.yaml"
+
+	// AuditVolumeName specifies the name for the Volume that is used for audit the API Server
+	AuditVolumeName string = "apiserver-audit"
+
+	// AuditVolumePath specifies the name for the volume path that is used for audit the API Server
+	AuditVolumePath string = "/var/log/apiserver"
+
+	// AuditLogFileName specifies the name for the log file that is used for audit the API Server
+	AuditLogFileName string = "audit.log"
 )
 
 var (
