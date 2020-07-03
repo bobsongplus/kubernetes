@@ -7,7 +7,7 @@
 package calico
 
 const (
-	Version = "v3.13.2"
+	Version = "v3.13.4"
 
 	//This ConfigMap is used to configure a self-hosted Calico installation.
 	//

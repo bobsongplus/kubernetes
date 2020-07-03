@@ -1,4 +1,4 @@
-Version =v1.18.3
+Version =v1.18.6
 CNI_VERSION=v0.8.6
 CNI_TARBALL=cni-plugins-linux-$(ARCH)-$(CNI_VERSION).tgz
 
