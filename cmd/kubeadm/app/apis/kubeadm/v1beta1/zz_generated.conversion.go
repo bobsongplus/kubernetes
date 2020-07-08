@@ -386,7 +386,6 @@ func autoConvert_v1beta1_ClusterConfiguration_To_kubeadm_ClusterConfiguration(in
 		return err
 	}
 	out.KubernetesVersion = in.KubernetesVersion
-	out.Arch = in.Arch
 	out.ControlPlaneEndpoint = in.ControlPlaneEndpoint
 	if err := Convert_v1beta1_APIServer_To_kubeadm_APIServer(&in.APIServer, &out.APIServer, s); err != nil {
 		return err
@@ -426,7 +425,6 @@ func autoConvert_kubeadm_ClusterConfiguration_To_v1beta1_ClusterConfiguration(in
 		return err
 	}
 	out.KubernetesVersion = in.KubernetesVersion
-	out.Arch = in.Arch
 	out.ControlPlaneEndpoint = in.ControlPlaneEndpoint
 	if err := Convert_kubeadm_APIServer_To_v1beta1_APIServer(&in.APIServer, &out.APIServer, s); err != nil {
 		return err

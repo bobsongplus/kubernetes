@@ -82,7 +82,7 @@ func CreateSchedulerPolicy(client clientset.Interface) error {
 	if err := apiclient.CreateOrUpdateConfigMap(client, configMap); err != nil {
 		return fmt.Errorf("unable to create kube-scheduler configmap %v", err)
 	}
-	//Deprecated see k8s.io/plugin/pkg/auth/authorizer/rbac/bootstrappolicy/policy.go#436
+	//Deprecated see k8s.io/plugin/pkg/auth/authorizer/rbac/bootstrappolicy/policy.go#537
 	// rbacv1helpers.NewRule(Read...).Groups(legacyGroup).Resources("configmaps").RuleOrDie()
 	return nil
 }

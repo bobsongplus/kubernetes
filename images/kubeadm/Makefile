@@ -1,15 +1,18 @@
-K8S_VERSION=v1.18.3
 Version=v5.0
 
-all: tde
-compress:
-	docker run --rm -v  $(shell pwd):/src/  -w /src 192.168.1.52/tenx_containers/goupx:latest goupx kubeadm
+ARCH?=amd64
+OUT_DIR?=_output
 
-tde:
-	docker build --build-arg k8s_version=${K8S_VERSION} -t 192.168.1.52/system_containers/tde:${Version}  .
+DOCKERIZED_OUTPUT_PATH=$(shell pwd)/../../$(OUT_DIR)/dockerized/bin/linux/$(ARCH)
+
+compress:
+	upx --best --ultra-brute -o kubeadm ${DOCKERIZED_OUTPUT_PATH}/kubeadm
+
+tde: compress
+	docker build  -t 192.168.1.52/system_containers/tde:${Version}  .
 
 arm64:
-	docker build --build-arg k8s_version=${K8S_VERSION} -t 192.168.1.52/system_containers/tde-arm64:${Version}  .
+	docker build  -t 192.168.1.52/system_containers/tde-arm64:${Version}  .
 
 
 clean:

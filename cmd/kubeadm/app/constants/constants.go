@@ -450,7 +450,7 @@ const (
 	NetworkDualStackMode = "dual-stack"
 
 	// KubeadmEtcdMetricCertsSecret specifies in what Secret in the kube-system namespace the etcd certificates should be stored
-	KubeadmEtcdMetricCertsSecret = "prometheus-etcd-certs"
+	EtcdCertsSecret = "etcd-certs"
 
 	// EncryptionConfigFileName is config file for Encrypting Secret Data at Rest.
 	EncryptionConfigFileName string = "encryption-config.yaml"

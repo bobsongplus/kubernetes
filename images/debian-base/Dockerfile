@@ -1,13 +1,15 @@
-FROM debian:jessie
+FROM debian:buster-slim
 
-MAINTAINER Joshua Andrew  weiwei@tenxcloud.com
+LABEL vendor="TenxCloud Incorporated" \
+      maintainer=weiwei@tenxcloud.com
 
-ADD sources.list  /etc/apt/sources.list
-RUN apt-get update -y && apt-get install -y wget
-RUN wget -q -O- 'http://mirrors.163.com/ceph/keys/release.asc' | apt-key add -
-RUN echo deb http://mirrors.163.com/ceph/debian-luminous/ jessie main > /etc/apt/sources.list.d/ceph.list
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -y \
-    && DEBIAN_FRONTEND=noninteractive apt-get -yy -q install \
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Smaller package install size.
+COPY excludes /etc/dpkg/dpkg.cfg.d/excludes
+
+RUN echo "deb http://mirrors.aliyun.com/debian/ buster main non-free contrib" > /etc/apt/sources.list
+RUN apt-get update -y && apt-get -yy -q install \
     iptables \
     ipset    \
     kmod     \
@@ -24,30 +26,33 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y \
     glusterfs-client\
     openssh-client \
     cifs-utils \
-    && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y \
-    && DEBIAN_FRONTEND=noninteractive apt-get autoremove -y \
-    && DEBIAN_FRONTEND=noninteractive apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* # CACHEBUST
+    && apt-get upgrade -y && apt-get autoremove -y
 
-COPY cni-bin/bin /opt/cni/bin
-RUN chmod -R 755 /opt/cni/bin/
+# Hold required packages to avoid breaking the installation of packages
+RUN apt-mark hold apt gnupg adduser passwd libsemanage1 libcap2
 
-# Create symlinks for each hyperkube server
-# Also create symlinks to /usr/local/bin/ where the server image binaries live, so the hyperkube image may be
-# used instead of gcr.io/google_containers/kube-* without any modifications.
-# TODO: replace manual symlink creation with --make-symlink command once
-# cross-building with qemu supports go binaries. See #28702
-# RUN /hyperkube --make-symlinks
-RUN ln -s /hyperkube /apiserver \
- && ln -s /hyperkube /controller-manager \
- && ln -s /hyperkube /aggregator \
- && ln -s /hyperkube /kubectl \
- && ln -s /hyperkube /kubelet \
- && ln -s /hyperkube /proxy \
- && ln -s /hyperkube /scheduler \
- && ln -s /hyperkube /usr/local/bin/kube-apiserver \
- && ln -s /hyperkube /usr/local/bin/kube-controller-manager \
- && ln -s /hyperkube /usr/local/bin/kube-aggregator \
- && ln -s /hyperkube /usr/local/bin/kubectl \
- && ln -s /hyperkube /usr/local/bin/kubelet \
- && ln -s /hyperkube /usr/local/bin/kube-proxy \
- && ln -s /hyperkube /usr/local/bin/kube-scheduler
+# Cleanup cached and unnecessary files.
+RUN apt-get autoremove -y && \
+    apt-get clean -y && \
+    tar -czf /usr/share/copyrights.tar.gz /usr/share/common-licenses /usr/share/doc/*/copyright && \
+    rm -rf \
+        /usr/share/doc \
+        /usr/share/man \
+        /usr/share/info \
+        /usr/share/locale \
+        /var/lib/apt/lists/* \
+        /var/log/* \
+        /var/cache/debconf/* \
+        /usr/share/common-licenses* \
+        /usr/share/bash-completion \
+        ~/.bashrc \
+        ~/.profile \
+        /etc/systemd \
+        /lib/lsb \
+        /lib/udev \
+        /usr/lib/x86_64-linux-gnu/gconv/IBM* \
+        /usr/lib/x86_64-linux-gnu/gconv/EBC* && \
+    mkdir -p /usr/share/man/man1 /usr/share/man/man2 \
+        /usr/share/man/man3 /usr/share/man/man4 \
+        /usr/share/man/man5 /usr/share/man/man6 \
+        /usr/share/man/man7 /usr/share/man/man8

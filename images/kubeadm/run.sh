@@ -1,7 +1,7 @@
 #!/bin/bash
 REGISTRY_SERVER="index.tenxcloud.com"
 REGISTRY_USER="system_containers"
-K8S_VERSION=${K8S_VERSION_VAR}
+K8S_VERSION="v1.18.3"
 ETCD_VERSION="3.4.3-0"
 CALICO_VERSION="v3.13.2"
 HA_BINDPORT="16443"
@@ -88,15 +88,15 @@ echo "}"
 PullImage=$(cat <<EOF
   PullImage() {
   echo "Pulling Necessary Images from \${1}"
-  docker pull \${1}/\${2}/kube-scheduler-${_ARCH}:${K8S_VERSION}
-  docker pull \${1}/\${2}/kube-controller-manager-${_ARCH}:${K8S_VERSION}
-  docker pull \${1}/\${2}/kube-apiserver-${_ARCH}:${K8S_VERSION}
-  docker pull \${1}/\${2}/etcd-${_ARCH}:${ETCD_VERSION}
+  docker pull \${1}/\${2}/kube-proxy-${_ARCH}:${K8S_VERSION}
   docker pull \${1}/\${2}/kubectl-${_ARCH}:${K8S_VERSION}
   docker pull \${1}/\${2}/ctl-${_ARCH}:${CALICO_VERSION}
   docker pull \${1}/\${2}/node-${_ARCH}:${CALICO_VERSION}
   docker pull \${1}/\${2}/cni-${_ARCH}:${CALICO_VERSION}
   if [ \${3} == "master" ]; then
+      docker pull \${1}/\${2}/kube-scheduler-${_ARCH}:${K8S_VERSION}
+      docker pull \${1}/\${2}/kube-controller-manager-${_ARCH}:${K8S_VERSION}
+      docker pull \${1}/\${2}/kube-apiserver-${_ARCH}:${K8S_VERSION}
       docker pull  \${1}/\${2}/etcd-${_ARCH}:${ETCD_VERSION}
   fi
   }
@@ -237,7 +237,6 @@ kubeadm_configure() {
 
 
     sed -i -e "s@{{K8S_VERSION}}@${K8S_VERSION}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{ARCH}}@${_ARCH}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{REGISTRY_SERVER}}@${REGISTRY_SERVER}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{REGISTRY_USER}}@${REGISTRY_USER}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{certSANs}}@${certSANs}@g" "${kubeadm_config_file}"
@@ -253,7 +252,7 @@ kubeadm_configure() {
     sed -i -e "s@{{networkPlugin}}@${networkPlugin}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{masters}}@${masters}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{loadBalances}}@${loadbalances}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{kubeProxMode}}@${KUBE_PROXY_MODE}@g" "${kubeadm_config_file}"
+    sed -i -e "s@{{kubeProxyMode}}@${KUBE_PROXY_MODE}@g" "${kubeadm_config_file}"
 }
 
 kubeadm_init() {

@@ -21,8 +21,8 @@ import (
 // NewUploadEtcdCertsPhase returns the uploadEtcdCerts phase
 func NewUploadEtcdCertsPhase() workflow.Phase {
 	return workflow.Phase{
-		Name:  "upload-etcd-metric-certs",
-		Short: fmt.Sprintf("Upload etcd metric certificates to %s", kubeadmconstants.KubeadmCertsSecret),
+		Name:  "upload-etcd-certs",
+		Short: fmt.Sprintf("Upload etcd certificates to %s", kubeadmconstants.EtcdCertsSecret),
 		Long:  cmdutil.MacroCommandLongDescription,
 		Run:   runUploadEtcdCerts,
 		InheritFlags: []string{
@@ -54,9 +54,9 @@ func runUploadEtcdCerts(c workflow.RunData) error {
 		}
 		data.SetCertificateKey(certificateKey)
 	}
-	if err := copycerts.UploadEtcdMetricClientCerts(client, data.Cfg()); err != nil {
-		return errors.Errorf("can't create secret needed by prometheus")
+	if err := copycerts.UploadEtcdClientCerts(client, data.Cfg()); err != nil {
+		return errors.Errorf("can't create etcd certificate secret")
 	}
-	fmt.Printf("[upload-etcd-metric-certs] create secret for prometheus metrics\n")
+	fmt.Printf("[upload-etcd-certs] create etcd certificate secret \n")
 	return nil
 }

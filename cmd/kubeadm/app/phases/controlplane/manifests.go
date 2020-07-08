@@ -366,6 +366,7 @@ func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 	defaultArguments := map[string]string{
 		"bind-address":              "127.0.0.1",
 		"leader-elect":              "true",
+		"policy-configmap":          "kube-scheduler",
 		"kubeconfig":                kubeconfigFile,
 		"authentication-kubeconfig": kubeconfigFile,
 		"authorization-kubeconfig":  kubeconfigFile,
