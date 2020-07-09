@@ -377,6 +377,7 @@ if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"
 else
    echo "Kubernetes Enterprise Edition cluster deployed  failed!"
+   exit 1
 fi
 mkdir -p $HOME/.kube
 if [[ -f $HOME/.kube/config ]];then rm -rf $HOME/.kube/config;fi
@@ -404,6 +405,7 @@ if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"
 else
    echo "Kubernetes Enterprise Edition cluster deployed  failed!"
+   exit 1
 fi
 EOF
 exit 0
