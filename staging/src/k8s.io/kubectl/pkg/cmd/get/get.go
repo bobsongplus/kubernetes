@@ -81,6 +81,8 @@ type GetOptions struct {
 	Sort           bool
 	IgnoreNotFound bool
 
+	KeepManagedFields bool
+
 	genericclioptions.IOStreams
 }
 
@@ -180,6 +182,9 @@ func NewCmdGet(parent string, f cmdutil.Factory, streams genericclioptions.IOStr
 	cmd.Flags().StringVarP(&o.LabelSelector, "selector", "l", o.LabelSelector, "Selector (label query) to filter on, supports '=', '==', and '!='.(e.g. -l key1=value1,key2=value2)")
 	cmd.Flags().StringVar(&o.FieldSelector, "field-selector", o.FieldSelector, "Selector (field query) to filter on, supports '=', '==', and '!='.(e.g. --field-selector key1=value1,key2=value2). The server only supports a limited number of field queries per type.")
 	cmd.Flags().BoolVarP(&o.AllNamespaces, "all-namespaces", "A", o.AllNamespaces, "If present, list the requested object(s) across all namespaces. Namespace in current context is ignored even if specified with --namespace.")
+	cmd.Flags().BoolVarP(&o.KeepManagedFields,
+		"keep-managed-fields", "M", false,
+		"If present, behave as original kubectl do, if not metadata.managedFields will be omitted from displaying.")
 	addOpenAPIPrintColumnFlags(cmd, o)
 	addServerPrintColumnFlags(cmd, o)
 	cmdutil.AddFilenameOptionFlags(cmd, &o.FilenameOptions, "identifying the resource to get from a server.")
@@ -726,6 +731,22 @@ func (o *GetOptions) watch(f cmdutil.Factory, cmd *cobra.Command, args []string)
 	return nil
 }
 
+func removeManagedFields(infos []*resource.Info) {
+	if infos == nil {
+		return
+	}
+	if len(infos) <= 0 {
+		return
+	}
+	for _, info := range infos {
+		if info == nil || info.Object == nil {
+			continue
+		}
+		unstructuredObject := info.Object.(*unstructured.Unstructured)
+		unstructuredObject.SetManagedFields(nil)
+	}
+}
+
 func (o *GetOptions) printGeneric(r *resource.Result) error {
 	// we flattened the data from the builder, so we have individual items, but now we'd like to either:
 	// 1. if there is more than one item, combine them all into a single list
@@ -743,6 +764,10 @@ func (o *GetOptions) printGeneric(r *resource.Result) error {
 
 	if len(infos) == 0 && o.IgnoreNotFound {
 		return utilerrors.Reduce(utilerrors.Flatten(utilerrors.NewAggregate(errs)))
+	}
+
+	if !o.KeepManagedFields {
+		removeManagedFields(infos)
 	}
 
 	printer, err := o.ToPrinter(nil, nil, false, false)
