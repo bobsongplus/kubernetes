@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"k8s.io/klog"
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/phases/workflow"
 	cmdutil "k8s.io/kubernetes/cmd/kubeadm/app/cmd/util"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
@@ -60,7 +59,7 @@ func runHaproxyPhaseLocal() func(c workflow.RunData) error {
 		}
 		cfg := data.Cfg()
 		if cfg.LoadBalances == nil && cfg.Masters == nil {
-			klog.Warning("loadbalances and master list is empty, skip creating haproxy manifest pods for high availability")
+			//klog.Warning("loadbalances and master list is empty, skip creating haproxy manifest pods for high availability")
 			return nil
 		}
 		var loadbalances []string

@@ -1,4 +1,4 @@
-Version=v5.0
+Version=v5.0.0
 
 ARCH?=amd64
 OUT_DIR?=_output

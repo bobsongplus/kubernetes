@@ -36,7 +36,7 @@ func runlbConfig(c workflow.RunData) error {
 	}
 	cfg := data.Cfg()
 	if cfg.ControlPlaneEndpoint == "" {
-		klog.Info("[lbconfig] skip creating in kube-system, because configPlaneEndpoint is empty")
+		//klog.Info("[lbconfig] skip creating in kube-system, because configPlaneEndpoint is empty")
 		return nil
 	}
 	vip := cfg.ControlPlaneEndpoint

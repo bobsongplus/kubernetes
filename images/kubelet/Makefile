@@ -2,6 +2,12 @@ Version =v1.18.3
 CNI_VERSION=v0.8.6
 CNI_TARBALL=cni-plugins-linux-$(ARCH)-$(CNI_VERSION).tgz
 
+ARCH?=amd64
+OUT_DIR?=_output
+DOCKERIZED_OUTPUT_PATH=$(shell pwd)/../../$(OUT_DIR)/dockerized/bin/linux/$(ARCH)
+
+
+
 all: build
 
 cni-tars/$(CNI_TARBALL):
@@ -9,10 +15,10 @@ cni-tars/$(CNI_TARBALL):
 	cd cni-tars/ && curl -sSLO --retry 5 https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/${CNI_TARBALL}
 
 compress:
-	docker run --rm -v  $(shell pwd):/src/  -w /src 192.168.1.52/tenx_containers/goupx:latest goupx kubelet
+	upx --best --ultra-brute -o kubelet ${DOCKERIZED_OUTPUT_PATH}/kubelet
 
-kubelet:
-	docker build -t 192.168.1.52/system_containers/hyperkube-amd64:${Version}  .
+build:
+	docker build -t 192.168.1.52/system_containers/kubelet-amd64:${Version}  .
 
 clean:
 	rm -f ./$(shell basename $(shell pwd)) >/dev/null
