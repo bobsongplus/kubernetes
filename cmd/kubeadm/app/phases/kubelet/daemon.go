@@ -97,7 +97,7 @@ WantedBy=multi-user.target
 	buf.WriteString("ExecStartPre=/bin/bash -c \"mkdir -p /opt/cni/bin && cp -r /opt/tmp/bin/ /opt/cni/ && cp /opt/tmp/bin/nsenter /usr/bin/ && rm -r /opt/tmp\"\n")
 	buf.WriteString("ExecStartPre=/bin/bash -c \"docker inspect kubelet >/dev/null 2>&1 && docker rm -f kubelet || true \" \n")
 	buf.WriteString("ExecStart= \n")
-	buf.WriteString("ExecStart=/bin/bash -c \"docker run --name kubelet --net=host --cpu-period=500000 --cpu-quota=1000000 --cpu-shares=655 --memory=1g --privileged --pid=host -v /:/rootfs:ro ")
+	buf.WriteString("ExecStart=/bin/bash -c \"docker run --name kubelet --net=host --cpu-period=500000 --cpu-quota=1000000 --cpu-shares=1024 --memory=1g --privileged --pid=host -v /:/rootfs:ro ")
 	buf.WriteString("-v /dev:/dev -v /var/log:/var/log:shared -v /var/lib/docker/:/var/lib/docker:rw  ")
 	buf.WriteString("-v /var/lib/kubelet/:/var/lib/kubelet:shared -v /etc/kubernetes:/etc/kubernetes:ro ")
 	buf.WriteString("-v /etc/cni:/etc/cni:rw -v /sys:/sys:ro -v /var/run:/var/run:rw -v /opt/cni/bin/:/opt/cni/bin/ ")

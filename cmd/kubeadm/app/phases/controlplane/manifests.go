@@ -146,7 +146,7 @@ func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint 
 	auditLogFile := filepath.Join(kubeadmconstants.AuditVolumePath, kubeadmconstants.AuditLogFileName)
 	defaultArguments := map[string]string{
 		"advertise-address":               localAPIEndpoint.AdvertiseAddress,
-		"enable-admission-plugins":        "NodeRestriction,PodSecurityPolicy,DefaultTolerationSeconds,SecurityContextDeny",
+		"enable-admission-plugins":        "NodeRestriction,PodSecurityPolicy",
 		"service-cluster-ip-range":        cfg.Networking.ServiceSubnet,
 		"service-account-key-file":        filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPublicKeyName),
 		"service-account-signing-key-file": filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),
@@ -178,7 +178,6 @@ func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint 
 		"kubelet-timeout":                        "5s",
 		"default-not-ready-toleration-seconds":   "60",
 		"default-unreachable-toleration-seconds": "60",
-		// "anonymous-auth":                     "false",
 		"tls-cipher-suites":   "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256",
 		"audit-policy-file":   auditPolicyFile,
 		"audit-log-format":    "json",
