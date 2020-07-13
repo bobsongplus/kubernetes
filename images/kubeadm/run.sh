@@ -3,11 +3,11 @@ REGISTRY_SERVER="index.tenxcloud.com"
 REGISTRY_USER="system_containers"
 K8S_VERSION="v1.18.6"
 ETCD_VERSION="3.4.3-0"
-CALICO_VERSION="v3.13.2"
+CALICO_VERSION="v3.13.4"
 HA_BINDPORT="16443"
 MASTER_BINDPORT="6443"
 KUBE_PROXY_MODE="ipvs"
-_ARCH="amd64"
+ARCH="amd64"
 kubeadm_dir="."
 tmp_dir="/tmp"
 kubeadm_config_file="${kubeadm_dir}/kubeadm-config.yaml"
@@ -88,16 +88,17 @@ echo "}"
 PullImage=$(cat <<EOF
   PullImage() {
   echo "Pulling Necessary Images from \${1}"
-  docker pull \${1}/\${2}/kube-proxy-${_ARCH}:${K8S_VERSION}
-  docker pull \${1}/\${2}/kubectl-${_ARCH}:${K8S_VERSION}
-  docker pull \${1}/\${2}/ctl-${_ARCH}:${CALICO_VERSION}
-  docker pull \${1}/\${2}/node-${_ARCH}:${CALICO_VERSION}
-  docker pull \${1}/\${2}/cni-${_ARCH}:${CALICO_VERSION}
+  docker pull \${1}/\${2}/kube-proxy-${ARCH}:${K8S_VERSION}
+  docker pull \${1}/\${2}/kubelet-${ARCH}:${K8S_VERSION}
+  docker pull \${1}/\${2}/kubectl-${ARCH}:${K8S_VERSION}
+  docker pull \${1}/\${2}/node-${ARCH}:${CALICO_VERSION}
+  docker pull \${1}/\${2}/cni-${ARCH}:${CALICO_VERSION}
   if [ \${3} == "master" ]; then
-      docker pull \${1}/\${2}/kube-scheduler-${_ARCH}:${K8S_VERSION}
-      docker pull \${1}/\${2}/kube-controller-manager-${_ARCH}:${K8S_VERSION}
-      docker pull \${1}/\${2}/kube-apiserver-${_ARCH}:${K8S_VERSION}
-      docker pull  \${1}/\${2}/etcd-${_ARCH}:${ETCD_VERSION}
+      docker pull \${1}/\${2}/kube-scheduler-${ARCH}:${K8S_VERSION}
+      docker pull \${1}/\${2}/kube-controller-manager-${ARCH}:${K8S_VERSION}
+      docker pull \${1}/\${2}/kube-apiserver-${ARCH}:${K8S_VERSION}
+      docker pull  \${1}/\${2}/etcd-${ARCH}:${ETCD_VERSION}
+      docker pull \${1}/\${2}/ctl-${ARCH}:${CALICO_VERSION}
   fi
   }
 EOF
@@ -112,7 +113,6 @@ cat <<EOF
 #!/bin/bash
 ${Clean}
 Clean
-rm /usr/bin/kubeadm 2>/dev/null
 rm /tmp/kubeadm 2>/dev/null
 echo "Uninstall Node Successfully"
 EOF
@@ -150,9 +150,6 @@ kubeadm_configure() {
     local serviceSubnet=""
     local dnsDomain=""
 
-    if [[ -n "${ARCH}" ]];then
-        _ARCH="${ARCH}"
-    fi
 
     if [[ -n "${CERT_EXTRA_SANS}" ]]; then
         serverCertSANs+="serverCertSANs: ["
@@ -262,7 +259,7 @@ $(welcome)
 welcome
 ${Clean}
 Clean
-/usr/bin/kubeadm init  ${KUBEADM_ARGS} --config "${tmp_file}"
+/tmp/kubeadm init  ${KUBEADM_ARGS} --config "${tmp_file}"
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"
 else
@@ -292,15 +289,15 @@ cat <<EOF
     fi
     cp /tmp/kubeadm /usr/bin/  >/dev/null
 
-    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubectl-${_ARCH}:${K8S_VERSION} /usr/bin/kubectl /tmp
+    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubectl-${ARCH}:${K8S_VERSION} /usr/bin/kubectl /tmp
     rm -rf $(which kubectl)
     mv /tmp/kubectl /usr/bin/  >/dev/null
 
-    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/etcd-${_ARCH}:${ETCD_VERSION}  /usr/local/bin/etcdctl /tmp
+    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/etcd-${ARCH}:${ETCD_VERSION}  /usr/local/bin/etcdctl /tmp
     rm -rf $(which etcdctl)
     mv /tmp/etcdctl /usr/bin/  >/dev/null
 
-    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/ctl-${_ARCH}:${CALICO_VERSION} /calicoctl /tmp
+    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/ctl-${ARCH}:${CALICO_VERSION} /calicoctl /tmp
     rm -rf $(which calicoctl)
     mv /tmp/calicoctl /usr/bin/  >/dev/null
     $(CalicoConfig)
@@ -372,8 +369,7 @@ Clean
 
 ${PullImage}
 PullImage ${REGISTRY_SERVER} ${REGISTRY_USER}  "node"
-mv /tmp/kubeadm /usr/bin/ > /dev/null 2>&1
-/usr/bin/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint}  ${apiServerAdvertiseAddress}  ${apiServerBindPort}   --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH}  --control-plane --certificate-key areyoukidingme ${KUBEADM_ARGS}
+/tmp/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint}  ${apiServerAdvertiseAddress}  ${apiServerBindPort}   --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH}  --control-plane --certificate-key areyoukidingme ${KUBEADM_ARGS}
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"
 else
@@ -396,12 +392,9 @@ $(welcome)
 welcome
 ${Clean}
 Clean
-if [[ "${CONTROLPLANE}" = "true" ]]; then
 ${PullImage}
 PullImage ${REGISTRY_SERVER} ${REGISTRY_USER}  "node"
-fi
-mv /tmp/kubeadm /usr/bin/ > /dev/null 2>&1
-/usr/bin/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint} --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH} ${KUBEADM_ARGS}
+/tmp/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint} --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH} ${KUBEADM_ARGS}
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"
 else
