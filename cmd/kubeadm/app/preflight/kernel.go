@@ -27,6 +27,8 @@ var kernelModules = []string{
 }
 
 var sysctl = []string{
+	"kernel.panic=10",
+	"vm.overcommit_memory=1",
 	"net.ipv4.ip_forward=1",
 	"net.ipv6.conf.all.forwarding=1",
 	"net.bridge.bridge-nf-call-iptables=1",
