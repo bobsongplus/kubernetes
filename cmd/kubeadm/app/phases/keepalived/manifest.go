@@ -11,8 +11,6 @@ var keepalivedManifest = `
 kind: Pod
 apiVersion: v1
 metadata:
-  annotations:
-    scheduler.alpha.kubernetes.io/critical-pod: ""
   labels:
     component: keepalived
     tier: control-plane
@@ -20,6 +18,7 @@ metadata:
   namespace: kube-system
 spec:
   hostNetwork: true
+  priorityClassName: system-cluster-critical
   containers:
   - name: kube-keepalived
     args:
@@ -43,6 +42,6 @@ spec:
   volumes:
   - hostPath:
       path: /etc/kubernetes/keepalived/keepalived.conf
-      type: "File"
+      type: File
     name: config
 `

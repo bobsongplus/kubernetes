@@ -12,8 +12,6 @@ var (
 apiVersion: v1
 kind: Pod
 metadata:
-  annotations:
-    scheduler.alpha.kubernetes.io/critical-pod: ""
   labels:
     component: haproxy
     tier: control-plane
@@ -27,17 +25,25 @@ spec:
     args: ["-db", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
     imagePullPolicy: IfNotPresent
     name: haproxy
+    livenessProbe:
+      failureThreshold: 8
+      httpGet:
+        host: 127.0.0.1
+        path: /liveness
+        port: 33305
+      initialDelaySeconds: 60
+      timeoutSeconds: 15
     volumeMounts:
     - mountPath: /usr/local/etc/haproxy
       name: config
   enableServiceLinks: true
   hostNetwork: true
-  priority: 0
+  priorityClassName: system-cluster-critical
   restartPolicy: Always
   volumes:
   - hostPath:
       path: /etc/kubernetes/haproxy
-      type: ""
+      type: DirectoryOrCreate
     name: config
 `
 )
