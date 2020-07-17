@@ -38,16 +38,16 @@ defaults
   option  httplog
   option  dontlognull
   timeout connect 5000
-  timeout client  50000
-  timeout server  50000
+  timeout client  3600000
+  timeout server  3600000
   timeout http-request 15s
   timeout http-keep-alive 15s
 
-frontend monitor-in
-  bind *:33305
+frontend liveness
+  bind 127.0.0.1:33305
   mode http
   option httplog
-  monitor-uri /monitor
+  monitor-uri /liveness
 
 listen stats
   bind    *:9000
