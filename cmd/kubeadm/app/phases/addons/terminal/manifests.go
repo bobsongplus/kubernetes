@@ -38,12 +38,12 @@ spec:
         - name: kubectl
           image: {{ .ImageRepository }}/kubectl-{{ .Arch }}:{{ .Version }}
           resources:
-            requests:
-              cpu: 100m
-              memory: 100Mi
             limits:
-              cpu: 200m
-              memory: 200Mi
+              cpu: 2000m
+              memory: 512Mi
+            requests:
+              cpu: 500m
+              memory: 512Mi
           volumeMounts:
           - name: docker-sock
             mountPath: /var/run/docker.sock
