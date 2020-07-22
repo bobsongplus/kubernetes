@@ -282,12 +282,16 @@ func (g *genericDescriber) Describe(namespace, name string, describerSettings De
 	}
 
 	return tabbedString(func(out io.Writer) error {
+		skip := []string{".metadata.name", ".metadata.namespace", ".metadata.labels", ".metadata.annotations"}
+		if !describerSettings.KeepManagedFields {
+			skip = append(skip, ".metadata.managedFields")
+		}
 		w := NewPrefixWriter(out)
 		w.Write(LEVEL_0, "Name:\t%s\n", obj.GetName())
 		w.Write(LEVEL_0, "Namespace:\t%s\n", obj.GetNamespace())
 		printLabelsMultiline(w, "Labels", obj.GetLabels())
 		printAnnotationsMultiline(w, "Annotations", obj.GetAnnotations())
-		printUnstructuredContent(w, LEVEL_0, obj.UnstructuredContent(), "", ".metadata.name", ".metadata.namespace", ".metadata.labels", ".metadata.annotations")
+		printUnstructuredContent(w, LEVEL_0, obj.UnstructuredContent(), "", skip...)
 		if events != nil {
 			DescribeEvents(events, w)
 		}

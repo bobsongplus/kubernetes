@@ -47,7 +47,8 @@ type ResourceDescriber interface {
 // DescriberSettings holds display configuration for each object
 // describer to control what is printed.
 type DescriberSettings struct {
-	ShowEvents bool
+	ShowEvents        bool
+	KeepManagedFields bool
 }
 
 // ObjectDescriber is an interface for displaying arbitrary objects with extra
