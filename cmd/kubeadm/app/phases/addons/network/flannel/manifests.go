@@ -101,7 +101,6 @@ spec:
         beta.kubernetes.io/os: linux
       tolerations:
       - operator: Exists
-        effect: NoSchedule
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
