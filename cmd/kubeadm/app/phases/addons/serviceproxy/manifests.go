@@ -122,6 +122,7 @@ spec:
     metadata:
       annotations:
         prometheus.io/scrape: "true"
+        prometheus.io/port: "9101"
       labels:
         name: service-proxy
     spec:
