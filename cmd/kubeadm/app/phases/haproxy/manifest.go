@@ -7,22 +7,19 @@
 package haproxy
 
 var (
-	Version         = "2.1.4"
+	Version         = "2.2.2"
 	haproxyManifest = `
 apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    component: haproxy
+    k8s-app: haproxy
     tier: control-plane
   name: kube-haproxy
   namespace: kube-system
 spec:
   containers:
   - image: {{ .ImageRepository }}/haproxy-{{.Arch}}:{{.Version}}
-    command:
-    - haproxy
-    args: ["-db", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
     imagePullPolicy: IfNotPresent
     name: haproxy
     livenessProbe:
@@ -36,7 +33,6 @@ spec:
     volumeMounts:
     - mountPath: /usr/local/etc/haproxy
       name: config
-  enableServiceLinks: true
   hostNetwork: true
   priorityClassName: system-cluster-critical
   restartPolicy: Always

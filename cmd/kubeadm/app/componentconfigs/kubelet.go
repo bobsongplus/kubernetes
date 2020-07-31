@@ -27,6 +27,7 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 	kubeletconfig "k8s.io/kubelet/config/v1beta1"
+	kubeproxyconfig "k8s.io/kubernetes/pkg/proxy/apis/config"
 	utilpointer "k8s.io/utils/pointer"
 
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
@@ -154,6 +155,15 @@ func (kc *kubeletConfig) Default(cfg *kubeadmapi.ClusterConfiguration, _ *kubead
 		clusterDNS = dnsIP.String()
 	}
 
+	//to fit node local dns cache
+	kubeProxyConfig, ok := cfg.ComponentConfigs[KubeProxyGroup]
+	if ok {
+		proxy, _ := kubeProxyConfig.(*KubeProxyConfig)
+		if string(proxy.Config.Mode) == string(kubeproxyconfig.ProxyModeIPVS) {
+			clusterDNS = constants.NodeLocalDNSAddress
+		}
+	}
+
 	if kc.config.ClusterDNS == nil {
 		kc.config.ClusterDNS = []string{clusterDNS}
 	} else if len(kc.config.ClusterDNS) != 1 || kc.config.ClusterDNS[0] != clusterDNS {
@@ -276,7 +286,7 @@ func (kc *kubeletConfig) Default(cfg *kubeadmapi.ClusterConfiguration, _ *kubead
 		kc.config.CgroupDriver = constants.CgroupDriverSystemd
 	}
 
-	ok, err := isServiceActive("systemd-resolved")
+	ok, err = isServiceActive("systemd-resolved")
 	if err != nil {
 		klog.Warningf("cannot determine if systemd-resolved is active: %v", err)
 	}

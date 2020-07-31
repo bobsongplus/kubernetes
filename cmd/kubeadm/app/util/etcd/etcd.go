@@ -43,7 +43,7 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
 )
 
-const etcdTimeout = 2 * time.Second
+const etcdTimeout = 20 * time.Second
 
 // Exponential backoff for etcd operations (up to ~200 seconds)
 var etcdBackoff = wait.Backoff{

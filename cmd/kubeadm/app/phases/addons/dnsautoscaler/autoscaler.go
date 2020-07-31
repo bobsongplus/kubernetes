@@ -27,10 +27,10 @@ func DnsAutoscalerAddOn(cfg *kubeadmapi.ClusterConfiguration, client clientset.I
 	} else {
 		target = "Deployment/coredns"
 	}
-	deploymentBytes, err := kubeadmutil.ParseTemplate(KubeDnsAutoscaler, struct{ ImageRepository, Arch, Version, Target string }{
+	deploymentBytes, err := kubeadmutil.ParseTemplate(CoreDnsAutoscaler, struct{ ImageRepository, Arch, Version, Target string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
 		Arch:            runtime.GOARCH,
-		Version:         KubeDnsAutoscalerVersion,
+		Version:         CoreDnsAutoscalerVersion,
 		Target:          target,
 	})
 	if err != nil {
@@ -51,7 +51,7 @@ func createDnsAutoscaler(deploymentBytes []byte, client clientset.Interface) err
 		return fmt.Errorf("unable to decode kube dns autoscaler clusterroles %v", err)
 	}
 
-	// Create the ClusterRoles for kube dns autoscaler or update it in case it already exists
+	// Create the ClusterRoles for coredns autoscaler or update it in case it already exists
 	if err := apiclient.CreateOrUpdateClusterRole(client, clusterRoles); err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func createDnsAutoscaler(deploymentBytes []byte, client clientset.Interface) err
 		return fmt.Errorf("unable to decode kube dns autoscaler clusterrolebindings %v", err)
 	}
 
-	// Create the ClusterRoleBindings for kube dns autoscaler or update it in case it already exists
+	// Create the ClusterRoleBindings for coredns autoscaler or update it in case it already exists
 	if err := apiclient.CreateOrUpdateClusterRoleBinding(client, clusterRolesBinding); err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func createDnsAutoscaler(deploymentBytes []byte, client clientset.Interface) err
 		return fmt.Errorf("unable to decode kube dns autoscaler serviceAccount %v", err)
 	}
 
-	// Create the ConfigMap for kube dns autoscaler or update it in case it already exists
+	// Create the sa for coredns autoscaler or update it in case it already exists
 	if err := apiclient.CreateOrUpdateServiceAccount(client, serviceAccount); err != nil {
 		return err
 	}
@@ -81,6 +81,6 @@ func createDnsAutoscaler(deploymentBytes []byte, client clientset.Interface) err
 		return fmt.Errorf("unable to decode kube dns autoscaler deployment %v", err)
 	}
 
-	// Create the Deployment for kube-dns-autoscaler or update it in case it already exists
+	// Create the Deployment for coredns-autoscaler or update it in case it already exists
 	return apiclient.CreateOrUpdateDeployment(client, deployment)
 }

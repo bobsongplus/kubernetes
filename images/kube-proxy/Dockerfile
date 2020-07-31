@@ -1,4 +1,4 @@
-FROM 192.168.1.52/system_containers/debian-iptables-amd64:v12.1.0
+FROM 192.168.1.52/build-image/debian-iptables-amd64:v12.1.2
 
 LABEL vendor="TenxCloud Incorporated" \
       maintainer=weiwei@tenxcloud.com

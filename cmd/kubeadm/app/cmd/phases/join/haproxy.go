@@ -15,7 +15,7 @@ import (
 
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/phases/workflow"
 	cmdutil "k8s.io/kubernetes/cmd/kubeadm/app/cmd/util"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
@@ -62,7 +62,7 @@ func runHaproxyPhaseLocal() func(c workflow.RunData) error {
 			klog.Error(err)
 			return err
 		}
-		lbconfig, err := client.CoreV1().ConfigMaps("kube-system").Get(context.TODO(), "lbconfig", metav1.GetOptions{})
+		lbconfig, err := client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(context.TODO(), "lbconfig", metav1.GetOptions{})
 		if err != nil {
 			klog.Error(err)
 			return err

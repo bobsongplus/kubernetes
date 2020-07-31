@@ -174,7 +174,7 @@ func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint 
 	auditLogFile := filepath.Join(kubeadmconstants.AuditVolumePath, kubeadmconstants.AuditLogFileName)
 	defaultArguments := map[string]string{
 		"advertise-address":               localAPIEndpoint.AdvertiseAddress,
-		"enable-admission-plugins":        "NodeRestriction,PodSecurityPolicy",
+		"enable-admission-plugins":        "NodeRestriction,PodSecurityPolicy,Priority",
 		"service-cluster-ip-range":        cfg.Networking.ServiceSubnet,
 		"service-account-key-file":        filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPublicKeyName),
 		"service-account-signing-key-file": filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),
@@ -213,6 +213,7 @@ func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint 
 		"audit-log-maxage":    "30",
 		"audit-log-maxbackup": "10",
 		"audit-log-maxsize":   "100",
+		"profiling":           "false",
 	}
 	if certphase.UseEncryption {
 		defaultArguments["encryption-provider-config"] = filepath.Join(cfg.CertificatesDir, kubeadmconstants.EncryptionConfigFileName)
@@ -360,6 +361,7 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 		"deployment-controller-sync-period":     "30s",
 		"pvclaimbinder-sync-period":             "15s",
 		"terminated-pod-gc-threshold":           "10",
+		"profiling":                             "false",
 	}
 
 	// If using external CA, pass empty string to controller manager instead of ca.key/ca.crt path,
@@ -401,6 +403,7 @@ func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 		"kubeconfig":                kubeconfigFile,
 		"authentication-kubeconfig": kubeconfigFile,
 		"authorization-kubeconfig":  kubeconfigFile,
+		"profiling":                 "false",
 	}
 
 	command := []string{"kube-scheduler"}

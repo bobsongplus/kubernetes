@@ -22,6 +22,8 @@ import (
 	"k8s.io/klog/v2"
 	"strings"
 
+
+	"github.com/caddyserver/caddy/caddyfile"
 	"github.com/coredns/corefile-migration/migration"
 	"github.com/pkg/errors"
 	apps "k8s.io/api/apps/v1"
@@ -37,6 +39,7 @@ import (
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/images"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/dnsautoscaler"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/dnscache"
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 )
@@ -91,6 +94,9 @@ func EnsureDNSAddon(cfg *kubeadmapi.ClusterConfiguration, client clientset.Inter
 		return err
 	}
 	err = coreDNSAddon(cfg, client, replicas)
+	if err = dnscache.CreateNodeDnsCacheAddOn(cfg,client); err != nil {
+		return err
+	}
 	err = dnsautoscaler.DnsAutoscalerAddOn(cfg, client)
 	return err
 }
@@ -136,7 +142,7 @@ func coreDNSAddon(cfg *kubeadmapi.ClusterConfiguration, client clientset.Interfa
 	if err := createCoreDNSAddon(coreDNSDeploymentBytes, coreDNSServiceBytes, coreDNSConfigMapBytes, client); err != nil {
 		return err
 	}
-	fmt.Println("[addons] Applied essential addon: CoreDNS")
+	fmt.Println("[addons] Applied essential addon: coredns")
 	return nil
 }
 

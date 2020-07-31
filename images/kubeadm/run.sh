@@ -1,9 +1,9 @@
 #!/bin/bash
 REGISTRY_SERVER="index.tenxcloud.com"
 REGISTRY_USER="system_containers"
-K8S_VERSION="v1.18.6"
+K8S_VERSION="v1.18.8"
 ETCD_VERSION="3.4.3-0"
-CALICO_VERSION="v3.13.4"
+CALICO_VERSION="v3.15.1"
 HA_BINDPORT="16443"
 MASTER_BINDPORT="6443"
 KUBE_PROXY_MODE="ipvs"
@@ -157,27 +157,27 @@ kubeadm_configure() {
         delim=""
         sans=${CERT_EXTRA_SANS//,/ }
         for san in ${sans}; do
-            tmp="${delim}\"${san}"\"
-            certSANs+="${tmp}"
-            serverCertSANs+="${tmp}"
+            tmp="${delim}${san}"
+            certSANs+=${tmp}
+            serverCertSANs+=${tmp}
             delim=","
         done
     fi
     if [[ -n "${certSANs}" ]];then
-        certSANs+=']'
+        certSANs+="]"
     fi
 
     if [[ -n "${VIP}" ]]; then
-        controlPlaneEndpoint='controlPlaneEndpoint: '"${VIP}:${MASTER_BINDPORT}"
+        controlPlaneEndpoint="controlPlaneEndpoint: ${VIP}:${MASTER_BINDPORT}"
         if [[ -n "${serverCertSANs}" ]]; then
-            serverCertSANs+=",\"${VIP}"\"
+            serverCertSANs+=",${VIP}"
         else
-            serverCertSANs+="serverCertSANs": [\""${VIP}"\"
+            serverCertSANs+="serverCertSANs: [${VIP}"
         fi
     fi
 
     if [[ -n "${serverCertSANs}" ]]; then
-        serverCertSANs+=']'
+        serverCertSANs+="]"
     fi
 
     if [[ -n "${SERVER_URL}" ]] && [[ -n "${CREDENTIAL}" ]]; then
@@ -185,7 +185,7 @@ kubeadm_configure() {
         apiServerCredential+="ApiServerCredential: ${CREDENTIAL}"
     fi
     if [[ -n "${CLUSTERID}" ]]; then
-        clusterName+="clusterName": "${CLUSTERID}"
+        clusterName+="clusterName: ${CLUSTERID}"
     fi
 
     if [[ -n "${NETWORK_MODE}" ]]; then
@@ -210,8 +210,8 @@ kubeadm_configure() {
         delim=""
         sans=${MASTERS//,/ }
         for san in ${sans}; do
-            tmp="${delim}\"${san}"\"
-            masters+="${tmp}"
+            tmp=${delim}${san}
+            masters+=${tmp}
             delim=","
         done
         masters+="]"
@@ -221,15 +221,15 @@ kubeadm_configure() {
         delim=""
         sans=${LOADBALANCES//,/ }
         for san in ${sans}; do
-            tmp="${delim}\"${san}"\"
-            loadbalances+="${tmp}"
+            tmp=${delim}${san}
+            loadbalances+=${tmp}
             delim=","
         done
         loadbalances+="]"
     fi
 
     if [[ -n "${PROXY_MODE}" ]];then
-        KUBE_PROXY_MODE="${PROXY_MODE}"
+        KUBE_PROXY_MODE=${PROXY_MODE}
     fi
 
 
@@ -314,8 +314,6 @@ Master(){
 
 
 Node(){
-    # installbinay simplify
-    # InstallBinary
     Join
 }
 

@@ -12,7 +12,7 @@ kind: Pod
 apiVersion: v1
 metadata:
   labels:
-    component: keepalived
+    k8s-app: keepalived
     tier: control-plane
   name: kube-keepalived
   namespace: kube-system
