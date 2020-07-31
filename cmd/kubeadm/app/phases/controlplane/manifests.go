@@ -185,6 +185,7 @@ func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint 
 		"audit-log-maxage":    "30",
 		"audit-log-maxbackup": "10",
 		"audit-log-maxsize":   "100",
+		"profiling":           "false",
 	}
 	if certphase.UseEncryption {
 		defaultArguments["encryption-provider-config"] = filepath.Join(cfg.CertificatesDir, kubeadmconstants.EncryptionConfigFileName)
@@ -337,6 +338,7 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 		"deployment-controller-sync-period":     "30s",
 		"pvclaimbinder-sync-period":             "15s",
 		"terminated-pod-gc-threshold":           "10",
+		"profiling":                             "false",
 	}
 
 	// If using external CA, pass empty string to controller manager instead of ca.key/ca.crt path,
@@ -384,6 +386,7 @@ func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 		"kubeconfig":                kubeconfigFile,
 		"authentication-kubeconfig": kubeconfigFile,
 		"authorization-kubeconfig":  kubeconfigFile,
+		"profiling":                 "false",
 	}
 
 	// TODO: The following code should be remvoved after dual-stack is GA.
