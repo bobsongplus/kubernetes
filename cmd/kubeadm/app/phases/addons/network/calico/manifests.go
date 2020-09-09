@@ -89,7 +89,7 @@ spec:
       k8s-app: calico
       component: calico
   updateStrategy:
-    type: RollingUpdate
+    type: OnDelete
     rollingUpdate:
       maxUnavailable: 1
   template:

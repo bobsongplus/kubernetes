@@ -115,6 +115,8 @@ metadata:
   name: service-proxy
   namespace: kube-system
 spec:
+  updateStrategy:
+    type: OnDelete
   selector:
     matchLabels:
       name: service-proxy

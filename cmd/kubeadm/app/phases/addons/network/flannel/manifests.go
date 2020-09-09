@@ -73,6 +73,8 @@ metadata:
     tier: node
     k8s-app: flannel
 spec:
+  updateStrategy:
+    type: OnDelete
   selector:
     matchLabels:
       k8s-app: flannel
