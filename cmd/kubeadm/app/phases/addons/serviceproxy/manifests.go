@@ -6,7 +6,7 @@
 package serviceproxy
 
 const (
-	TenxProxyVersion       = "v4.1.0"
+	TenxProxyVersion       = "v5.1.0"
 	HarpoxyExporterVersion = "v0.8.0"
 
 	TenxProxyTemplate = `
@@ -14,22 +14,21 @@ apiVersion: v1
 data:
   haproxy.tpl: |
     # Licensed Materials - Property of tenxcloud.com
-    # (C) Copyright 2017 TenxCloud. All Rights Reserved.
-    # 2017-07-20  @author lizhen
+    # (C) Copyright 2020 TenxCloud. All Rights Reserved.
+    # 2020-07-27 @author lizhen
 
     global
         log 127.0.0.1 local2
         chroot /var/lib/haproxy
         stats socket /run/haproxy/admin.sock mode 660 level admin
         stats timeout 600s
-        ulimit-n 1500000
-        maxconn 2000000
         user haproxy
         group haproxy
         daemon
         tune.ssl.default-dh-param 2048
         ssl-default-bind-options no-sslv3 no-tlsv10
         ssl-default-bind-ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK
+
 
     defaults
         mode                    http
@@ -59,26 +58,52 @@ data:
         bind {{$.PublicIP}}:80
         mode http
         option forwardfor       except 127.0.0.0/8
-        errorfile 503 /etc/haproxy/errors/503.http{{range .Redirect}}
-        redirect scheme https code 301 if { hdr(Host) -i {{range .DomainNames}} {{.}}{{end}} } !{ ssl_fc }{{end}}{{range .Domains}}
+        errorfile 503 /etc/haproxy/errors/503.http{{range .Redirect}}{{if not .PreferIPv6}}
+        redirect scheme https code 301 if { hdr(Host) -i {{range .DomainNames}} {{.}}{{end}} } !{ ssl_fc }{{end}}{{end}}{{range .Domains}}{{if not .PreferIPv6}}
         acl {{.BackendName}} hdr(host) -i {{range .DomainNames}} {{.}}{{end}}
-        use_backend {{.BackendName}} if {{.BackendName}}{{end}}{{end}}
+        use_backend {{.BackendName}} if {{.BackendName}}{{end}}{{end}}{{end}}
+
+    {{if .PublicIPv6 }}{{with .DefaultHTTP}}
+    listen defaulthttp-ipv6
+        bind {{$.PublicIPv6}}:80
+        mode http
+        option forwardfor
+        errorfile 503 /etc/haproxy/errors/503.http{{range .Redirect}}{{if .PreferIPv6}}
+        redirect scheme https code 301 if { hdr(Host) -i {{range .DomainNames}} {{.}}{{end}} } !{ ssl_fc }{{end}}{{end}}{{range .Domains}}{{if .PreferIPv6}}
+        acl {{.BackendName}} hdr(host) -i {{range .DomainNames}} {{.}}{{end}}
+        use_backend {{.BackendName}} if {{.BackendName}}{{end}}{{end}}{{end}}{{end}}
 
     {{with .FrontendLB}}
     frontend LB
         mode http
         option forwardfor       except 127.0.0.0/8
         errorfile 503 /etc/haproxy/errors/503.http
-        bind {{$.PublicIP}}:443 ssl crt {{.DefaultSSLCert}}{{range .SSLCerts}} crt {{.}}{{end}}{{range .Domains}}
+        bind {{$.PublicIP}}:443 ssl crt {{.DefaultSSLCert}}{{range .SSLCerts}} crt {{.}}{{end}}{{range .Domains}}{{if not .PreferIPv6}}
         acl {{.BackendName}} hdr(host) -i {{range .DomainNames}} {{.}}{{end}}
-        use_backend {{.BackendName}} if {{.BackendName}} { ssl_fc_sni{{range .DomainNames}} {{.}}{{end}} }{{end}}{{end}}
+        use_backend {{.BackendName}} if {{.BackendName}} { ssl_fc_sni{{range .DomainNames}} {{.}}{{end}} }{{end}}{{end}}{{end}}
 
-    {{with .Listen}}{{range .}}
+    {{if .PublicIPv6 }}{{with .FrontendLB}}
+    frontend LB-ipv6
+        mode http
+        option forwardfor
+        errorfile 503 /etc/haproxy/errors/503.http
+        bind {{$.PublicIPv6}}:443 ssl crt {{.DefaultSSLCert}}{{range .SSLCerts}} crt {{.}}{{end}}{{range .Domains}}{{if .PreferIPv6}}
+        acl {{.BackendName}} hdr(host) -i {{range .DomainNames}} {{.}}{{end}}
+        use_backend {{.BackendName}} if {{.BackendName}} { ssl_fc_sni{{range .DomainNames}} {{.}}{{end}} }{{end}}{{end}}{{end}}{{end}}
+
+    {{with .Listen}}{{range .}}{{if not .PreferIPv6}}
     listen {{.DomainName}}
         bind {{$.PublicIP}}:{{.PublicPort}}
         mode tcp
         balance roundrobin{{$port := .Port}}{{range .Pods}}
-        server {{.Name}} {{.IP}}:{{$port}} maxconn 5000{{end}}{{end}}{{end}}
+        server {{.Name}} {{.IP}}:{{$port}} maxconn 5000{{end}}{{end}}{{end}}{{end}}
+
+    {{if .PublicIPv6 }}{{with .Listen}}{{range .}}{{if .PreferIPv6}}
+    listen {{.DomainName}}
+        bind {{$.PublicIPv6}}:{{.PublicPort}}
+        mode tcp
+        balance roundrobin{{$port := .Port}}{{range .Pods}}
+        server {{.Name}} {{.IP}}:{{$port}} maxconn 5000{{end}}{{end}}{{end}}{{end}}{{end}}
 
     {{with .Backend}}{{range .}}
     backend {{.BackendName}}{{$port := .Port}}{{range .Pods}}
