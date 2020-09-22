@@ -90,8 +90,6 @@ spec:
       component: calico
   updateStrategy:
     type: OnDelete
-    rollingUpdate:
-      maxUnavailable: 1
   template:
     metadata:
       labels:
