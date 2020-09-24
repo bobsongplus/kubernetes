@@ -76,7 +76,7 @@ frontend etcd
 backend etcd
   mode tcp
   option tcplog
-  option tcp-check
+  option ssl-hello-chk
   balance roundrobin
   default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100
   {{range .}}server {{ .Name }} {{ .IP }}:2379 check
@@ -85,7 +85,7 @@ backend etcd
 backend k8s-api
   mode tcp
   option tcplog
-  option tcp-check
+  option ssl-hello-chk
   balance roundrobin
   default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100
   {{range .}}server {{ .Name }} {{ .IP }}:{{ .Port}} check
