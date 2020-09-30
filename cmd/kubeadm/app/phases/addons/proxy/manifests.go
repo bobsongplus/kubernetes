@@ -67,6 +67,9 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+        prometheus.io/port: "10249"
+        prometheus.io/scrape: "true"
       labels:
         k8s-app: kube-proxy
     spec:
