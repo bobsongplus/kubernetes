@@ -25,7 +25,8 @@ import (
 const (
 
 	// policy.cfg structure
-	// "k8s.io/kubernetes/pkg/scheduler/api"
+	// "k8s.io/kubernetes/pkg/scheduler/apis/config"
+	// https://v1-18.docs.kubernetes.io/docs/reference/scheduling/policies/
 	KubeScheduler = `
 apiVersion: v1
 kind: ConfigMap
@@ -40,13 +41,10 @@ data:
         "predicates" : [
             {"name" : "PodFitsHostPorts"},
             {"name" : "PodFitsResources"},
-            {"name" : "NoDiskConflict"},
             {"name" : "NoVolumeZoneConflict"},
+            {"name" : "NoDiskConflict"},
             {"name" : "CheckVolumeBinding"},
             {"name" : "MatchNodeSelector"},
-            {"name" : "MaxGCEPDVolumeCount"},
-            {"name" : "MaxEBSVolumeCount"},
-            {"name" : "MaxAzureDiskVolumeCount"},
             {"name" : "PodToleratesNodeTaints"},
             {"name" : "MatchInterPodAffinity"},
             {"name" : "HostName"}
@@ -59,7 +57,9 @@ data:
             {"name" : "NodeAffinityPriority", "weight" : 1},
             {"name" : "NodePreferAvoidPodsPriority", "weight" : 1},
             {"name" : "TaintTolerationPriority", "weight" : 1},
-            {"name" : "ImageLocalityPriority", "weight" : 1}
+            {"name" : "ImageLocalityPriority", "weight" : 1},
+            {"name" : "ServiceSpreadingPriority", "weight" : 1},
+            {"name" : "EvenPodsSpreadPriority", "weight" : 1}
             ],
         "hardPodAffinitySymmetricWeight" : 10,
         "alwaysCheckAllPredicates" : false

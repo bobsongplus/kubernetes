@@ -5,7 +5,7 @@ const (
 	// https://github.com/kubernetes/dns/tree/master/cmd/node-cache
 	// https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/0030-nodelocal-dns-cache.md
 
-	DnsCacheVersion  = "1.15.10"
+	DnsCacheVersion  = "1.15.16"
 
 	CoreDnsCache =`
 apiVersion: apps/v1
@@ -17,8 +17,7 @@ metadata:
     k8s-app: coredns-cache
 spec:
   updateStrategy:
-    rollingUpdate:
-      maxUnavailable: 10%
+    type: OnDelete
   selector:
     matchLabels:
       k8s-app: coredns-cache
