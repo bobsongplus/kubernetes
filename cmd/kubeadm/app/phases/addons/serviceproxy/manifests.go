@@ -20,7 +20,7 @@ data:
     global
         log 127.0.0.1 local2
         chroot /var/lib/haproxy
-        stats socket /run/haproxy/admin.sock mode 660 level admin
+        stats socket /var/lib/haproxy/haproxy.sock mode 600 level admin expose-fd listeners
         stats timeout 600s
         user haproxy
         group haproxy
@@ -39,11 +39,14 @@ data:
         retries                 3
         timeout http-request    5000
         timeout queue           30000
-        timeout connect         2000
-        timeout client          3600000
-        timeout server          3600000
-        timeout http-keep-alive 500
         timeout check           5000
+        timeout connect         5s
+        timeout client          60s
+        timeout client-fin      1s
+        timeout server          60s
+        timeout server-fin      1s
+        timeout http-request    10s
+        timeout http-keep-alive 300s
         maxconn                 50000
 
     listen stats
