@@ -175,12 +175,12 @@ spec:
         - mountPath: /etc/default/hafolder/haproxy.tpl
           name: service-proxy-template
           subPath: haproxy.tpl
-        - mountPath: /run/haproxy
+        - mountPath: /var/lib/haproxy
           name: haproxy-sock
       - command:
         - sh
         - -c
-        - sleep 10 && haproxy_exporter --haproxy.scrape-uri=unix:/run/haproxy/admin.sock
+        - sleep 10 && haproxy_exporter --haproxy.scrape-uri=unix:/run/haproxy/haproxy.sock
         image: {{ .ImageRepository }}/haproxy-exporter-{{ .Arch }}:{{.HarpoxyExporterVersion}}
         imagePullPolicy: IfNotPresent
         name: exporter
