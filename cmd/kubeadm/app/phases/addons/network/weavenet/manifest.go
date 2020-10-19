@@ -130,6 +130,7 @@ spec:
     metadata:
       labels:
         name: weave-net
+        component: weave-net
         k8s-app: weave-net
     spec:
       containers:
