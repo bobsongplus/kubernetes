@@ -70,7 +70,7 @@ metadata:
   name: flannel
   namespace: kube-system
   labels:
-    tier: node
+    component: flannel
     k8s-app: flannel
 spec:
   updateStrategy:
