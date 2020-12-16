@@ -405,48 +405,102 @@ const (
 apiVersion: audit.k8s.io/v1beta1
 kind: Policy
 omitStages:
-- "RequestReceived"
+  - "RequestReceived"
 rules:
-  - level: RequestResponse
-    resources:
-    - group: ""
-      resources: ["pods"]
-  - level: Metadata
-    resources:
-    - group: ""
-      resources: ["pods/log", "pods/status"]
-  - level: None
-    resources:
-    - group: ""
-      resources: ["configmaps"]
-      resourceNames: ["controller-leader"]
   - level: None
     users: ["system:kube-proxy"]
     verbs: ["watch"]
     resources:
-    - group: ""
-      resources: ["endpoints", "services"]
+      - group: ""
+        resources: ["endpoints", "services"]
   - level: None
-    userGroups: ["system:authenticated"]
+    users: ["system:unsecured"]
+    namespaces: ["kube-system"]
+    verbs: ["get"]
+    resources:
+      - group: ""
+        resources: ["configmaps"]
+  - level: None
+    users: ["kubelet"] # legacy kubelet identity
+    verbs: ["get"]
+    resources:
+      - group: ""
+        resources: ["nodes"]
+  - level: None
+    userGroups: ["system:nodes"]
+    verbs: ["get"]
+    resources:
+      - group: ""
+        resources: ["nodes"]
+  - level: None
+    users:
+      - system:kube-controller-manager
+      - system:kube-scheduler
+      - system:serviceaccount:kube-system:endpoint-controller
+    verbs: ["get", "update"]
+    namespaces: ["kube-system"]
+    resources:
+      - group: ""
+        resources: ["endpoints"]
+  - level: None
+    users: ["system:apiserver"]
+    verbs: ["get"]
+    resources:
+      - group: ""
+        resources: ["namespaces"]
+  - level: None
     nonResourceURLs:
-    - "/api*"
-    - "/version"
-  - level: Request
+      - /healthz*
+      - /version
+      - /swagger*
+  - level: None
+    resources:
+      - group: ""
+        resources: ["events"]
+  - level: None
     resources:
     - group: ""
-      resources: ["configmaps"]
-      namespaces: ["kube-system"]
+      resources: ["pods/log", "pods/status"]
   - level: Metadata
     resources:
-    - group: ""
-      resources: ["secrets", "configmaps"]
+      - group: ""
+        resources: ["secrets", "configmaps"]
+      - group: authentication.k8s.io
+        resources: ["tokenreviews"]
   - level: Request
+    verbs: ["get", "list", "watch"]
     resources:
-    - group: ""
-    - group: "extensions"
+      - group: ""
+      - group: "admissionregistration.k8s.io"
+      - group: "apps"
+      - group: "authentication.k8s.io"
+      - group: "authorization.k8s.io"
+      - group: "autoscaling"
+      - group: "batch"
+      - group: "certificates.k8s.io"
+      - group: "extensions"
+      - group: "networking.k8s.io"
+      - group: "policy"
+      - group: "rbac.authorization.k8s.io"
+      - group: "settings.k8s.io"
+      - group: "storage.k8s.io"
+  - level: RequestResponse
+    resources:
+      - group: ""
+      - group: "admissionregistration.k8s.io"
+      - group: "apps"
+      - group: "authentication.k8s.io"
+      - group: "authorization.k8s.io"
+      - group: "autoscaling"
+      - group: "batch"
+      - group: "certificates.k8s.io"
+      - group: "extensions"
+      - group: "networking.k8s.io"
+      - group: "policy"
+      - group: "rbac.authorization.k8s.io"
+      - group: "settings.k8s.io"
+      - group: "storage.k8s.io"
   - level: Metadata
-    omitStages:
-    - "RequestReceived"
 `
 )
 
