@@ -452,6 +452,8 @@ const (
 	// KubeadmEtcdMetricCertsSecret specifies in what Secret in the kube-system namespace the etcd certificates should be stored
 	EtcdCertsSecret = "etcd-certs"
 
+	OvnCertsSecret = "ovn-certs"
+
 	// EncryptionConfigFileName is config file for Encrypting Secret Data at Rest.
 	EncryptionConfigFileName string = "encryption-config.yaml"
 
@@ -469,6 +471,23 @@ const (
 
 	// node local dns cache address
 	NodeLocalDNSAddress = "169.254.0.10"
+
+	// For backwards compatible, leave it empty if unset
+	Calico string = "calico"
+	// If nothing exists at the given path, an empty directory will be created there
+	// as needed with file mode 0755, having the same group and ownership with Kubelet.
+	Flannel string = "flannel"
+	// A directory must exist at the given path
+	Canal string = "canal"
+	// If nothing exists at the given path, an empty file will be created there
+	// as needed with file mode 0644, having the same group and ownership with Kubelet.
+	Macvlan string = "macvlan"
+
+	Ovn string = "ovn"
+
+	OvnKube string = "ovnkube"
+
+	Weave string = "weave"
 )
 
 var (

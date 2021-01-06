@@ -808,7 +808,9 @@ func Convert_kubeadm_LocalEtcd_To_v1beta1_LocalEtcd(in *kubeadm.LocalEtcd, out *
 func autoConvert_v1beta1_Networking_To_kubeadm_Networking(in *Networking, out *kubeadm.Networking, s conversion.Scope) error {
 	out.ServiceSubnet = in.ServiceSubnet
 	out.PodSubnet = in.PodSubnet
+	out.PodExtraSubnet = in.PodExtraSubnet
 	out.DNSDomain = in.DNSDomain
+	out.NodeSubnet = in.NodeSubnet
 	out.Plugin = in.Plugin
 	out.Mode = in.Mode
 	return nil
@@ -822,7 +824,9 @@ func Convert_v1beta1_Networking_To_kubeadm_Networking(in *Networking, out *kubea
 func autoConvert_kubeadm_Networking_To_v1beta1_Networking(in *kubeadm.Networking, out *Networking, s conversion.Scope) error {
 	out.ServiceSubnet = in.ServiceSubnet
 	out.PodSubnet = in.PodSubnet
+	out.PodExtraSubnet = in.PodExtraSubnet
 	out.DNSDomain = in.DNSDomain
+	out.NodeSubnet = in.NodeSubnet
 	out.Plugin = in.Plugin
 	out.Mode = in.Mode
 	return nil

@@ -1,696 +1,35 @@
 /*
  * Licensed Materials - Property of tenxcloud.com
- * (C) Copyright 2020 TenxCloud. All Rights Reserved.
- * 2020  @author tenxcloud
+ * (C) Copyright 2021 TenxCloud. All Rights Reserved.
+ * 2021-01-04  @author weiwei@tenxcloud.com
  */
 package ovn
 
+/*
+  1. ovn central ovn.io/role: central
+  2. ovn certs
+*/
+
 const (
-	ConfigMap = `
-kind: ConfigMap
+    Version = "v1.0"
+    // ovn shard resource
+    ConfigMap = `
 apiVersion: v1
+kind: ConfigMap
 metadata:
   name: ovn-config
-  namespace: ovn-kubernetes
-data:
-  net_cidr:      {{ .PodSubnet }}/26
-  svc_cidr:      {{ .ServiceSubnet }}
-  k8s_apiserver: {{ .APIEndpoint }}
+  namespace: kube-system
 `
 
-	DBDeploy = `
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-  name: ovnkube-db
-  namespace: ovn-kubernetes
-  annotations:
-    kubernetes.io/description: |
-      This daemonset launches the OVN NB/SB ovsdb service components.
-spec:
-  progressDeadlineSeconds: 600
-  replicas: 1
-  revisionHistoryLimit: 10
-  selector:
-    matchLabels:
-      name: ovnkube-db
-  strategy:
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-    type: RollingUpdate
-  template:
-    metadata:
-      labels:
-        name: ovnkube-db
-        component: ovn
-        type: infra
-        beta.kubernetes.io/os: "linux"
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ''
-    spec:
-      serviceAccountName: ovn
-      hostNetwork: true
-      hostPID: true
-      containers:
-      - name: nb-ovsdb
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
-        imagePullPolicy: IfNotPresent
-        command: ["/root/ovnkube.sh", "nb-ovsdb"]
-        securityContext:
-          runAsUser: 0
-          privileged: true
-        volumeMounts:
-        - mountPath: /etc/sysconfig/origin-node
-          name: host-sysconfig-node
-          readOnly: true
-        - mountPath: /var/run
-          name: host-var-run
-        - mountPath: /var/run/dbus/
-          name: host-var-run-dbus
-          readOnly: true
-        - mountPath: /etc/openvswitch/
-          name: host-var-lib-ovs
-        - mountPath: /var/lib/openvswitch/
-          name: host-var-lib-ovs
-        - mountPath: /var/log/openvswitch/
-          name: host-var-log-ovs
-        - mountPath: /var/run/openvswitch/
-          name: host-var-run-ovs
-        resources:
-          requests:
-            cpu: 100m
-            memory: 300Mi
-        env:
-        - name: OVN_DAEMONSET_VERSION
-          value: "3"
-        - name: OVN_LOG_NB
-          value: "-vconsole:info -vfile:info"
-        - name: K8S_APISERVER
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: k8s_apiserver
-        - name: K8S_NODE
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        ports:
-        - name: healthz
-          containerPort: 10256
-      - name: sb-ovsdb
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
-        imagePullPolicy: IfNotPresent
-        command: ["/root/ovnkube.sh", "sb-ovsdb"]
-        securityContext:
-          runAsUser: 0
-          privileged: true
-        volumeMounts:
-        - mountPath: /etc/sysconfig/origin-node
-          name: host-sysconfig-node
-          readOnly: true
-        - mountPath: /var/run
-          name: host-var-run
-        - mountPath: /var/run/dbus/
-          name: host-var-run-dbus
-          readOnly: true
-        - mountPath: /etc/openvswitch/
-          name: host-var-lib-ovs
-        - mountPath: /var/lib/openvswitch/
-          name: host-var-lib-ovs
-        - mountPath: /var/log/openvswitch/
-          name: host-var-log-ovs
-        - mountPath: /var/run/openvswitch/
-          name: host-var-run-ovs
-        resources:
-          requests:
-            cpu: 100m
-            memory: 300Mi
-        env:
-        - name: OVN_DAEMONSET_VERSION
-          value: "3"
-        - name: OVN_LOG_SB
-          value: "-vconsole:info -vfile:info"
-        - name: K8S_APISERVER
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: k8s_apiserver
-        - name: K8S_NODE
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        ports:
-        - name: healthz
-          containerPort: 10255
-      nodeSelector:
-        node-role.kubernetes.io/master: ""
-        beta.kubernetes.io/os: "linux"
-      volumes:
-      - name: host-sysconfig-node
-        hostPath:
-          path: /etc/sysconfig/origin-node
-      - name: host-modules
-        hostPath:
-          path: /lib/modules
-      - name: host-var-run
-        hostPath:
-          path: /var/run
-      - name: host-var-run-dbus
-        hostPath:
-          path: /var/run/dbus
-      - name: host-var-lib-ovs
-        hostPath:
-          path: /var/lib/openvswitch
-      - name: host-var-log-ovs
-        hostPath:
-          path: /var/log/openvswitch
-      - name: host-var-run-ovs
-        hostPath:
-          path: /var/run/openvswitch
-      tolerations:
-      - operator: "Exists"
-`
-
-	DBService = `
-apiVersion: v1
-kind: Service
-metadata:
-  name: ovnkube-db
-  namespace: ovn-kubernetes
-spec:
-  ports:
-  - name: north
-    port: 6641
-    protocol: TCP
-    targetPort: 6641
-  - name: south
-    port: 6642
-    protocol: TCP
-    targetPort: 6642
-  sessionAffinity: None
-  clusterIP: None
-  type: ClusterIP
-`
-
-	NorthdDeploy = `
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-  name: ovnkube-master
-  namespace: ovn-kubernetes
-  annotations:
-    kubernetes.io/description: |
-      This daemonset launches the ovn-kubernetes networking components.
-spec:
-  progressDeadlineSeconds: 600
-  replicas: 1
-  revisionHistoryLimit: 10
-  selector:
-    matchLabels:
-      name: ovnkube-master
-  strategy:
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-    type: RollingUpdate
-  template:
-    metadata:
-      labels:
-        name: ovnkube-master
-        component: ovn
-        type: infra
-        openshift.io/component: network
-        beta.kubernetes.io/os: "linux"
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ''
-    spec:
-      serviceAccountName: ovn
-      hostNetwork: true
-      hostPID: true
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-                - key: name
-                  operator: In
-                  values:
-                    - ovnkube-db
-            topologyKey: kubernetes.io/hostname
-      containers:
-      - name: run-ovn-northd
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
-        imagePullPolicy: IfNotPresent
-        command: ["/root/ovnkube.sh", "run-ovn-northd"]
-        securityContext:
-          runAsUser: 0
-          privileged: true
-        volumeMounts:
-        - mountPath: /etc/sysconfig/origin-node
-          name: host-sysconfig-node
-          readOnly: true
-        - mountPath: /var/run
-          name: host-var-run
-        - mountPath: /var/run/dbus/
-          name: host-var-run-dbus
-          readOnly: true
-        - mountPath: /etc/openvswitch/
-          name: host-var-lib-ovs
-        - mountPath: /var/lib/openvswitch/
-          name: host-var-lib-ovs
-        - mountPath: /var/log/openvswitch/
-          name: host-var-log-ovs
-        - mountPath: /var/run/openvswitch/
-          name: host-var-run-ovs
-        - mountPath: /var/run/kubernetes/
-          name: host-var-run-kubernetes
-          readOnly: true
-        - mountPath: /var/run/ovn-kubernetes
-          name: host-var-run-ovn-kubernetes
-        - mountPath: /host/opt/cni/bin
-          name: host-opt-cni-bin
-        - mountPath: /etc/cni/net.d
-          name: host-etc-cni-netd
-        - mountPath: /var/lib/cni/networks/ovn-k8s-cni-overlay
-          name: host-var-lib-cni-networks-ovn-kubernetes
-        resources:
-          requests:
-            cpu: 100m
-            memory: 300Mi
-        env:
-        - name: OVN_DAEMONSET_VERSION
-          value: "3"
-        - name: OVN_LOG_NORTHD
-          value: "-vconsole:info"
-        - name: OVN_NET_CIDR
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: net_cidr
-        - name: OVN_SVC_CIDR
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: svc_cidr
-        - name: K8S_APISERVER
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: k8s_apiserver
-        - name: K8S_NODE
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        ports:
-        - name: healthz
-          containerPort: 10257
-      - name: ovnkube-master
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
-        imagePullPolicy: IfNotPresent
-        command: ["/root/ovnkube.sh", "ovn-master"]
-        securityContext:
-          runAsUser: 0
-          privileged: true
-        volumeMounts:
-        - mountPath: /etc/sysconfig/origin-node
-          name: host-sysconfig-node
-          readOnly: true
-        - mountPath: /var/run
-          name: host-var-run
-        - mountPath: /var/run/dbus/
-          name: host-var-run-dbus
-          readOnly: true
-        - mountPath: /etc/openvswitch/
-          name: host-var-lib-ovs
-        - mountPath: /var/lib/openvswitch/
-          name: host-var-lib-ovs
-        - mountPath: /var/log/openvswitch/
-          name: host-var-log-ovs
-        - mountPath: /var/log/ovn-kubernetes/
-          name: host-var-log-ovnkube
-        - mountPath: /var/run/openvswitch/
-          name: host-var-run-ovs
-        - mountPath: /var/run/kubernetes/
-          name: host-var-run-kubernetes
-          readOnly: true
-        - mountPath: /var/run/ovn-kubernetes
-          name: host-var-run-ovn-kubernetes
-        - mountPath: /host/opt/cni/bin
-          name: host-opt-cni-bin
-        - mountPath: /etc/cni/net.d
-          name: host-etc-cni-netd
-        - mountPath: /var/lib/cni/networks/ovn-k8s-cni-overlay
-          name: host-var-lib-cni-networks-ovn-kubernetes
-        resources:
-          requests:
-            cpu: 100m
-            memory: 300Mi
-        env:
-        - name: OVN_DAEMONSET_VERSION
-          value: "3"
-        - name: OVN_MASTER
-          value: "true"
-        - name: OVNKUBE_LOGLEVEL
-          value: "4"
-        - name: OVN_NET_CIDR
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: net_cidr
-        - name: OVN_SVC_CIDR
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: svc_cidr
-        - name: K8S_APISERVER
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: k8s_apiserver
-        - name: K8S_NODE
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        ports:
-        - name: healthz
-          containerPort: 10254
-      nodeSelector:
-        node-role.kubernetes.io/master: ""
-        beta.kubernetes.io/os: "linux"
-      volumes:
-      - name: host-sysconfig-node
-        hostPath:
-          path: /etc/sysconfig/origin-node
-      - name: host-modules
-        hostPath:
-          path: /lib/modules
-      - name: host-var-run
-        hostPath:
-          path: /var/run
-      - name: host-var-run-dbus
-        hostPath:
-          path: /var/run/dbus
-      - name: host-var-lib-ovs
-        hostPath:
-          path: /var/lib/openvswitch
-      - name: host-var-log-ovs
-        hostPath:
-          path: /var/log/openvswitch
-      - name: host-var-log-ovnkube
-        hostPath:
-          path: /var/log/ovn-kubernetes
-      - name: host-var-run-ovs
-        hostPath:
-          path: /var/run/openvswitch
-      - name: host-var-run-kubernetes
-        hostPath:
-          path: /var/run/kubernetes
-      - name: host-var-run-ovn-kubernetes
-        hostPath:
-          path: /var/run/ovn-kubernetes
-      - name: host-opt-cni-bin
-        hostPath:
-          path: /opt/cni/bin
-      - name: host-etc-cni-netd
-        hostPath:
-          path: /etc/cni/net.d
-      - name: host-var-lib-cni-networks-ovn-kubernetes
-        hostPath:
-          path: /var/lib/cni/networks/ovn-k8s-cni-overlay
-      tolerations:
-      - operator: "Exists"
-`
-
-	Controller = `
-kind: DaemonSet
-apiVersion: apps/v1
-metadata:
-  name: ovnkube-node
-  namespace: ovn-kubernetes
-  labels:
-    app: ovnkube-node
-    component: ovn
-  annotations:
-    kubernetes.io/description: |
-      This daemonset launches the ovn-kubernetes networking components.
-spec:
-  selector:
-    matchLabels:
-      app: ovnkube-node
-      component: ovn
-  updateStrategy:
-    type: RollingUpdate
-  template:
-    metadata:
-      labels:
-        app: ovnkube-node
-        component: ovn
-        type: infra
-        beta.kubernetes.io/os: "linux"
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ''
-    spec:
-      serviceAccountName: ovn
-      hostNetwork: true
-      hostPID: true
-      containers:
-      - name: ovs-daemons
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
-        imagePullPolicy: IfNotPresent
-        command: ["/root/ovnkube.sh", "ovs-server"]
-        livenessProbe:
-          exec:
-            command:
-            - /usr/share/openvswitch/scripts/ovs-ctl
-            - status
-          initialDelaySeconds: 15
-          periodSeconds: 5
-        securityContext:
-          runAsUser: 0
-          privileged: true
-        volumeMounts:
-        - mountPath: /lib/modules
-          name: host-modules
-          readOnly: true
-        - mountPath: /run/openvswitch
-          name: host-run-ovs
-        - mountPath: /var/run/openvswitch
-          name: host-var-run-ovs
-        - mountPath: /sys
-          name: host-sys
-          readOnly: true
-        - mountPath: /etc/openvswitch
-          name: host-config-openvswitch
-        resources:
-          requests:
-            cpu: 100m
-            memory: 300Mi
-          limits:
-            cpu: 200m
-            memory: 400Mi
-        env:
-        - name: OVN_DAEMONSET_VERSION
-          value: "3"
-        - name: K8S_APISERVER
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: k8s_apiserver
-      - name: ovn-controller
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
-        imagePullPolicy: IfNotPresent
-        command: ["/root/ovnkube.sh", "ovn-controller"]
-        securityContext:
-          runAsUser: 0
-          privileged: true
-        volumeMounts:
-        - mountPath: /etc/sysconfig/origin-node
-          name: host-sysconfig-node
-          readOnly: true
-        - mountPath: /var/run
-          name: host-var-run
-        - mountPath: /var/run/dbus/
-          name: host-var-run-dbus
-          readOnly: true
-        - mountPath: /var/lib/openvswitch/
-          name: host-var-lib-ovs
-        - mountPath: /var/log/openvswitch/
-          name: host-var-log-ovs
-        - mountPath: /var/run/openvswitch/
-          name: host-var-run-ovs
-        - mountPath: /var/run/kubernetes/
-          name: host-var-run-kubernetes
-          readOnly: true
-        - mountPath: /var/run/ovn-kubernetes
-          name: host-var-run-ovn-kubernetes
-        - mountPath: /host/opt/cni/bin
-          name: host-opt-cni-bin
-        - mountPath: /etc/cni/net.d
-          name: host-etc-cni-netd
-        - mountPath: /var/lib/cni/networks/ovn-k8s-cni-overlay
-          name: host-var-lib-cni-networks-ovn-kubernetes
-        resources:
-          requests:
-            cpu: 100m
-            memory: 300Mi
-        env:
-        - name: OVN_DAEMONSET_VERSION
-          value: "3"
-        - name: OVNKUBE_LOGLEVEL
-          value: "4"
-        - name: OVN_NET_CIDR
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: net_cidr
-        - name: OVN_SVC_CIDR
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: svc_cidr
-        - name: K8S_APISERVER
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: k8s_apiserver
-        - name: K8S_NODE
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        ports:
-        - name: healthz
-          containerPort: 10258
-      - name: ovn-node
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
-        imagePullPolicy: IfNotPresent
-        command: ["/root/ovnkube.sh", "ovn-node"]
-        securityContext:
-          runAsUser: 0
-          privileged: true
-        volumeMounts:
-        - mountPath: /etc/sysconfig/origin-node
-          name: host-sysconfig-node
-          readOnly: true
-        - mountPath: /var/run
-          name: host-var-run
-        - mountPath: /var/run/dbus/
-          name: host-var-run-dbus
-          readOnly: true
-        - mountPath: /var/lib/openvswitch/
-          name: host-var-lib-ovs
-        - mountPath: /var/log/openvswitch/
-          name: host-var-log-ovs
-        - mountPath: /var/log/ovn-kubernetes/
-          name: host-var-log-ovnkube
-        - mountPath: /var/run/openvswitch/
-          name: host-var-run-ovs
-        - mountPath: /var/run/kubernetes/
-          name: host-var-run-kubernetes
-          readOnly: true
-        - mountPath: /var/run/ovn-kubernetes
-          name: host-var-run-ovn-kubernetes
-        - mountPath: /host/opt/cni/bin
-          name: host-opt-cni-bin
-        - mountPath: /etc/cni/net.d
-          name: host-etc-cni-netd
-        - mountPath: /var/lib/cni/networks/ovn-k8s-cni-overlay
-          name: host-var-lib-cni-networks-ovn-kubernetes
-        resources:
-          requests:
-            cpu: 100m
-            memory: 300Mi
-        env:
-        - name: OVN_DAEMONSET_VERSION
-          value: "3"
-        - name: OVNKUBE_LOGLEVEL
-          value: "5"
-        - name: OVN_NET_CIDR
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: net_cidr
-        - name: OVN_SVC_CIDR
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: svc_cidr
-        - name: K8S_APISERVER
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: k8s_apiserver
-        - name: K8S_NODE
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        ports:
-        - name: healthz
-          containerPort: 10259
-      nodeSelector:
-        beta.kubernetes.io/os: "linux"
-      volumes:
-      - name: host-sysconfig-node
-        hostPath:
-          path: /etc/sysconfig/origin-node
-      - name: host-modules
-        hostPath:
-          path: /lib/modules
-      - name: host-var-run
-        hostPath:
-          path: /var/run
-      - name: host-var-run-dbus
-        hostPath:
-          path: /var/run/dbus
-      - name: host-var-lib-ovs
-        hostPath:
-          path: /var/lib/openvswitch
-      - name: host-var-log-ovs
-        hostPath:
-          path: /var/log/openvswitch
-      - name: host-var-log-ovnkube
-        hostPath:
-          path: /var/log/ovn-kubernetes
-      - name: host-run-ovs
-        hostPath:
-          path: /run/openvswitch
-      - name: host-var-run-ovs
-        hostPath:
-          path: /var/run/openvswitch
-      - name: host-var-run-kubernetes
-        hostPath:
-          path: /var/run/kubernetes
-      - name: host-var-run-ovn-kubernetes
-        hostPath:
-          path: /var/run/ovn-kubernetes
-      - name: host-sys
-        hostPath:
-          path: /sys
-      - name: host-opt-cni-bin
-        hostPath:
-          path: /opt/cni/bin
-      - name: host-etc-cni-netd
-        hostPath:
-          path: /etc/cni/net.d
-      - name: host-config-openvswitch
-        hostPath:
-          path: /etc/origin/openvswitch
-      - name: host-var-lib-cni-networks-ovn-kubernetes
-        hostPath:
-          path: /var/lib/cni/networks/ovn-k8s-cni-overlay
-      tolerations:
-      - operator: "Exists"
-`
-
-	ServiceAccount = `
+    ServiceAccount = `
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ovn
-  namespace: ovn-kubernetes
+  namespace:  kube-system
 `
 
-	ClusterRole = `
+    ClusterRole = `
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -698,79 +37,833 @@ metadata:
     rbac.authorization.k8s.io/system-only: "true"
   name: system:ovn
 rules:
-- apiGroups:
-  - ""
-  - extensions
-  resources:
-  - pods
-  - namespaces
-  - networkpolicies
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - patch
-  - update
-- apiGroups:
-  - policy
-  resources: 
-  - podsecuritypolicies
-  verbs:     
-  - use
-  resourceNames:
-  - system
-- apiGroups:
-  - extensions
-  resources: 
-  - podsecuritypolicies
-  verbs:     
-  - use
-  resourceNames:
-  - system
+  - apiGroups:
+      - "ovn.io"
+    resources:
+      - subnets
+      - subnets/status
+      - ips
+      - vlans
+      - networks
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - namespaces
+      - nodes
+      - configmaps
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - patch
+      - update
+  - apiGroups:
+      - ""
+      - networking.k8s.io
+      - apps
+      - extensions
+    resources:
+      - networkpolicies
+      - services
+      - endpoints
+      - statefulsets
+      - daemonsets
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+      - update
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - create
+      - update
+      - get
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - use
+    resourceNames:
+      - system
 `
 
-	ClusterRoleBinding = `
+    ClusterRoleBinding = `
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: system:ovn
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: system:ovn
-subjects:
-- kind: ServiceAccount
   name: ovn
-  namespace: ovn-kubernetes
+roleRef:
+  name: system:ovn
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: ovn
+    namespace:  kube-system
 `
 
-	AdminClusterRoleBinding = `
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+    // native ovn
+    OvnNBService = `
+kind: Service
+apiVersion: v1
 metadata:
-  name: system:ovn-admin
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: ovn
-  namespace: ovn-kubernetes
+  name: ovn-nb
+  namespace:  kube-system
+spec:
+  ports:
+    - name: ovn-nb
+      protocol: TCP
+      port: 6641
+      targetPort: 6641
+  type: ClusterIP
+  selector:
+    app: ovn-central
+    ovn-nb-leader: "true"
+  sessionAffinity: None
 `
+
+    OvnSBService = `
+kind: Service
+apiVersion: v1
+metadata:
+  name: ovn-sb
+  namespace:  kube-system
+spec:
+  ports:
+    - name: ovn-sb
+      protocol: TCP
+      port: 6642
+      targetPort: 6642
+  type: ClusterIP
+  selector:
+    app: ovn-central
+    ovn-sb-leader: "true"
+  sessionAffinity: None
+`
+
+    OvnExporterService = `
+kind: Service
+apiVersion: v1
+metadata:
+  name: ovn-exporter
+  namespace:  kube-system
+  labels:
+    app: ovn-exporter
+spec:
+  ports:
+    - name: metrics
+      port: 10661
+  type: ClusterIP
+  selector:
+    app: ovn-central
+  sessionAffinity: None
+`
+
+    OvnCentralDeployment = `
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ovn-central
+  namespace:  kube-system
+  labels:
+    component: ovn
+  annotations:
+    kubernetes.io/description: |
+      OVN components: northd, nb and sb.
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 0%
+      maxUnavailable: 100%
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: ovn-central
+  template:
+    metadata:
+      labels:
+        app: ovn-central
+        k8s-app: ovn
+        component: ovn
+    spec:
+      tolerations:
+      - operator: Exists
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: ovn-central
+              topologyKey: kubernetes.io/hostname
+      priorityClassName: system-cluster-critical
+      serviceAccountName: ovn
+      hostNetwork: true
+      shareProcessNamespace: true
+      containers:
+        - name: ovn-central
+          image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/ovn/start-central.sh"]
+          securityContext:
+            capabilities:
+              add: ["SYS_NICE"]
+          env:
+            - name: SSL
+              value: "false"
+            - name: NODE_IPS
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          resources:
+            requests:
+              cpu: 500m
+              memory: 300Mi
+          volumeMounts:
+            - mountPath: /var/run/openvswitch
+              name: host-run-ovs
+            - mountPath: /var/run/ovn
+              name: host-run-ovn
+            - mountPath: /sys
+              name: host-sys
+              readOnly: true
+            - mountPath: /etc/openvswitch
+              name: host-config-openvswitch
+            - mountPath: /etc/ovn
+              name: host-config-ovn
+            - mountPath: /var/log/openvswitch
+              name: host-log-ovs
+            - mountPath: /var/log/ovn
+              name: host-log-ovn
+            - mountPath: /var/run/pki
+              name: ovn-certs
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - /ovn/ovn-is-leader.sh
+            periodSeconds: 3
+            timeoutSeconds: 45
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - /ovn/ovn-central-healthcheck.sh
+            initialDelaySeconds: 30
+            periodSeconds: 7
+            failureThreshold: 5
+            timeoutSeconds: 45
+        - name: ovn-exporter
+          image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/ovn/start-exporter.sh"]
+          env:
+          - name: SSL
+            value: "false"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 100Mi
+          volumeMounts:
+            - mountPath: /var/run/openvswitch
+              name: host-run-ovs
+            - mountPath: /var/run/ovn
+              name: host-run-ovn
+            - mountPath: /sys
+              name: host-sys
+              readOnly: true
+            - mountPath: /etc/openvswitch
+              name: host-config-openvswitch
+            - mountPath: /etc/ovn
+              name: host-config-ovn
+            - mountPath: /var/log/openvswitch
+              name: host-log-ovs
+            - mountPath: /var/log/ovn
+              name: host-log-ovn
+            - mountPath: /var/run/pki
+              name: ovn-certs
+          readinessProbe:
+            exec:
+              command:
+              - cat
+              - /var/run/ovn/ovnnb_db.pid
+            periodSeconds: 3
+            timeoutSeconds: 45
+          livenessProbe:
+            exec:
+              command:
+              - cat
+              - /var/run/ovn/ovn-nbctl.pid
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 5
+            timeoutSeconds: 45
+      nodeSelector:
+        kubernetes.io/os: "linux"
+        ovn.io/role: "central"
+      volumes:
+        - name: host-run-ovs
+          hostPath:
+            path: /run/openvswitch
+        - name: host-run-ovn
+          hostPath:
+            path: /run/ovn
+        - name: host-sys
+          hostPath:
+            path: /sys
+        - name: host-config-openvswitch
+          hostPath:
+            path: /etc/origin/openvswitch
+        - name: host-config-ovn
+          hostPath:
+            path: /etc/origin/ovn
+        - name: host-log-ovs
+          hostPath:
+            path: /var/log/openvswitch
+        - name: host-log-ovn
+          hostPath:
+            path: /var/log/ovn
+        - name: ovn-certs
+          secret:
+            optional: true
+            secretName: ovn-certs
+`
+
+    OvnHostDaemonSet = `
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: ovn-host
+  namespace:  kube-system
+  labels:
+    component: ovn
+  annotations:
+    kubernetes.io/description: |
+      This daemon set launches the openvswitch daemon.
+spec:
+  selector:
+    matchLabels:
+      app: ovn-host
+  updateStrategy:
+    type: OnDelete
+  template:
+    metadata:
+      labels:
+        app: ovn-host
+        k8s-app: ovn
+        component: ovn
+    spec:
+      tolerations:
+      - operator: Exists
+      priorityClassName: system-cluster-critical
+      serviceAccountName: ovn
+      hostNetwork: true
+      hostPID: true
+      containers:
+        - name: host
+          image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/ovn/start-host.sh"]
+          securityContext:
+            runAsUser: 0
+            privileged: true
+          env:
+            - name: SSL
+              value: "false"
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: HW_OFFLOAD
+              value: "false"
+            - name: ENCAP
+              value: "geneve"
+          volumeMounts:
+            - mountPath: /lib/modules
+              name: host-modules
+              readOnly: true
+            - mountPath: /var/run/openvswitch
+              name: host-run-ovs
+            - mountPath: /var/run/ovn
+              name: host-run-ovn
+            - mountPath: /sys
+              name: host-sys
+              readOnly: true
+            - mountPath: /etc/openvswitch
+              name: host-config-openvswitch
+            - mountPath: /etc/ovn
+              name: host-config-ovn
+            - mountPath: /var/log/openvswitch
+              name: host-log-ovs
+            - mountPath: /var/log/ovn
+              name: host-log-ovn
+            - mountPath: /var/run/pki
+              name: ovn-certs
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - /ovn/host-healthcheck.sh
+            periodSeconds: 5
+            timeoutSeconds: 45
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - /ovn/host-healthcheck.sh
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            failureThreshold: 5
+            timeoutSeconds: 45
+          resources:
+            requests:
+              cpu: 200m
+              memory: 300Mi
+            limits:
+              cpu: 1000m
+              memory: 800Mi
+      nodeSelector:
+        kubernetes.io/os: "linux"
+      volumes:
+        - name: host-modules
+          hostPath:
+            path: /lib/modules
+        - name: host-run-ovs
+          hostPath:
+            path: /run/openvswitch
+        - name: host-run-ovn
+          hostPath:
+            path: /run/ovn
+        - name: host-sys
+          hostPath:
+            path: /sys
+        - name: host-config-openvswitch
+          hostPath:
+            path: /etc/origin/openvswitch
+        - name: host-config-ovn
+          hostPath:
+            path: /etc/origin/ovn
+        - name: host-log-ovs
+          hostPath:
+            path: /var/log/openvswitch
+        - name: host-log-ovn
+          hostPath:
+            path: /var/log/ovn
+        - name: ovn-certs
+          secret:
+            optional: true
+            secretName: ovn-certs
+`
+
+    // custom ovn
+    OvnControllerService = `
+kind: Service
+apiVersion: v1
+metadata:
+  name: ovn-controller
+  namespace:  kube-system
+  labels:
+    app: ovn-controller
+spec:
+  selector:
+    app: ovn-controller
+  ports:
+    - port: 10660
+      name: metrics
+`
+
+    OvnDaemonService = `
+kind: Service
+apiVersion: v1
+metadata:
+  name: ovn-daemon
+  namespace:  kube-system
+  labels:
+    app: ovn-daemon
+spec:
+  selector:
+    app: ovn-daemon
+  ports:
+    - port: 10665
+      name: metrics
+`
+
+    OvnInspectorService = `
+kind: Service
+apiVersion: v1
+metadata:
+  name: ovn-inspector
+  namespace:  kube-system
+  labels:
+    app: ovn-inspector
+spec:
+  selector:
+    app: ovn-inspector
+  ports:
+    - port: 8080
+      name: metrics
+`
+
+    OvnControllerDeployment = `
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ovn-controller
+  namespace:  kube-system
+  labels:
+    component: ovn
+  annotations:
+    kubernetes.io/description: |
+      ovn controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ovn-controller
+  strategy:
+    rollingUpdate:
+      maxSurge: 0%
+      maxUnavailable: 100%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: ovn-controller
+        k8s-app: ovn
+        component: ovn
+    spec:
+      tolerations:
+      - operator: Exists
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: ovn-controller
+              topologyKey: kubernetes.io/hostname
+      priorityClassName: system-cluster-critical
+      serviceAccountName: ovn
+      hostNetwork: true
+      containers:
+        - name: ovn-controller
+          image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+          imagePullPolicy: IfNotPresent
+          command:
+          - /ovn/start-controller.sh
+          args:
+          - --default-cidr={{ .PodSubnet }}
+          - --default-exclude-ips=
+          - --node-switch-cidr={{ .NodeSubnet }}
+          - --network-type=geneve
+          - --default-interface-name=
+          - --default-vlan-id=100
+          env:
+            - name: SSL
+              value: "false"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - /ovn/ovn-controller-healthcheck.sh
+            periodSeconds: 3
+            timeoutSeconds: 45
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - /ovn/ovn-controller-healthcheck.sh
+            initialDelaySeconds: 300
+            periodSeconds: 7
+            failureThreshold: 5
+            timeoutSeconds: 45
+          volumeMounts:
+          - mountPath: /var/run/pki
+            name: ovn-certs
+      nodeSelector:
+        kubernetes.io/os: "linux"
+      volumes:
+        - name: ovn-certs
+          secret:
+            optional: true
+            secretName: ovn-certs
+`
+
+    OvnDaemonDaemonSet = `
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: ovn-daemon
+  namespace:  kube-system
+  labels:
+    component: ovn
+  annotations:
+    kubernetes.io/description: |
+      This daemon set launches the ovn cni daemon.
+spec:
+  selector:
+    matchLabels:
+      app: ovn-daemon
+  updateStrategy:
+    type: OnDelete
+  template:
+    metadata:
+      labels:
+        app: ovn-daemon
+        k8s-app: ovn
+        component: ovn
+    spec:
+      tolerations:
+      - operator: Exists
+      priorityClassName: system-cluster-critical
+      serviceAccountName: ovn
+      hostNetwork: true
+      hostPID: true
+      initContainers:
+      - name: install-cni
+        image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+        imagePullPolicy: IfNotPresent
+        command: ["/ovn/install-cni.sh"]
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        volumeMounts:
+          - mountPath: /opt/cni/bin
+            name: cni-bin
+      containers:
+      - name: cniserver
+        image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+        imagePullPolicy: IfNotPresent
+        command:
+          - sh
+          - /ovn/start-daemon.sh
+        args:
+          - --enable-mirror=false
+          - --encap-checksum=true
+          - --service-cluster-ip-range={{ .ServiceSubnet }}
+          - --iface=
+          - --network-type=geneve
+          - --default-interface-name=
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        env:
+          - name: SSL
+            value: "false"
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+        volumeMounts:
+          - mountPath: /etc/cni/net.d
+            name: cni-conf
+          - mountPath: /run/openvswitch
+            name: host-run-ovs
+          - mountPath: /run/ovn
+            name: host-run-ovn
+          - mountPath: /var/run/netns
+            name: host-ns
+            mountPropagation: HostToContainer
+        readinessProbe:
+          exec:
+            command:
+              - nc
+              - -z
+              - -w3
+              - 127.0.0.1
+              - "10665"
+          periodSeconds: 3
+        livenessProbe:
+          exec:
+            command:
+              - nc
+              - -z
+              - -w3
+              - 127.0.0.1
+              - "10665"
+          initialDelaySeconds: 30
+          periodSeconds: 7
+          failureThreshold: 5
+      nodeSelector:
+        kubernetes.io/os: "linux"
+      volumes:
+        - name: host-run-ovs
+          hostPath:
+            path: /run/openvswitch
+        - name: host-run-ovn
+          hostPath:
+            path: /run/ovn
+        - name: cni-conf
+          hostPath:
+            path: /etc/cni/net.d
+        - name: cni-bin
+          hostPath:
+            path: /opt/cni/bin
+        - name: host-ns
+          hostPath:
+            path: /var/run/netns
+`
+
+    OvnInspectorDaemonSet = `
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: ovn-inspector
+  namespace:  kube-system
+  labels:
+    component: ovn
+  annotations:
+    kubernetes.io/description: |
+      This daemon set launches the openvswitch daemon.
+spec:
+  selector:
+    matchLabels:
+      app: ovn-inspector
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: ovn-inspector
+        k8s-app: ovn
+        component: ovn
+    spec:
+      tolerations:
+        - operator: Exists
+      serviceAccountName: ovn
+      hostPID: true
+      containers:
+        - name: inspector
+          image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+          command: ["/ovn/ovn-inspector", "--external-address=114.114.114.114", "--external-dns=tenxcloud.com"]
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+            privileged: false
+          env:
+            - name: SSL
+              value: "false"
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - mountPath: /lib/modules
+              name: host-modules
+              readOnly: true
+            - mountPath: /run/openvswitch
+              name: host-run-ovs
+            - mountPath: /var/run/openvswitch
+              name: host-run-ovs
+            - mountPath: /var/run/ovn
+              name: host-run-ovn
+            - mountPath: /sys
+              name: host-sys
+              readOnly: true
+            - mountPath: /etc/openvswitch
+              name: host-config-openvswitch
+            - mountPath: /var/log/openvswitch
+              name: host-log-ovs
+            - mountPath: /var/log/ovn
+              name: host-log-ovn
+            - mountPath: /var/run/pki
+              name: ovn-certs
+          resources:
+            requests:
+              cpu: 100m
+              memory: 300Mi
+            limits:
+              cpu: 200m
+              memory: 400Mi
+      nodeSelector:
+        kubernetes.io/os: "linux"
+      volumes:
+        - name: host-modules
+          hostPath:
+            path: /lib/modules
+        - name: host-run-ovs
+          hostPath:
+            path: /run/openvswitch
+        - name: host-run-ovn
+          hostPath:
+            path: /run/ovn
+        - name: host-sys
+          hostPath:
+            path: /sys
+        - name: host-config-openvswitch
+          hostPath:
+            path: /etc/origin/openvswitch
+        - name: host-log-ovs
+          hostPath:
+            path: /var/log/openvswitch
+        - name: host-log-ovn
+          hostPath:
+            path: /var/log/ovn
+        - name: ovn-certs
+          secret:
+            optional: true
+            secretName: ovn-certs
+`
+
+
+
 )

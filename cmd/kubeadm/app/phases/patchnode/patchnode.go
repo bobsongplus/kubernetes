@@ -40,3 +40,21 @@ func annotateNodeWithCRISocket(n *v1.Node, criSocket string) {
 	}
 	n.ObjectMeta.Annotations[constants.AnnotationKubeadmCRISocket] = criSocket
 }
+
+// Label the node with the given labels
+func LabelNode(client clientset.Interface, nodeName string, labels map[string]string) error {
+	klog.V(1).Infof("[labelnode] lable node %s  \n", nodeName)
+	return apiclient.PatchNode(client, nodeName, func(n *v1.Node) {
+		labelNode(n, labels)
+	})
+}
+
+func labelNode(n *v1.Node, labels map[string]string) {
+	if n.ObjectMeta.Labels == nil {
+		n.ObjectMeta.Labels = make(map[string]string)
+	}
+	for k, v := range labels {
+		n.ObjectMeta.Labels[k] = v
+	}
+
+}

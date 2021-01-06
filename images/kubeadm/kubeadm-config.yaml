@@ -34,10 +34,12 @@ dns:
 {{loadBalances}}
 {{masters}}
 networking:
-  Plugin: {{networkPlugin}}
+  plugin: {{networkPlugin}}
   {{networkMode}}
   {{podSubnet}}
+  {{podExtraSubnet}}
   {{serviceSubnet}}
+  {{nodeSubnet}}
   {{dnsDomain}}
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1

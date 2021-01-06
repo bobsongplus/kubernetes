@@ -18,6 +18,7 @@ package componentconfigs
 
 import (
 	"net"
+	"strings"
 
 	clientset "k8s.io/client-go/kubernetes"
 	kubeproxyconfig "k8s.io/kube-proxy/config/v1alpha1"
@@ -104,6 +105,13 @@ func (kp *KubeProxyConfig) Default(cfg *kubeadmapi.ClusterConfiguration, localAP
 		kp.Config.ClusterCIDR = cfg.Networking.PodSubnet
 	} else if cfg.Networking.PodSubnet != "" && kp.Config.ClusterCIDR != cfg.Networking.PodSubnet {
 		warnDefaultComponentConfigValue(kind, "clusterCIDR", cfg.Networking.PodSubnet, kp.Config.ClusterCIDR)
+	}
+	// override subnet
+	plugins := strings.Split(cfg.Networking.Plugin,",")
+	if len(plugins) == 2 {
+		if plugins[1] == kubeadmconstants.Flannel {
+			kp.Config.ClusterCIDR = cfg.Networking.PodExtraSubnet
+		}
 	}
 
 	if kp.Config.ClientConnection.Kubeconfig == "" {

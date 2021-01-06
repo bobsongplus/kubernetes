@@ -33,6 +33,8 @@ const (
 	DefaultServicesSubnet = "10.96.0.0/12"
 	// DefaultClusterDNSIP defines default DNS IP
 	DefaultClusterDNSIP = "10.96.0.10"
+	// DefaultNodeSubnet defines default node subnet for ovn
+	DefaultNodeSubnet = "172.32.0.0/16"
 	// DefaultServicesIp6Subnet  defines default service subnet range for ipv6
 	DefaultServicesIpv6Subnet = "fd10:24e2:f998:72d6::/64"
 	// DefaultPodIp6Subnet defines default pod subnet range for ipv6
@@ -87,7 +89,15 @@ func SetDefaults_ClusterConfiguration(obj *ClusterConfiguration) {
 	}
 
 	if obj.Networking.PodSubnet == "" {
-		obj.Networking.PodSubnet = util.AcquirePodCIDR(172, 16, 31)
+		obj.Networking.PodSubnet = util.AcquirePodCIDR(172, 16, 31, util.Reverse)
+	}
+
+	if obj.Networking.PodExtraSubnet == "" {
+		obj.Networking.PodExtraSubnet = util.AcquirePodCIDR(172, 16, 31, util.Positive)
+	}
+
+	if obj.Networking.NodeSubnet == "" {
+		obj.Networking.NodeSubnet = DefaultNodeSubnet
 	}
 
 	if obj.Networking.DNSDomain == "" {

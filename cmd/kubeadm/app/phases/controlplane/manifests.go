@@ -357,6 +357,13 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 			defaultArguments["service-cluster-ip-range"] = cfg.Networking.ServiceSubnet
 		}
 	}
+	// override subnet
+	plugins := strings.Split(cfg.Networking.Plugin,",")
+	if len(plugins) == 2 {
+		if plugins[1] == kubeadmconstants.Flannel {
+			defaultArguments["cluster-cidr"] = cfg.Networking.PodExtraSubnet
+		}
+	}
 
 	// Set cluster name
 	if cfg.ClusterName != "" {

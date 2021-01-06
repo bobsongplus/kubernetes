@@ -22,7 +22,7 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 )
 
-func CreateWeaveNetAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
+func CreateWeaveNetAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
 
 	clusterRoles := &rbac.ClusterRole{}
 	if err := kuberuntime.DecodeInto(scheme.Codecs.UniversalDecoder(), []byte(ClusterRole), clusterRoles); err != nil {
@@ -69,10 +69,11 @@ func CreateWeaveNetAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Int
 		return err
 	}
 
-	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Arch, Version string }{
+	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Arch, Version, PodSubnet string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
 		Arch:            runtime.GOARCH,
 		Version:         Version,
+		PodSubnet:       defaultSubnet,
 	})
 	if err != nil {
 		return fmt.Errorf("error when parsing weavenet daemonset template: %v", err)
@@ -88,6 +89,6 @@ func CreateWeaveNetAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Int
 		klog.Error(err)
 		return err
 	}
-	fmt.Println("[addons] Applied essential addon: weavenet")
+	fmt.Println("[addons] Applied essential addon: weave")
 	return nil
 }

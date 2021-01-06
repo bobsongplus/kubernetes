@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	apps "k8s.io/api/apps/v1"
-	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	kuberuntime "k8s.io/apimachinery/pkg/runtime"
@@ -23,7 +22,7 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 )
 
-func CreateFlannelAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
+func CreateFlannelAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
 	//PHASE 2: create flannel containers
 	// Generate ControlPlane Endpoints
 	controlPlaneEndpoint, err := kubeadmutil.GetControlPlaneEndpoint(cfg.ControlPlaneEndpoint, &cfg.LocalAPIEndpoint)
@@ -41,7 +40,7 @@ func CreateFlannelAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Inte
 		return fmt.Errorf("error when parsing flannel daemonset template: %v", err)
 	}
 	configMapBytes, err := kubeadmutil.ParseTemplate(ConfigMap, struct{ PodSubnet, Backend string }{
-		PodSubnet: cfg.Networking.PodSubnet,
+		PodSubnet: defaultSubnet,
 		// TODO: FIXME
 		Backend: "vxlan", // vxlan,udp,host-gw,ipip,ali-vpc,aws-vpc,gce,alloc
 	})
@@ -109,11 +108,16 @@ func createFlannel(daemonSetBytes, configBytes []byte, client clientset.Interfac
 
 }
 
-func createEtcdCtl(JobBytes []byte, client clientset.Interface) error {
-	//PHASE 1 : create Job to configure flannel ip pool
-	job := &batch.Job{}
-	if err := kuberuntime.DecodeInto(scheme.Codecs.UniversalDecoder(), JobBytes, job); err != nil {
-		return fmt.Errorf("unable to decode configure flannel Job %v", err)
+func currentIsMasterPlugin(cfg *kubeadmapi.InitConfiguration) string {
+	plugins := strings.Split(cfg.Networking.Plugin,",")
+	if len(plugins) == 1 {
+           return cfg.Networking.PodSubnet
+	} else if len(plugins) ==2 {
+		if plugins[0] == "flannel" {//calico,ovn,weave != flannel
+			return cfg.Networking.PodSubnet
+		} else {
+			return cfg.Networking.PodExtraSubnet
+		}
 	}
-	return apiclient.CreateOrUpdateJob(client, job)
+	return ""
 }

@@ -249,9 +249,13 @@ type Networking struct {
 	ServiceSubnet string
 	// PodSubnet is the subnet used by pods.
 	PodSubnet string
+	// PodExtraSubnet is the subnet used by pods.
+	PodExtraSubnet string
 	// DNSDomain is the dns domain used by k8s services. Defaults to "cluster.local".
 	DNSDomain string
 
+	//NodeSubnet
+	NodeSubnet string
 	// Network Plugin: calico ....
 	Plugin string
 	// Network Mode: ipv4, ipv6, dual-stack

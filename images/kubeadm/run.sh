@@ -147,7 +147,9 @@ kubeadm_configure() {
     local networkMode=""
     local networkPlugin="calico"
     local podSubnet=""
+    local podExtraSubnet=""
     local serviceSubnet=""
+    local nodeSubnet=""
     local dnsDomain=""
 
 
@@ -195,8 +197,14 @@ kubeadm_configure() {
     if [[ -n "${POD_CIDR}" ]]; then
         podSubnet+="podSubnet: ${POD_CIDR}"
     fi
+    if [[ -n "${POD_EXTRA_CIDR}" ]]; then
+        podExtraSubnet+="podExtraSubnet: ${POD_EXTRA_CIDR}"
+    fi
     if [[ -n "${SERVICE_CIDR}" ]]; then
         serviceSubnet+="serviceSubnet: ${SERVICE_CIDR}"
+    fi
+    if [[ -n "${NODE_CIDR}" ]]; then
+        nodeSubnet+="nodeSubnet: ${NODE_CIDR}"
     fi
     if [[ -n "${SERVICE_DNS_DOMAIN}" ]]; then
         dnsDomain+="dnsDomain: ${SERVICE_DNS_DOMAIN}"
@@ -244,7 +252,9 @@ kubeadm_configure() {
     sed -i -e "s@{{clusterName}}@${clusterName}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{networkMode}}@${networkMode}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{podSubnet}}@${podSubnet}@g" "${kubeadm_config_file}"
+    sed -i -e "s@{{podExtraSubnet}}@${podExtraSubnet}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{serviceSubnet}}@${serviceSubnet}@g" "${kubeadm_config_file}"
+    sed -i -e "s@{{nodeSubnet}}@${nodeSubnet}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{dnsDomain}}@${dnsDomain}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{networkPlugin}}@${networkPlugin}@g" "${kubeadm_config_file}"
     sed -i -e "s@{{masters}}@${masters}@g" "${kubeadm_config_file}"

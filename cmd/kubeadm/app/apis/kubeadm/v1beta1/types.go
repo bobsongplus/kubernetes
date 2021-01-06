@@ -239,13 +239,16 @@ type Networking struct {
 	ServiceSubnet string `json:"serviceSubnet"`
 	// PodSubnet is the subnet used by pods.
 	PodSubnet string `json:"podSubnet"`
+	// PodExtraSubnet is the subnet used by pods.
+	PodExtraSubnet string `json:"podExtraSubnet,omitempty"`
 	// DNSDomain is the dns domain used by k8s services. Defaults to "cluster.local".
 	DNSDomain string `json:"dnsDomain"`
 
+	NodeSubnet string `json:"nodeSubnet,omitempty"`
 	// Network Plugin: calico ....
-	Plugin string
+	Plugin string  `json:"plugin,omitempty"`
 	// Network Mode: ipv4, ipv6, dual-stack
-	Mode string
+	Mode string `json:"mode,omitempty"`
 }
 
 // BootstrapToken describes one bootstrap token, stored as a Secret in the cluster
