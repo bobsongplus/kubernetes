@@ -31,7 +31,7 @@ data:
   ip6_autodetection_method: "first-found"
   cni_network_config: |-
     {
-        "name": "k8s",
+        "name": "calico",
         "cniVersion": "0.3.1",
         "plugins": [
           {
@@ -101,10 +101,7 @@ spec:
         beta.kubernetes.io/arch: {{ .Arch }}
       hostNetwork: true
       tolerations:
-        - effect: NoSchedule
-          operator: Exists
-        - effect: NoExecute
-          operator: Exists
+      - operator: Exists
       serviceAccountName: calico-node
       terminationGracePeriodSeconds: 0
       priorityClassName: system-node-critical

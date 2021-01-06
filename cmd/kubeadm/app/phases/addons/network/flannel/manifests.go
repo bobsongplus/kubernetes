@@ -15,7 +15,7 @@ const (
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: kube-flannel-cfg
+  name: flannel-cfg
   namespace: kube-system
   labels:
     tier: node
@@ -23,7 +23,7 @@ metadata:
 data:
   cni-conf.json: |
     {
-      "name": "k8s",
+      "name": "flannel",
       "cniVersion":"0.3.1",
       "plugins": [
         {
@@ -107,7 +107,7 @@ spec:
         args:
         - -f
         - /etc/kube-flannel/cni-conf.json
-        - /etc/cni/net.d/10-flannel.conflist
+        - /etc/cni/net.d/50-flannel.conflist
         volumeMounts:
         - name: cni
           mountPath: /etc/cni/net.d
@@ -158,7 +158,7 @@ spec:
             path: /etc/cni/net.d
         - name: flannel-cfg
           configMap:
-            name: kube-flannel-cfg
+            name: flannel-cfg
         - name: etc-resolv-conf
           hostPath:
             path: /etc/resolv.conf

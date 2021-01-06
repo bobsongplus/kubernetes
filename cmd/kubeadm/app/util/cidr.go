@@ -11,7 +11,15 @@ import (
 	"regexp"
 )
 
-var RegRule = regexp.MustCompile("lo|cali.*|docker.*|veth.*|tunl.*")
+type Order int
+
+const (
+	Reverse Order = iota
+	Positive
+)
+
+
+var RegRule = regexp.MustCompile("lo|cali.*|veth.*|tunl.*")
 
 func IsLocalNetwork(name string) bool {
 	return !RegRule.MatchString(name)
@@ -48,14 +56,25 @@ func getHostCIDR() map[string]string {
 // if set, the control plane will automatically allocate CIDRs for every node
 // AcquirePodCIDR for --pod-network-cidr
 // TODO: FIXME to support ipv6
-func AcquirePodCIDR(prefix, from, to int) string {
+func AcquirePodCIDR(prefix, from, to int, order Order) string {
 	ret := "172.31.0.0/16"
 	hostCIDR := getHostCIDR()
-	for i := to; i >= from && i <= to; i-- {
-		cidr := fmt.Sprintf("%d.%d.0.0/16", prefix, i)
-		if _, ok := hostCIDR[cidr]; !ok {
-			//fmt.Printf("Acquire pod cidr [%s]. \n",cidr)
-			return cidr
+	switch order {
+	case Reverse:
+		for i := to; i >= from && i <= to; i-- {
+			cidr := fmt.Sprintf("%d.%d.0.0/16", prefix, i)
+			if _, ok := hostCIDR[cidr]; !ok {
+				//fmt.Printf("Acquire pod cidr [%s]. \n",cidr)
+				return cidr
+			}
+		}
+	case Positive:
+		for i := from; i >= from && i <= to; i++ {
+			cidr := fmt.Sprintf("%d.%d.0.0/16", prefix, i)
+			if _, ok := hostCIDR[cidr]; !ok {
+				//fmt.Printf("Acquire pod cidr [%s]. \n",cidr)
+				return cidr
+			}
 		}
 	}
 	return ret

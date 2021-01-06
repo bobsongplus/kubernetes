@@ -24,7 +24,7 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 )
 
-func CreateCalicoAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
+func CreateCalicoAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
 	//PHASE 1: create calico node containers
 	var iPAutoDetection, iP6AutoDetection, assignIpv4, assignIpv6 string
 	if cfg.Networking.Mode == kubeadmconstants.NetworkIPV6Mode { // ipv6
@@ -95,11 +95,11 @@ func CreateCalicoAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Inter
 		if err := createCalicoIPPool(kubeadmapiv1beta1.DefaultServicesIpv6Subnet, kubeadmapiv1beta1.DefaultPodIpv6Subnet, "default-ipv6pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
 			return err
 		}
-		if err := createCalicoIPPool(cfg.Networking.ServiceSubnet, cfg.Networking.PodSubnet, "default-ipv4pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
+		if err := createCalicoIPPool(cfg.Networking.ServiceSubnet, defaultSubnet, "default-ipv4pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
 			return err
 		}
 	} else {
-		if err := createCalicoIPPool(cfg.Networking.ServiceSubnet, cfg.Networking.PodSubnet, "default-ipv4pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
+		if err := createCalicoIPPool(cfg.Networking.ServiceSubnet, defaultSubnet, "default-ipv4pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
 			return err
 		}
 	}

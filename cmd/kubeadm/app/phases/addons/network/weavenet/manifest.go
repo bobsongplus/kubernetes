@@ -2,9 +2,7 @@ package weavenet
 
 const (
 	Version = "2.6.2"
-)
 
-var (
 	ServiceAccount = `
 apiVersion: v1
 kind: ServiceAccount
@@ -121,6 +119,8 @@ spec:
       name: weave-net
       component: weave-net
       k8s-app: weave-net
+  updateStrategy:
+    type: OnDelete
   template:
     metadata:
       labels:
@@ -140,6 +140,8 @@ spec:
                   fieldPath: spec.nodeName
             - name: NO_MASQ_LOCAL
               value: "1"
+            - name: IPALLOC_RANGE
+              value: {{ .PodSubnet }}
           image: {{ .ImageRepository }}/weave-kube-{{ .Arch }}:{{ .Version }}
           readinessProbe:
             httpGet:
@@ -191,10 +193,7 @@ spec:
         seLinuxOptions: {}
       serviceAccountName: weave-net
       tolerations:
-        - effect: NoSchedule
-          operator: Exists
-        - effect: NoExecute
-          operator: Exists
+      - operator: Exists
       volumes:
       - name: weavedb
         hostPath:
@@ -218,7 +217,5 @@ spec:
         hostPath:
           path: /run/xtables.lock
           type: FileOrCreate
-  updateStrategy:
-    type: RollingUpdate
 `
 )
