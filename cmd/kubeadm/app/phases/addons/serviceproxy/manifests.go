@@ -6,7 +6,7 @@
 package serviceproxy
 
 const (
-	TenxProxyVersion       = "v5.1.0"
+	TenxProxyVersion       = "v5.2.0"
 	HarpoxyExporterVersion = "v0.8.0"
 
 	TenxProxyTemplate = `
@@ -20,7 +20,7 @@ data:
     global
         log 127.0.0.1 local2
         chroot /var/lib/haproxy
-        stats socket /var/lib/haproxy/haproxy.sock mode 600 level admin expose-fd listeners
+        stats socket /var/lib/haproxy/haproxy.sock mode 777 level admin expose-fd listeners
         stats timeout 600s
         user haproxy
         group haproxy
@@ -212,9 +212,7 @@ spec:
           defaultMode: 420
           name: service-proxy-template
         name: service-proxy-template
-      - configMap:
-          defaultMode: 420
-          name: kube-certs
+      - emptyDir: {}
         name: kube-cert
       - emptyDir: {}
         name: haproxy-sock
