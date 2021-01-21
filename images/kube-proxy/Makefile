@@ -1,4 +1,4 @@
-Version =v1.18.8
+Version=v1.18.15
 
 ARCH?=amd64
 OUT_DIR?=_output
@@ -11,7 +11,7 @@ compress:
 	upx --best --ultra-brute -o kube-proxy ${DOCKERIZED_OUTPUT_PATH}/kube-proxy
 
 build: compress
-	docker build -t 192.168.1.52/system_containers/kube-proxy-${ARCH}:${Version}  .
+	docker build -t 192.168.1.220/system_containers/kube-proxy-${ARCH}:${Version}  .
 
 clean:
 	rm -f ./$(shell basename $(shell pwd)) >/dev/null

@@ -1,5 +1,5 @@
-Version =v1.18.8
-CNI_VERSION=v0.8.6
+Version=v1.18.15
+CNI_VERSION=v0.9.0
 CNI_TARBALL=cni-plugins-linux-$(ARCH)-$(CNI_VERSION).tgz
 
 ARCH?=amd64
@@ -15,10 +15,10 @@ cni-tars/$(CNI_TARBALL):
 	cd cni-tars/ && curl -sSLO --retry 5 https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/${CNI_TARBALL}
 
 compress:
-	upx --best --ultra-brute -o kubelet ${DOCKERIZED_OUTPUT_PATH}/kubelet
+	upx --best -o kubelet ${DOCKERIZED_OUTPUT_PATH}/kubelet
 
-build:
-	docker build -t 192.168.1.52/system_containers/kubelet-amd64:${Version}  .
+build: compress
+	docker build -t 192.168.1.220/system_containers/kubelet-amd64:${Version}  .
 
 clean:
 	rm -f ./$(shell basename $(shell pwd)) >/dev/null
