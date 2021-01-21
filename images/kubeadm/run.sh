@@ -1,7 +1,7 @@
 #!/bin/bash
 REGISTRY_SERVER="index.tenxcloud.com"
 REGISTRY_USER="system_containers"
-K8S_VERSION="v1.18.8"
+K8S_VERSION="v1.18.15"
 ETCD_VERSION="3.4.3-0"
 CALICO_VERSION="v3.15.1"
 HA_BINDPORT="16443"
@@ -9,9 +9,8 @@ MASTER_BINDPORT="6443"
 KUBE_PROXY_MODE="ipvs"
 ARCH="amd64"
 kubeadm_dir="."
-tmp_dir="/tmp"
 kubeadm_config_file="${kubeadm_dir}/kubeadm-config.yaml"
-tmp_file="${tmp_dir}/kubeadm-config.yaml"
+tmp_file="/tmp/kubeadm-config.yaml"
 welcome() {
 message="$(cat <<EOF
 *******************************************************

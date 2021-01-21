@@ -1,8 +1,8 @@
-FROM  192.168.1.52/build-image/debian-base-amd64:v2.1.3
+FROM  192.168.1.220/build-image/debian-base-amd64:v2.1.3
 
 LABEL vendor="TenxCloud Incorporated" \
       maintainer=weiwei@tenxcloud.com
 
-RUN touch /etc/ceph/ceph.keyring /etc/ceph/ceph.conf
+RUN mkdir -p /etc/ceph && touch /etc/ceph/ceph.keyring /etc/ceph/ceph.conf
 COPY kube-controller-manager /usr/local/bin/kube-controller-manager
 
