@@ -5,4 +5,5 @@ LABEL vendor="TenxCloud Incorporated" \
 
 COPY kube-proxy /usr/local/bin/kube-proxy
 # remove iptables-wrapper
-RUN rm -f /usr/sbin/iptables && clean-install iptables
+RUN echo "deb http://mirrors.aliyun.com/debian/ buster main non-free contrib" > /etc/apt/sources.list \
+    && rm -f /usr/sbin/iptables && clean-install iptables
