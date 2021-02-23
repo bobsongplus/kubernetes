@@ -287,22 +287,3 @@ func (w *tlsHandshakeErrorWriter) Write(p []byte) (int, error) {
 	// for non tls handshake error, log it as usual
 	return w.out.Write(p)
 }
-
-// tlsHandshakeErrorWriter writes TLS handshake errors to klog with
-// trace level - V(5), to avoid flooding of tls handshake errors.
-type tlsHandshakeErrorWriter struct {
-	out io.Writer
-}
-
-const tlsHandshakeErrorPrefix = "http: TLS handshake error"
-
-func (w *tlsHandshakeErrorWriter) Write(p []byte) (int, error) {
-	if strings.Contains(string(p), tlsHandshakeErrorPrefix) {
-		klog.V(5).Info(string(p))
-		metrics.TLSHandshakeErrors.Inc()
-		return len(p), nil
-	}
-
-	// for non tls handshake error, log it as usual
-	return w.out.Write(p)
-}
