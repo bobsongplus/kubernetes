@@ -146,7 +146,7 @@ func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint 
 	auditLogFile := filepath.Join(kubeadmconstants.AuditVolumePath, kubeadmconstants.AuditLogFileName)
 	defaultArguments := map[string]string{
 		"advertise-address":               localAPIEndpoint.AdvertiseAddress,
-		"enable-admission-plugins":        "NodeRestriction,PodSecurityPolicy",
+		"enable-admission-plugins":        "NodeRestriction,PodSecurityPolicy,Priority",
 		"service-cluster-ip-range":        cfg.Networking.ServiceSubnet,
 		"service-account-key-file":        filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPublicKeyName),
 		"service-account-signing-key-file": filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),

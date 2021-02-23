@@ -7,7 +7,7 @@
 package calico
 
 const (
-	Version = "v3.13.4"
+	Version = "v3.15.1"
 
 	//This ConfigMap is used to configure a self-hosted Calico installation.
 	//
@@ -81,12 +81,12 @@ metadata:
   name: calico-node
   namespace: kube-system
   labels:
-    k8s-app: calico-node
+    k8s-app: calico
     component: calico
 spec:
   selector:
     matchLabels:
-      k8s-app: calico-node
+      k8s-app: calico
       component: calico
   updateStrategy:
     type: RollingUpdate
@@ -95,10 +95,8 @@ spec:
   template:
     metadata:
       labels:
-        k8s-app: calico-node
+        k8s-app: calico
         component: calico
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       nodeSelector:
         beta.kubernetes.io/os: linux
@@ -111,27 +109,8 @@ spec:
           operator: Exists
       serviceAccountName: calico-node
       terminationGracePeriodSeconds: 0
+      priorityClassName: system-node-critical
       initContainers:
-        - name: upgrade-ipam
-          image: {{ .ImageRepository }}/cni-{{ .Arch }}:{{ .Version }}
-          command: ["/opt/cni/bin/calico-ipam", "-upgrade"]
-          env:
-            - name: KUBERNETES_NODE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-            - name: CALICO_NETWORKING_BACKEND
-              valueFrom:
-                configMapKeyRef:
-                  name: calico-config
-                  key: calico_backend
-          volumeMounts:
-            - mountPath: /var/lib/cni/networks
-              name: host-local-net-dir
-            - mountPath: /host/opt/cni/bin
-              name: cni-bin-dir
-          securityContext:
-            privileged: true
         - name: install-cni
           image: {{ .ImageRepository }}/cni-{{ .Arch }}:{{ .Version }}
           imagePullPolicy: IfNotPresent
@@ -256,7 +235,7 @@ spec:
             privileged: true
           resources:
             requests:
-              cpu: 200m
+              cpu: 300m
               memory: 256Mi
           livenessProbe:
             httpGet:
@@ -266,13 +245,6 @@ spec:
             periodSeconds: 10
             initialDelaySeconds: 90
             failureThreshold: 6
-          readinessProbe:
-            exec:
-              command:
-              - /bin/calico-node
-              - -bird-ready
-              - -felix-ready
-            periodSeconds: 10
           volumeMounts:
             - mountPath: /lib/modules
               name: lib-modules
@@ -360,8 +332,6 @@ spec:
       namespace: kube-system
       labels:
         k8s-app: kube-controller
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       hostNetwork: true
       nodeSelector:
@@ -522,7 +492,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: system:calico-node
 rules:
-  # The CNI plugin needs to get pods, nodes, and namespaces.
   - apiGroups: [""]
     resources:
       - pods
@@ -535,12 +504,8 @@ rules:
       - endpoints
       - services
     verbs:
-      # Used to discover service IPs for advertisement.
       - watch
       - list
-      # Used to discover Typhas.
-      - get
-  # Pod CIDR auto-detection on kubeadm needs access to config maps.
   - apiGroups: [""]
     resources:
       - configmaps
@@ -550,109 +515,7 @@ rules:
     resources:
       - nodes/status
     verbs:
-      # Needed for clearing NodeNetworkUnavailable flag.
       - patch
-      # Calico stores some configuration information in node annotations.
-      - update
-  # Watch for changes to Kubernetes NetworkPolicies.
-  - apiGroups: ["networking.k8s.io"]
-    resources:
-      - networkpolicies
-    verbs:
-      - watch
-      - list
-  # Used by Calico for policy information.
-  - apiGroups: [""]
-    resources:
-      - pods
-      - namespaces
-      - serviceaccounts
-    verbs:
-      - list
-      - watch
-  # The CNI plugin patches pods/status.
-  - apiGroups: [""]
-    resources:
-      - pods/status
-    verbs:
-      - patch
-  # Calico monitors various CRDs for config.
-  - apiGroups: ["crd.projectcalico.org"]
-    resources:
-      - globalfelixconfigs
-      - felixconfigurations
-      - bgppeers
-      - globalbgpconfigs
-      - bgpconfigurations
-      - ippools
-      - ipamblocks
-      - globalnetworkpolicies
-      - globalnetworksets
-      - networkpolicies
-      - networksets
-      - clusterinformations
-      - hostendpoints
-      - blockaffinities
-    verbs:
-      - get
-      - list
-      - watch
-  # Calico must create and update some CRDs on startup.
-  - apiGroups: ["crd.projectcalico.org"]
-    resources:
-      - ippools
-      - felixconfigurations
-      - clusterinformations
-    verbs:
-      - create
-      - update
-  # Calico stores some configuration information on the node.
-  - apiGroups: [""]
-    resources:
-      - nodes
-    verbs:
-      - get
-      - list
-      - watch
-  # These permissions are only requried for upgrade from v2.6, and can
-  # be removed after upgrade or on fresh installations.
-  - apiGroups: ["crd.projectcalico.org"]
-    resources:
-      - bgpconfigurations
-      - bgppeers
-    verbs:
-      - create
-      - update
-  # These permissions are required for Calico CNI to perform IPAM allocations.
-  - apiGroups: ["crd.projectcalico.org"]
-    resources:
-      - blockaffinities
-      - ipamblocks
-      - ipamhandles
-    verbs:
-      - get
-      - list
-      - create
-      - update
-      - delete
-  - apiGroups: ["crd.projectcalico.org"]
-    resources:
-      - ipamconfigs
-    verbs:
-      - get
-  # Block affinities must also be watchable by confd for route aggregation.
-  - apiGroups: ["crd.projectcalico.org"]
-    resources:
-      - blockaffinities
-    verbs:
-      - watch
-  # The Calico IPAM migration needs to get daemonsets. These permissions can be
-  # removed if not upgrading from an installation using host-local IPAM.
-  - apiGroups: ["apps"]
-    resources:
-      - daemonsets
-    verbs:
-      - get
 `
 
 	CalicoServiceAccount = `
@@ -685,16 +548,15 @@ metadata:
 rules:
 - apiGroups:
   - ""
-  - extensions
   resources:
   - pods
   - namespaces
-  - networkpolicies
   - nodes
   - serviceaccounts
   verbs:
   - watch
   - list
+  - get
 - apiGroups:
   - networking.k8s.io
   resources:

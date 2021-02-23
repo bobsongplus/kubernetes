@@ -124,10 +124,12 @@ spec:
   selector:
     matchLabels:
       name: weave-net
+      k8s-app: weavenet
   template:
     metadata:
       labels:
         name: weave-net
+        k8s-app: weavenet
     spec:
       containers:
         - name: weave

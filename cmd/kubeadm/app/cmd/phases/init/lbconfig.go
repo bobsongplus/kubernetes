@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/phases/workflow"
@@ -65,7 +65,7 @@ func runlbConfig(c workflow.RunData) error {
 		klog.Error(err)
 		return err
 	}
-	if _, err := client.CoreV1().ConfigMaps("kube-system").Create(context.TODO(), config, metav1.CreateOptions{}); err != nil {
+	if _, err := client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Create(context.TODO(), config, metav1.CreateOptions{}); err != nil {
 		klog.Error(err)
 		return errors.Wrapf(err, "lbconfig phase creating configmap in kube-system error")
 	}

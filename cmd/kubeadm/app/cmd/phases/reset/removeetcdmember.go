@@ -76,7 +76,7 @@ func getEtcdDataDir(manifestPath string, cfg *kubeadmapi.InitConfiguration) (str
 	if cfg != nil && cfg.Etcd.Local != nil {
 		return cfg.Etcd.Local.DataDir, nil
 	}
-	klog.Warningln("[reset] No kubeadm config, using etcd pod spec to get data directory")
+	fmt.Println("[reset] No kubeadm config, using etcd pod spec to get data directory")
 
 	etcdPod, err := utilstaticpod.ReadStaticPodFromDisk(manifestPath)
 	if err != nil {

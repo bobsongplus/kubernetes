@@ -67,20 +67,20 @@ data:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: kube-flannel-ds-amd64
+  name: flannel
   namespace: kube-system
   labels:
     tier: node
-    app: flannel
+    k8s-app: flannel
 spec:
   selector:
     matchLabels:
-      app: flannel
+      k8s-app: flannel
   template:
     metadata:
       labels:
         tier: node
-        app: flannel
+        k8s-app: flannel
     spec:
       affinity:
         nodeAffinity:
@@ -94,7 +94,7 @@ spec:
                   - key: kubernetes.io/arch
                     operator: In
                     values:
-                      - amd64
+                      - {{.Arch}}
       hostNetwork: true
       nodeSelector:
         beta.kubernetes.io/arch: {{.Arch}}
@@ -202,7 +202,7 @@ rules:
       - nodes/status
     verbs:
       - patch
-  - apiGroups: ["policy","extensions"]
+  - apiGroups: ["policy"]
     resourceNames: ["system"]
     resources: ["podsecuritypolicies"]
     verbs: ["use"]
@@ -221,53 +221,5 @@ subjects:
 - kind: ServiceAccount
   name: flannel
   namespace: kube-system
-`
-	PodSecurityPolicy = `
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: psp.flannel.unprivileged
-  annotations:
-    seccomp.security.alpha.kubernetes.io/allowedProfileNames: docker/default
-    seccomp.security.alpha.kubernetes.io/defaultProfileName: docker/default
-    apparmor.security.beta.kubernetes.io/allowedProfileNames: runtime/default
-    apparmor.security.beta.kubernetes.io/defaultProfileName: runtime/default
-spec:
-  privileged: false
-  volumes:
-    - configMap
-    - secret
-    - emptyDir
-    - hostPath
-  allowedHostPaths:
-    - pathPrefix: "/etc/cni/net.d"
-    - pathPrefix: "/etc/kube-flannel"
-    - pathPrefix: "/run/flannel"
-  readOnlyRootFilesystem: false
-  # Users and groups
-  runAsUser:
-    rule: RunAsAny
-  supplementalGroups:
-    rule: RunAsAny
-  fsGroup:
-    rule: RunAsAny
-  # Privilege Escalation
-  allowPrivilegeEscalation: false
-  defaultAllowPrivilegeEscalation: false
-  # Capabilities
-  allowedCapabilities: ['NET_ADMIN']
-  defaultAddCapabilities: []
-  requiredDropCapabilities: []
-  # Host namespaces
-  hostPID: false
-  hostIPC: false
-  hostNetwork: true
-  hostPorts:
-  - min: 0
-    max: 65535
-  # SELinux
-  seLinux:
-    # SELinux is unused in CaaSP
-    rule: 'RunAsAny'
 `
 )

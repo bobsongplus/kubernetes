@@ -160,7 +160,7 @@ func (w *KubeWaiter) WaitForKubeletAndFunc(f func() error) error {
 	errorChan := make(chan error, 1)
 
 	go func(errC chan error, waiter Waiter) {
-		if err := waiter.WaitForHealthyKubelet(40*time.Second, fmt.Sprintf("http://localhost:%d/healthz", kubeadmconstants.KubeletHealthzPort)); err != nil {
+		if err := waiter.WaitForHealthyKubelet(60*time.Second, fmt.Sprintf("http://localhost:%d/healthz", kubeadmconstants.KubeletHealthzPort)); err != nil {
 			errC <- err
 		}
 	}(errorChan, w)

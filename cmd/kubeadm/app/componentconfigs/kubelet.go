@@ -25,6 +25,7 @@ import (
 	"k8s.io/klog/v2"
 	kubeletconfig "k8s.io/kubelet/config/v1beta1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/initsystem"
+	kubeproxyconfig "k8s.io/kubernetes/pkg/proxy/apis/config"
 	utilsexec "k8s.io/utils/exec"
 	utilpointer "k8s.io/utils/pointer"
 
@@ -131,6 +132,15 @@ func (kc *kubeletConfig) Default(cfg *kubeadmapi.ClusterConfiguration, _ *kubead
 		clusterDNS = kubeadmapiv1beta2.DefaultClusterDNSIP
 	} else {
 		clusterDNS = dnsIP.String()
+	}
+
+	//to fit node local dns cache
+	kubeProxyConfig, ok := cfg.ComponentConfigs[KubeProxyGroup]
+	if ok {
+		proxy, _ := kubeProxyConfig.(*KubeProxyConfig)
+		if string(proxy.Config.Mode) == string(kubeproxyconfig.ProxyModeIPVS) {
+			clusterDNS = constants.NodeLocalDNSAddress
+		}
 	}
 
 	if kc.config.ClusterDNS == nil {
@@ -264,7 +274,7 @@ func (kc *kubeletConfig) Default(cfg *kubeadmapi.ClusterConfiguration, _ *kubead
 		}
 	}
 
-	ok, err := isServiceActive("systemd-resolved")
+	ok, err = isServiceActive("systemd-resolved")
 	if err != nil {
 		klog.Warningf("cannot determine if systemd-resolved is active: %v", err)
 	}

@@ -234,6 +234,9 @@ spec:
     metadata:
       labels:
         k8s-app: kube-dns
+    annotations:
+      prometheus.io/port: "9153"
+      prometheus.io/scrape: "true"
     spec:
       priorityClassName: system-cluster-critical
       serviceAccountName: coredns

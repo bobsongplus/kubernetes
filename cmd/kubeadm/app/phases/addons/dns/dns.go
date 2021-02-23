@@ -20,16 +20,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/dnscache"
 	"net"
 	"strings"
-
-	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/dnsautoscaler"
 
 	"github.com/caddyserver/caddy/caddyfile"
 	"github.com/coredns/corefile-migration/migration"
 	"github.com/pkg/errors"
 	apps "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,6 +41,7 @@ import (
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/features"
 	"k8s.io/kubernetes/cmd/kubeadm/app/images"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/dnsautoscaler"
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 	utilsnet "k8s.io/utils/net"
@@ -116,7 +116,12 @@ func EnsureDNSAddon(cfg *kubeadmapi.ClusterConfiguration, client clientset.Inter
 		}
 		err = coreDNSAddon(cfg, client, replicas)
 	}
-	err = dnsautoscaler.DnsAutoscalerAddOn(cfg, client)
+	if err = dnscache.CreateNodeDnsCacheAddOn(cfg,client); err != nil {
+		return err
+	}
+	if err = dnsautoscaler.DnsAutoscalerAddOn(cfg, client); err != nil {
+		return err
+	}
 	return err
 }
 
@@ -261,7 +266,7 @@ func coreDNSAddon(cfg *kubeadmapi.ClusterConfiguration, client clientset.Interfa
 	if err := createCoreDNSAddon(coreDNSDeploymentBytes, coreDNSServiceBytes, coreDNSConfigMapBytes, client); err != nil {
 		return err
 	}
-	fmt.Println("[addons] Applied essential addon: CoreDNS")
+	fmt.Println("[addons] Applied essential addon: coredns")
 	return nil
 }
 

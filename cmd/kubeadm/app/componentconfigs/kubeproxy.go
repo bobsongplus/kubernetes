@@ -41,7 +41,7 @@ var kubeProxyHandler = handler{
 	GroupVersion: kubeproxyconfig.SchemeGroupVersion,
 	AddToScheme:  kubeproxyconfig.AddToScheme,
 	CreateEmpty: func() kubeadmapi.ComponentConfig {
-		return &kubeProxyConfig{
+		return &KubeProxyConfig{
 			configBase: configBase{
 				GroupVersion: kubeproxyconfig.SchemeGroupVersion,
 			},
@@ -55,24 +55,24 @@ func kubeProxyConfigFromCluster(h *handler, clientset clientset.Interface, _ *ku
 }
 
 // kubeProxyConfig implements the kubeadmapi.ComponentConfig interface for kube-proxy
-type kubeProxyConfig struct {
+type KubeProxyConfig struct {
 	configBase
-	config kubeproxyconfig.KubeProxyConfiguration
+	Config kubeproxyconfig.KubeProxyConfiguration
 }
 
-func (kp *kubeProxyConfig) DeepCopy() kubeadmapi.ComponentConfig {
-	result := &kubeProxyConfig{}
+func (kp *KubeProxyConfig) DeepCopy() kubeadmapi.ComponentConfig {
+	result := &KubeProxyConfig{}
 	kp.configBase.DeepCopyInto(&result.configBase)
-	kp.config.DeepCopyInto(&result.config)
+	kp.Config.DeepCopyInto(&result.Config)
 	return result
 }
 
-func (kp *kubeProxyConfig) Marshal() ([]byte, error) {
-	return kp.configBase.Marshal(&kp.config)
+func (kp *KubeProxyConfig) Marshal() ([]byte, error) {
+	return kp.configBase.Marshal(&kp.Config)
 }
 
-func (kp *kubeProxyConfig) Unmarshal(docmap kubeadmapi.DocumentMap) error {
-	return kp.configBase.Unmarshal(docmap, &kp.config)
+func (kp *KubeProxyConfig) Unmarshal(docmap kubeadmapi.DocumentMap) error {
+	return kp.configBase.Unmarshal(docmap, &kp.Config)
 }
 
 func kubeProxyDefaultBindAddress(localAdvertiseAddress string) string {
@@ -83,38 +83,38 @@ func kubeProxyDefaultBindAddress(localAdvertiseAddress string) string {
 	return kubeadmapiv1beta2.DefaultProxyBindAddressv6
 }
 
-func (kp *kubeProxyConfig) Default(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint *kubeadmapi.APIEndpoint, _ *kubeadmapi.NodeRegistrationOptions) {
+func (kp *KubeProxyConfig) Default(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint *kubeadmapi.APIEndpoint, _ *kubeadmapi.NodeRegistrationOptions) {
 	const kind = "KubeProxyConfiguration"
 
 	// The below code is necessary because while KubeProxy may be defined, the user may not
 	// have defined any feature-gates, thus FeatureGates will be nil and the later insertion
 	// of any feature-gates (e.g. IPv6DualStack) will cause a panic.
-	if kp.config.FeatureGates == nil {
-		kp.config.FeatureGates = map[string]bool{}
+	if kp.Config.FeatureGates == nil {
+		kp.Config.FeatureGates = map[string]bool{}
 	}
 
 	defaultBindAddress := kubeProxyDefaultBindAddress(localAPIEndpoint.AdvertiseAddress)
-	if kp.config.BindAddress == "" {
-		kp.config.BindAddress = defaultBindAddress
-	} else if kp.config.BindAddress != defaultBindAddress {
-		warnDefaultComponentConfigValue(kind, "bindAddress", kp.config.BindAddress, defaultBindAddress)
+	if kp.Config.BindAddress == "" {
+		kp.Config.BindAddress = defaultBindAddress
+	} else if kp.Config.BindAddress != defaultBindAddress {
+		warnDefaultComponentConfigValue(kind, "bindAddress", kp.Config.BindAddress, defaultBindAddress)
 	}
 
-	if kp.config.ClusterCIDR == "" && cfg.Networking.PodSubnet != "" {
-		kp.config.ClusterCIDR = cfg.Networking.PodSubnet
-	} else if cfg.Networking.PodSubnet != "" && kp.config.ClusterCIDR != cfg.Networking.PodSubnet {
-		warnDefaultComponentConfigValue(kind, "clusterCIDR", cfg.Networking.PodSubnet, kp.config.ClusterCIDR)
+	if kp.Config.ClusterCIDR == "" && cfg.Networking.PodSubnet != "" {
+		kp.Config.ClusterCIDR = cfg.Networking.PodSubnet
+	} else if cfg.Networking.PodSubnet != "" && kp.Config.ClusterCIDR != cfg.Networking.PodSubnet {
+		warnDefaultComponentConfigValue(kind, "clusterCIDR", cfg.Networking.PodSubnet, kp.Config.ClusterCIDR)
 	}
 
-	if kp.config.ClientConnection.Kubeconfig == "" {
-		kp.config.ClientConnection.Kubeconfig = kubeproxyKubeConfigFileName
-	} else if kp.config.ClientConnection.Kubeconfig != kubeproxyKubeConfigFileName {
-		warnDefaultComponentConfigValue(kind, "clientConnection.kubeconfig", kubeproxyKubeConfigFileName, kp.config.ClientConnection.Kubeconfig)
+	if kp.Config.ClientConnection.Kubeconfig == "" {
+		kp.Config.ClientConnection.Kubeconfig = kubeproxyKubeConfigFileName
+	} else if kp.Config.ClientConnection.Kubeconfig != kubeproxyKubeConfigFileName {
+		warnDefaultComponentConfigValue(kind, "clientConnection.kubeconfig", kubeproxyKubeConfigFileName, kp.Config.ClientConnection.Kubeconfig)
 	}
 
 	// TODO: The following code should be removed after dual-stack is GA.
 	// Note: The user still retains the ability to explicitly set feature-gates and that value will overwrite this base value.
 	if enabled, present := cfg.FeatureGates[features.IPv6DualStack]; present {
-		kp.config.FeatureGates[features.IPv6DualStack] = enabled
+		kp.Config.FeatureGates[features.IPv6DualStack] = enabled
 	}
 }

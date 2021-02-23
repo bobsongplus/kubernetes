@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"k8s.io/klog/v2"
@@ -76,12 +77,18 @@ func runCleanupNode(c workflow.RunData) error {
 		r.AddDirsToClean(kubeletRunDir)
 	}
 
+	iptablesClean := "iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X "
+	iptablesCleanBytes, err := exec.Command("sh", "-c", iptablesClean).Output()
+	if err != nil {
+		fmt.Printf("[reset] Failed to clean iptables rules : %s\n", string(iptablesCleanBytes))
+	}
+
 	klog.V(1).Info("[reset] Removing Kubernetes-managed containers")
 	if err := removeContainers(utilsexec.New(), r.CRISocketPath()); err != nil {
 		klog.Warningf("[reset] Failed to remove containers: %v\n", err)
 	}
 
-	r.AddDirsToClean("/var/lib/dockershim", "/var/run/kubernetes", "/var/lib/cni", "/etc/cni/net.d", "/var/lib/calico")
+	r.AddDirsToClean("/var/lib/dockershim", "/var/run/kubernetes", "/var/lib/cni", "/etc/cni/net.d", "/opt/cni/bin", "/var/lib/calico","/etc/systemd/system/kubelet.service.d")
 
 	// Remove contents from the config and pki directories
 	klog.V(1).Infoln("[reset] Removing contents from the config and pki directories")
@@ -140,6 +147,7 @@ func resetConfigDir(configPathDir, pkiPathDir string) {
 		filepath.Join(configPathDir, kubeadmconstants.SchedulerKubeConfigFileName),
 		filepath.Join(configPathDir, kubeadmconstants.KeepalivedDirectory),
 		filepath.Join(configPathDir, kubeadmconstants.HaproxyDirectory),
+		"/etc/systemd/system/kubelet.service",
 	}
 	fmt.Printf("[reset] Deleting files: %v\n", filesToClean)
 	for _, path := range filesToClean {

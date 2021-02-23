@@ -466,6 +466,9 @@ const (
 
 	// AuditLogFileName specifies the name for the log file that is used for audit the API Server
 	AuditLogFileName string = "audit.log"
+
+	// node local dns cache address
+	NodeLocalDNSAddress = "169.254.0.10"
 )
 
 var (

@@ -23,28 +23,25 @@ package dnsautoscaler
  */
 
 const (
-	KubeDnsAutoscalerVersion = "1.7.1"
+	CoreDnsAutoscalerVersion = "1.7.1"
 
-	KubeDnsAutoscaler = `
+	CoreDnsAutoscaler = `
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kube-dns-autoscaler
+  name: coredns-autoscaler
   namespace: kube-system
   labels:
-    k8s-app: kube-dns-autoscaler
+    k8s-app: coredns-autoscaler
     kubernetes.io/cluster-service: "true"
 spec:
   selector:
     matchLabels:
-      k8s-app: kube-dns-autoscaler
+      k8s-app: coredns-autoscaler
   template:
     metadata:
       labels:
-        k8s-app: kube-dns-autoscaler
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ''
-        seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
+        k8s-app: coredns-autoscaler
     spec:
       priorityClassName: system-cluster-critical
       containers:
@@ -57,7 +54,7 @@ spec:
         command:
           - /cluster-proportional-autoscaler
           - --namespace=kube-system
-          - --configmap=kube-dns-autoscaler
+          - --configmap=coredns-autoscaler
           - --target={{.Target}}
           - --default-params={"linear":{"coresPerReplica":256,"nodesPerReplica":16,"preventSinglePointFailure":true}}
           - --logtostderr=true
@@ -67,7 +64,7 @@ spec:
         operator: Exists
       - effect: NoExecute
         operator: Exists
-      serviceAccountName: kube-dns-autoscaler
+      serviceAccountName: coredns-autoscaler
 `
 
 	// for kube-dns-autoscaler
@@ -75,7 +72,7 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: kube-dns-autoscaler
+  name: coredns-autoscaler
   namespace: kube-system
 `
 
@@ -83,19 +80,11 @@ metadata:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: system:kube-dns-autoscaler
-  labels:
-    addonmanager.kubernetes.io/mode: Reconcile
+  name: system:coredns-autoscaler
 rules:
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get","list","watch"]
-  - apiGroups: [""]
-    resources: ["replicationcontrollers/scale"]
-    verbs: ["get", "update"]
-  - apiGroups: ["extensions"]
-    resources: ["deployments/scale", "replicasets/scale"]
-    verbs: ["get", "update"]
   - apiGroups: ["apps"]
     resources: ["deployments/scale", "replicasets/scale"]
     verbs: ["get", "update"]
@@ -108,14 +97,14 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: system:kube-dns-autoscaler
+  name: system:coredns-autoscaler
 subjects:
   - kind: ServiceAccount
-    name: kube-dns-autoscaler
+    name: coredns-autoscaler
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: system:kube-dns-autoscaler
+  name: system:coredns-autoscaler
   apiGroup: rbac.authorization.k8s.io
 `
 )
