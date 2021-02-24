@@ -25,7 +25,7 @@ var (
 
 func createEncryptionAtRestToken(certsDir string) (tokenB64 string, err error) {
 	fileName := filepath.Join(certsDir, kubeadmconstants.EncryptionConfigFileName)
-	baseName := KubeadmCertRootCA.Name
+	baseName := KubeadmCertRootCA().Name
 	f, osErr := os.Stat(fileName)
 	if f != nil && osErr == nil {
 		fmt.Printf("[certs] Using existing encryption token and config file %s \n", fileName)

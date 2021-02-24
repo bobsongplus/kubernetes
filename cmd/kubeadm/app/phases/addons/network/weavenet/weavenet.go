@@ -15,7 +15,7 @@ import (
 	rbac "k8s.io/api/rbac/v1"
 	kuberuntime "k8s.io/apimachinery/pkg/runtime"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/output/scheme"
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
