@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
 	"os"
