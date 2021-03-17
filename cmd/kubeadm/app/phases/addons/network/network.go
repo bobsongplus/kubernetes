@@ -10,6 +10,7 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/calico"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/canal"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/flannel"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/macvlan"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/multus"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/ovn"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/ovnkube"
@@ -53,6 +54,10 @@ func pickNetworkPlugin(networkPlugin, defaultSubnet string, cfg *kubeadmapi.Init
 	case kubeadmconstants.Ovn:
 		if err := ovn.CreateOvnAddon(defaultSubnet, cfg, client); err != nil {
 			return fmt.Errorf("error setup ovn addon: %v", err)
+		}
+	case kubeadmconstants.Macvlan:
+		if err :=  macvlan.CreateMacVlanAddon(defaultSubnet, cfg, client); err != nil {
+			return fmt.Errorf("error setup macvaln addon: %v", err)
 		}
 	//Deprecated
 	case kubeadmconstants.OvnKube:
