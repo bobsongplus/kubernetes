@@ -17,6 +17,8 @@ metadata:
   name: kubectl
   namespace: kube-system
 spec:
+  updateStrategy:
+    type: OnDelete
   selector:
     matchLabels:
       app: kubectl
@@ -30,10 +32,7 @@ spec:
       serviceAccountName: kubectl
       hostNetwork: true
       tolerations:
-      - effect: NoSchedule
-        operator: Exists
-      - effect: NoExecute
-        operator: Exists
+      - operator: Exists
       containers:
         - name: kubectl
           image: {{ .ImageRepository }}/kubectl-{{ .Arch }}:{{ .Version }}

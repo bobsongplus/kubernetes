@@ -84,6 +84,7 @@ echo "}"
 
 
 
+# ${REGISTRY_SERVER} ${REGISTRY_USER}  "node"
 PullImage=$(cat <<EOF
   PullImage() {
   echo "Pulling Necessary Images from \${1}"
@@ -261,7 +262,7 @@ kubeadm_configure() {
     sed -i -e "s@{{kubeProxyMode}}@${KUBE_PROXY_MODE}@g" "${kubeadm_config_file}"
 }
 
-kubeadm_init() {
+do_init() {
     cat <<EOF
 #!/bin/bash
 $(welcome)
@@ -285,7 +286,7 @@ EOF
     #Normal master mode end
 }
 
-InstallBinary() {
+install_ctl_binary() {
     cp /kubeadm  /tmp/  > /dev/null 2>&1
     cp "${kubeadm_config_file}" "${tmp_file}" >/dev/null 2>&1
 cat <<EOF
@@ -306,7 +307,7 @@ cat <<EOF
     rm -rf $(which etcdctl)
     mv /tmp/etcdctl /usr/bin/  >/dev/null
 
-    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/ctl-${ARCH}:${CALICO_VERSION} /calicoctl /tmp/calicoctl
+    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubectl-${ARCH}:${K8S_VERSION} /usr/bin/calicoctl /tmp/calicoctl
     rm -rf $(which calicoctl)
     mv /tmp/calicoctl /usr/bin/  >/dev/null
     $(CalicoConfig)
@@ -314,16 +315,11 @@ cat <<EOF
 EOF
 }
 
-Master(){
+Init(){
     kubeadm_init_configure
     kubeadm_configure
-    InstallBinary
-    kubeadm_init
-}
-
-
-Node(){
-    Join
+    install_ctl_binary
+    do_init
 }
 
 Join() {
@@ -458,14 +454,14 @@ fi
                 exit
               fi
               MASTER="$2"
-              Node
+              Join
               exit 0
               shift 3;;
           "Init" )
               if [[ "$#" -gt 1 ]]; then
                 SERVER_URL="$2"
               fi
-              Master
+              Init
               exit 0
               shift 2;;
           "Uninstall" )
