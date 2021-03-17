@@ -1,4 +1,4 @@
-FROM  192.168.1.220/build-image/debian-base-amd64:v2.1.3
+FROM  192.168.1.220/build-image/debian-base-amd64:buster-v1.2.0
 
 LABEL vendor="TenxCloud Incorporated" \
       maintainer=weiwei@tenxcloud.com

@@ -1,4 +1,4 @@
-FROM 192.168.1.220/system_containers/alpine:3.12-bash
+FROM 192.168.1.220/system_containers/alpine:3.13-bash
 
 LABEL vendor="TenxCloud Incorporated" \
       maintainer=weiwei@tenxcloud.com

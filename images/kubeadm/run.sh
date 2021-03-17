@@ -1,9 +1,9 @@
 #!/bin/bash
 REGISTRY_SERVER="index.tenxcloud.com"
 REGISTRY_USER="system_containers"
-K8S_VERSION="v1.18.15"
-ETCD_VERSION="3.4.3-0"
-CALICO_VERSION="v3.15.1"
+K8S_VERSION="v1.20.4"
+ETCD_VERSION="3.4.13-3"
+CALICO_VERSION="v3.18.0"
 HA_BINDPORT="16443"
 MASTER_BINDPORT="6443"
 KUBE_PROXY_MODE="ipvs"
@@ -70,8 +70,8 @@ metadata:
 spec:
   etcdEndpoints: https://127.0.0.1:2379
   etcdCACertFile: /etc/kubernetes/pki/etcd/ca.crt
-  etcdCertFile: /etc/kubernetes/pki/etcd/client.crt
-  etcdKeyFile:  /etc/kubernetes/pki/etcd/client.key
+  etcdCertFile: /etc/kubernetes/pki/etcd/healthcheck-client.crt
+  etcdKeyFile:  /etc/kubernetes/pki/etcd/healthcheck-client.key
 EOF
 )"
 echo "CalicoConfig() {"
@@ -298,15 +298,15 @@ cat <<EOF
     fi
     cp /tmp/kubeadm /usr/bin/  >/dev/null
 
-    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubectl-${ARCH}:${K8S_VERSION} /usr/bin/kubectl /tmp
+    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubectl-${ARCH}:${K8S_VERSION} /usr/bin/kubectl /tmp/kubectl
     rm -rf $(which kubectl)
     mv /tmp/kubectl /usr/bin/  >/dev/null
 
-    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/etcd-${ARCH}:${ETCD_VERSION}  /usr/local/bin/etcdctl /tmp
+    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/etcd-${ARCH}:${ETCD_VERSION}  /usr/local/bin/etcdctl /tmp/etcdctl
     rm -rf $(which etcdctl)
     mv /tmp/etcdctl /usr/bin/  >/dev/null
 
-    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/ctl-${ARCH}:${CALICO_VERSION} /calicoctl /tmp
+    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/ctl-${ARCH}:${CALICO_VERSION} /calicoctl /tmp/calicoctl
     rm -rf $(which calicoctl)
     mv /tmp/calicoctl /usr/bin/  >/dev/null
     $(CalicoConfig)

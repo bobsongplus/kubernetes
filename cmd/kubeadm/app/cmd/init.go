@@ -170,7 +170,6 @@ func newCmdInit(out io.Writer, initOptions *initOptions) *cobra.Command {
 	initRunner.AppendPhase(phases.NewWaitControlPlanePhase())
 	initRunner.AppendPhase(phases.NewUploadConfigPhase())
 	initRunner.AppendPhase(phases.NewUploadCertsPhase())
-	initRunner.AppendPhase(phases.NewUploadEtcdCertsPhase())
 	initRunner.AppendPhase(phases.NewPolicyPhase())
 	initRunner.AppendPhase(phases.NewMarkControlPlanePhase())
 	initRunner.AppendPhase(phases.NewBootstrapTokenPhase())

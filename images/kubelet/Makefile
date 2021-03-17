@@ -1,5 +1,5 @@
-Version=v1.18.15
-CNI_VERSION=v0.9.0
+Version=v1.20.4
+CNI_VERSION=v0.9.1
 CNI_TARBALL=cni-plugins-linux-$(ARCH)-$(CNI_VERSION).tgz
 
 ARCH?=amd64
@@ -10,7 +10,7 @@ DOCKERIZED_OUTPUT_PATH=$(shell pwd)/../../$(OUT_DIR)/dockerized/bin/linux/$(ARCH
 
 all: build
 
-cni-tars/$(CNI_TARBALL):
+cni-tars:
 	mkdir -p cni-tars/
 	cd cni-tars/ && curl -sSLO --retry 5 https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/${CNI_TARBALL}
 

@@ -6,7 +6,7 @@
 package serviceproxy
 
 const (
-	TenxProxyVersion       = "v5.2.0"
+	TenxProxyVersion       = "v5.3.0"
 	HarpoxyExporterVersion = "v0.8.0"
 
 	TenxProxyTemplate = `

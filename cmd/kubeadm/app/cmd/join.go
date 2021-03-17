@@ -204,7 +204,6 @@ func newCmdJoin(out io.Writer, joinOptions *joinOptions) *cobra.Command {
 	joinRunner.AppendPhase(phases.NewCheckEtcdPhase())
 	joinRunner.AppendPhase(phases.NewKubeletPhase())
 	joinRunner.AppendPhase(phases.NewControlPlaneJoinPhase())
-	joinRunner.AppendPhase(phases.NewEtcdClientCertsPhase())
 	joinRunner.AppendPhase(phases.NewMarkWorkerPhase())
 
 	// sets the data builder function, that will be used by the runner

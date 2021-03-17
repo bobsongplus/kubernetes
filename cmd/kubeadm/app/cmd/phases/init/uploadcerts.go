@@ -74,5 +74,10 @@ func runUploadCerts(c workflow.RunData) error {
 	if !data.SkipCertificateKeyPrint() {
 		fmt.Printf("[upload-certs] Using certificate key:\n%s\n", data.CertificateKey())
 	}
+    // upload etcd client certs
+	if err := copycerts.UploadEtcdClientCerts(client, data.Cfg()); err != nil {
+		return errors.Wrap(err, "error uploading etcd client certs")
+	}
+
 	return nil
 }

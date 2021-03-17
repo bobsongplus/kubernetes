@@ -120,24 +120,6 @@ const (
 	// APIServerEtcdClientCertCommonName defines apiserver's etcd client certificate common name (CN)
 	APIServerEtcdClientCertCommonName = "kube-apiserver-etcd-client"
 
-	// EtcdClientCertAndKeyBaseName defines etcd client certificate and key base name
-	EtcdClientCertAndKeyBaseName = "etcd/client"
-	// EtcdClientCertName defines etcd client certificate name
-	EtcdClientCertName = "etcd/client.crt"
-	// EtcdClientKeyName defines etcd client key name
-	EtcdClientKeyName = "etcd/client.key"
-	// EtcdClientCertCommonName defines etcd client certificate common name (CN)
-	EtcdClientCertCommonName = "etcd-client"
-
-	// EtcdMetricClientCertAndKeyBaseName defines etcd metric client certificate and key base name
-	EtcdMetricClientCertAndKeyBaseName = "etcd/metric-client"
-	// EtcdMetricClientCertName defines etcd metric client certificate name
-	EtcdMetricClientCertName = "etcd/metric-client.crt"
-	// EtcdMetricClientKeyName defines etcd metric client key name
-	EtcdMetricClientKeyName = "etcd/metric-client.key"
-	// EtcdMetricClientCertCommonName defines etcd metric client certificate common name (CN)
-	EtcdMetricClientCertCommonName = "etcd-metric-client"
-
 	// ServiceAccountKeyBaseName defines SA key base name
 	ServiceAccountKeyBaseName = "sa"
 	// ServiceAccountPublicKeyName defines SA public key base name
@@ -311,7 +293,7 @@ const (
 	MinExternalEtcdVersion = "3.2.18"
 
 	// DefaultEtcdVersion indicates the default etcd version that kubeadm uses
-	DefaultEtcdVersion = "3.4.13-0"
+	DefaultEtcdVersion = "3.4.13-3"
 
 	// Etcd defines variable used internally when referring to etcd component
 	Etcd = "etcd"
@@ -375,7 +357,7 @@ const (
 	KubeDNSVersion = "1.14.13"
 
 	// CoreDNSVersion is the version of CoreDNS to be deployed if it is used
-	CoreDNSVersion = "1.7.0"
+	CoreDNSVersion = "1.8.0"
 
 	// ClusterConfigurationKind is the string kind value for the ClusterConfiguration struct
 	ClusterConfigurationKind = "ClusterConfiguration"
@@ -543,9 +525,9 @@ var (
 		16: "3.3.17-0",
 		17: "3.4.3-0",
 		18: "3.4.3-0",
-		19: "3.4.13-0",
-		20: "3.4.13-0",
-		21: "3.4.13-0",
+		19: "3.4.13-3",
+		20: "3.4.13-3",
+		21: "3.4.13-3",
 	}
 
 	// KubeadmCertsClusterRoleName sets the name for the ClusterRole that allows

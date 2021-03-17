@@ -5,8 +5,21 @@
  */
 package weavenet
 
+/*
+ *
+ * weaveworks/weave-kube:2.8.1
+ * weaveworks/weave-npc:2.8.1
+ * weaveworks/weaveexec:2.8.1
+ *
+ *
+ *
+ * https://github.com/weaveworks/weave
+ * https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s-1.11.yaml
+ *
+ */
+
 const (
-	Version = "2.6.2"
+	Version = "2.8.1"
 
 	ServiceAccount = `
 apiVersion: v1
@@ -133,70 +146,87 @@ spec:
         component: weave-net
         k8s-app: weave-net
     spec:
+      initContainers:
+      - name: weave-init
+        image: {{ .ImageRepository }}/weave-kube-{{ .Arch }}:{{ .Version }}
+        command:
+        - /home/weave/init.sh
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: cni-bin
+          mountPath: /host/opt
+        - name: cni-bin2
+          mountPath: /host/home
+        - name: cni-conf
+          mountPath: /host/etc
+        - name: lib-modules
+          mountPath: /lib/modules
+        - name: xtables-lock
+          mountPath: /run/xtables.lock
+          readOnly: false
       containers:
-        - name: weave
-          command:
-            - /home/weave/launch.sh
-          env:
-            - name: HOSTNAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: spec.nodeName
-            - name: NO_MASQ_LOCAL
-              value: "1"
-            - name: IPALLOC_RANGE
-              value: {{ .PodSubnet }}
-          image: {{ .ImageRepository }}/weave-kube-{{ .Arch }}:{{ .Version }}
-          readinessProbe:
-            httpGet:
-              host: 127.0.0.1
-              path: /status
-              port: 6784
-          resources:
-            requests:
-              cpu: 10m
-          securityContext:
-            privileged: true
-          volumeMounts:
-          - name: weavedb
-            mountPath: /weavedb
-          - name: cni-bin
-            mountPath: /host/opt
-          - name: cni-bin2
-            mountPath: /host/home
-          - name: cni-conf
-            mountPath: /host/etc
-          - name: dbus
-            mountPath: /host/var/lib/dbus
-          - name: lib-modules
-            mountPath: /lib/modules
-          - name: xtables-lock
-            mountPath: /run/xtables.lock
-        - name: weave-npc
-          env:
-            - name: HOSTNAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: spec.nodeName
-          image: {{ .ImageRepository }}/weave-npc-{{ .Arch }}:{{ .Version }}
-          resources:
-            requests:
-              cpu: 10m
-          securityContext:
-            privileged: true
-          volumeMounts:
-            - name: xtables-lock
-              mountPath: /run/xtables.lock
+      - name: weave
+        command:
+        - /home/weave/launch.sh
+        env:
+        - name: INIT_CONTAINER
+          value: "true"
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: IPALLOC_RANGE
+          value: {{ .PodSubnet }}
+        image: {{ .ImageRepository }}/weave-kube-{{ .Arch }}:{{ .Version }}
+        readinessProbe:
+          httpGet:
+            host: 127.0.0.1
+            path: /status
+            port: 6784
+        resources:
+          requests:
+            cpu: 200m
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: weavedb
+          mountPath: /weavedb
+        - name: dbus
+          mountPath: /host/var/lib/dbus
+          readOnly: true
+        - mountPath: /host/etc/machine-id
+          name: cni-machine-id
+          readOnly: true
+        - name: xtables-lock
+          mountPath: /run/xtables.lock
+          readOnly: false
+      - name: weave-npc
+        env:
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        image: {{ .ImageRepository }}/weave-npc-{{ .Arch }}:{{ .Version }}
+        resources:
+          requests:
+            cpu: 200m
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: xtables-lock
+          mountPath: /run/xtables.lock
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
-      hostPID: true
+      hostPID: false
       priorityClassName: system-node-critical
       restartPolicy: Always
       securityContext:
         seLinuxOptions: {}
       serviceAccountName: weave-net
+      terminationGracePeriodSeconds: 0
       tolerations:
       - operator: Exists
       volumes:
