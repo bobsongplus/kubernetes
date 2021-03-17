@@ -15,15 +15,17 @@ package dnsautoscaler
  * Autoscaling parameters could be tuned by modifying the kube-dns-autoscaler ConfigMap in kube-system namespace.
  *
  * gcr.io/google-containers/cluster-proportional-autoscaler-amd64:1.6.0
+ * k8s.gcr.io/cpa/cluster-proportional-autoscaler-amd64:1.8.3
  *
  * http://kubernetes.io/docs/tasks/administer-cluster/dns-horizontal-autoscaling/
  * https://github.com/kubernetes-incubator/cluster-proportional-autoscaler/
- * https://github.com/kubernetes/kubernetes/blob/release-1.12/cluster/addons/dns-horizontal-autoscaler/dns-horizontal-autoscaler.yaml
+ * https://github.com/kubernetes-sigs/cluster-proportional-autoscaler
+ * https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns-horizontal-autoscaler
  *
  */
 
 const (
-	CoreDnsAutoscalerVersion = "1.7.1"
+	CoreDnsAutoscalerVersion = "1.8.3"
 
 	CoreDnsAutoscaler = `
 apiVersion: apps/v1
@@ -56,14 +58,11 @@ spec:
           - --namespace=kube-system
           - --configmap=coredns-autoscaler
           - --target={{.Target}}
-          - --default-params={"linear":{"coresPerReplica":256,"nodesPerReplica":16,"preventSinglePointFailure":true}}
+          - --default-params={"linear":{"coresPerReplica":256,"nodesPerReplica":16,"preventSinglePointFailure":true,"includeUnschedulableNodes":true}}
           - --logtostderr=true
           - --v=2
       tolerations:
-      - effect: NoSchedule
-        operator: Exists
-      - effect: NoExecute
-        operator: Exists
+      - operator: Exists
       serviceAccountName: coredns-autoscaler
 `
 

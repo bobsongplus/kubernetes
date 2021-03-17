@@ -14,9 +14,9 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"k8s.io/client-go/util/keyutil"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/pkiutil"
-	"k8s.io/kubernetes/staging/src/k8s.io/client-go/util/keyutil"
 )
 
 var (

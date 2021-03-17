@@ -1,4 +1,4 @@
-FROM 192.168.1.220/build-image/debian-iptables-amd64:v12.1.2
+FROM 192.168.1.220/build-image/debian-iptables-amd64:buster-v1.3.0
 
 LABEL vendor="TenxCloud Incorporated" \
       maintainer=weiwei@tenxcloud.com

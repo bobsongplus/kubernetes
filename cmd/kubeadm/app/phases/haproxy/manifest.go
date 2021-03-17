@@ -7,7 +7,7 @@
 package haproxy
 
 var (
-	Version         = "2.2.2"
+	Version         = "2.2.9"
 	haproxyManifest = `
 apiVersion: v1
 kind: Pod

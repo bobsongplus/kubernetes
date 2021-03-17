@@ -7,12 +7,9 @@
 package calico
 
 const (
-	Version = "v3.15.1"
+	Version = "v3.18.0"
 
 	//This ConfigMap is used to configure a self-hosted Calico installation.
-	//
-	//https://github.com/containernetworking/plugins/tree/master/plugins/meta/bandwidth
-	//https://github.com/containernetworking/plugins/tree/master/plugins/meta/tuning
 	NodeConfigMap = `
 apiVersion: v1
 kind: ConfigMap
@@ -21,10 +18,11 @@ metadata:
   namespace: kube-system
 data:
   etcd_endpoints: {{ .EtcdEndPoints }}
-  etcd_ca: "/etc/kubernetes/pki/etcd/ca.crt"
-  etcd_cert: "/etc/kubernetes/pki/etcd/client.crt"
-  etcd_key: "/etc/kubernetes/pki/etcd/client.key"
+  etcd_ca: "/calico-secrets/etcd-ca"
+  etcd_cert: "/calico-secrets/etcd-cert"
+  etcd_key: "/calico-secrets/etcd-key"
   calico_backend: "bird"
+  veth_mtu: "0"
   ip: {{ .IPAutoDetection }}
   ip_autodetection_method: "first-found"
   ip6: {{ .IP6AutoDetection }}
@@ -41,7 +39,8 @@ data:
             "etcd_cert_file": "__ETCD_CERT_FILE__",
             "etcd_ca_cert_file": "__ETCD_CA_CERT_FILE__",
             "log_level": "__LOG_LEVEL__",
-            "mtu": 1440,
+            "log_file_path": "__LOG_FILE_PATH__",
+            "mtu": __CNI_MTU__,
             "ipam": {
                 "type": "calico-ipam",
                 "assign_ipv4": "{{ .AssignIpv4 }}",
@@ -54,10 +53,12 @@ data:
                 "kubeconfig": "/etc/kubernetes/kubelet.conf"
              }
           },{
-          "type": "portmap",
-          "snat": true,
-          "capabilities": {"portMappings": true}
-        },{
+             "type": "portmap",
+             "snat": true,
+             "capabilities": {
+                "portMappings": true
+              }
+          },{
              "type": "tuning",
              "sysctl": {
                  "net.core.somaxconn": "512"
@@ -109,32 +110,21 @@ spec:
         - name: install-cni
           image: {{ .ImageRepository }}/cni-{{ .Arch }}:{{ .Version }}
           imagePullPolicy: IfNotPresent
-          command: ["/install-cni.sh"]
+          command: ["/opt/cni/bin/install"]
           resources:
             requests:
               cpu: 100m
               memory: 128Mi
+          envFrom:
+            - configMapRef:
+                name: kubernetes-services-endpoint
+                optional: true
           env:
             - name: ETCD_ENDPOINTS
               valueFrom:
                 configMapKeyRef:
                   name: calico-config
                   key: etcd_endpoints
-            - name: CNI_CONF_ETCD_CERT
-              valueFrom:
-                configMapKeyRef:
-                  name: calico-config
-                  key: etcd_cert
-            - name: CNI_CONF_ETCD_KEY
-              valueFrom:
-                configMapKeyRef:
-                  name: calico-config
-                  key: etcd_key
-            - name: CNI_CONF_ETCD_CA
-              valueFrom:
-                configMapKeyRef:
-                  name: calico-config
-                  key: etcd_ca
             - name: CNI_NETWORK_CONFIG
               valueFrom:
                 configMapKeyRef:
@@ -143,7 +133,12 @@ spec:
             - name: CNI_CONF_NAME
               value: "10-calico.conflist"
             - name: CNI_MTU
-              value: "1440"
+              valueFrom:
+                configMapKeyRef:
+                  name: calico-config
+                  key: veth_mtu
+            - name: LOG_LEVEL
+              value: "error"
             - name: SLEEP
               value: "false"
             - name: UPDATE_CNI_BINARIES
@@ -153,9 +148,17 @@ spec:
               name: cni-bin-dir
             - mountPath: /host/etc/cni/net.d
               name: cni-net-dir
+            - mountPath: /calico-secrets
+              name: etcd-certs
+          securityContext:
+            privileged: true
       containers:
         - name: calico-node
           image: {{ .ImageRepository }}/node-{{ .Arch }}:{{ .Version }}
+          envFrom:
+            - configMapRef:
+                name: kubernetes-services-endpoint
+                optional: true
           env:
             - name: ETCD_ENDPOINTS
               valueFrom:
@@ -210,10 +213,6 @@ spec:
                   fieldPath: spec.nodeName
             - name: CALICO_DISABLE_FILE_LOGGING
               value: "true"
-            - name: CALICO_STARTUP_LOGLEVEL
-              value: WARNING
-            - name: BGP_LOGSEVERITYSCREEN
-              value: warning
             - name: FELIX_DEFAULTENDPOINTTOHOSTACTION
               value: "ACCEPT"
             - name: NO_DEFAULT_POOLS
@@ -221,7 +220,24 @@ spec:
             - name: FELIX_IPV6SUPPORT
               value: "true"
             - name: FELIX_IPINIPMTU
-              value: "1440"
+              valueFrom:
+                configMapKeyRef:
+                  name: calico-config
+                  key: veth_mtu
+            - name: FELIX_VXLANMTU
+              valueFrom:
+                configMapKeyRef:
+                  name: calico-config
+                  key: veth_mtu
+            - name: FELIX_WIREGUARDMTU
+              valueFrom:
+                configMapKeyRef:
+                  name: calico-config
+                  key: veth_mtu
+            - name: CALICO_STARTUP_LOGLEVEL
+              value: WARNING
+            - name: BGP_LOGSEVERITYSCREEN
+              value: warning
             - name: FELIX_LOGSEVERITYSCREEN
               value: WARNING
             - name: FELIX_HEALTHENABLED
@@ -233,42 +249,55 @@ spec:
               cpu: 300m
               memory: 256Mi
           livenessProbe:
-            httpGet:
-              path: /liveness
-              port: 9099
-              host: localhost
+            exec:
+              command:
+                - /bin/calico-node
+                - -felix-live
+                - -bird-live
             periodSeconds: 10
-            initialDelaySeconds: 90
+            initialDelaySeconds: 60
             failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - /bin/calico-node
+                - -felix-ready
+                - -bird-ready
+            periodSeconds: 10
           volumeMounts:
             - mountPath: /lib/modules
               name: lib-modules
               readOnly: true
+            - mountPath: /run/xtables.lock
+              name: xtables-lock
+              readOnly: false
             - mountPath: /var/run/calico
               name: var-run-calico
               readOnly: false
             - mountPath: /var/lib/calico
               name: var-lib-calico
               readOnly: false
-            - mountPath: /etc/kubernetes/pki
-              name: k8s-certs
-              readOnly: true
-            - mountPath: /etc/resolv.conf
-              name: etc-resolv-conf
+            - mountPath: /calico-secrets
+              name: etcd-certs
+            - mountPath: /sys/fs/
+              name: sysfs
+              mountPropagation: Bidirectional
+            - name: cni-log-dir
+              mountPath: /var/log/calico/cni
               readOnly: true
       volumes:
         - name: lib-modules
           hostPath:
             path: /lib/modules
             type: DirectoryOrCreate
-        - name: var-run-calico
-          hostPath:
-            path: /var/run/calico
-            type: DirectoryOrCreate
         - name: xtables-lock
           hostPath:
             path: /run/xtables.lock
             type: FileOrCreate
+        - name: var-run-calico
+          hostPath:
+            path: /var/run/calico
+            type: DirectoryOrCreate
         - name: var-lib-calico
           hostPath:
             path: /var/lib/calico
@@ -281,22 +310,24 @@ spec:
           hostPath:
             path: /etc/cni/net.d
             type: DirectoryOrCreate
-        - name: k8s-certs
+        - name: sysfs
           hostPath:
-            path: /etc/kubernetes/pki
+            path: /sys/fs/
             type: DirectoryOrCreate
-        - name: etc-resolv-conf
+        - name: cni-log-dir
           hostPath:
-            path: /etc/resolv.conf
-            type: FileOrCreate
-        - name: host-local-net-dir
-          hostPath:
-            path: /var/lib/cni/networks`
+            path: /var/log/calico/cni
+            type: DirectoryOrCreate
+        - name: etcd-certs
+          secret:
+            secretName: etcd-certs
+            defaultMode: 0400
+`
 
 	// This manifest installs the calico/kube-controllers container on each master.
 	// using kube-controllers only if you're using the etcd Datastore
 	// See https://github.com/projectcalico/kube-controllers
-	//     https://docs.projectcalico.org/v3.2/reference/kube-controllers/configuration
+	//     https://docs.projectcalico.org/archive/v3.18/reference/kube-controllers/configuration
 	//     https://github.com/kubernetes/contrib/tree/master/election
 
 	//The calico/kube-controllers container includes the following controllers:
@@ -333,10 +364,7 @@ spec:
         beta.kubernetes.io/os: linux
         beta.kubernetes.io/arch: {{ .Arch }}
       tolerations:
-        - effect: NoSchedule
-          operator: Exists
-        - effect: NoExecute
-          operator: Exists
+        - operator: Exists
       serviceAccountName: kube-controllers
       containers:
       - name: kube-controller
@@ -367,31 +395,24 @@ spec:
               configMapKeyRef:
                 name: calico-config
                 key: etcd_cert
-          - name: ENABLED_CONTROLLERS
-            value: policy,namespace,workloadendpoint,node,serviceaccount
+          - name: AUTO_HOST_ENDPOINTS
+            value: enabled
           - name: LOG_LEVEL
-            value: warning
+            value: error
         readinessProbe:
           exec:
             command:
             - /usr/bin/check-status
             - -r
         volumeMounts:
-          - mountPath: /etc/resolv.conf
-            name: etc-resolv-conf
-            readOnly: true
-          - mountPath: /etc/kubernetes
-            name: k8s-certs
+          - mountPath: /calico-secrets
+            name: etcd-certs
             readOnly: true
       volumes:
-        - name: etc-resolv-conf
-          hostPath:
-            path: /etc/resolv.conf
-            type: FileOrCreate
-        - name: k8s-certs
-          hostPath:
-            path: /etc/kubernetes
-            type: DirectoryOrCreate
+        - name: etcd-certs
+          secret:
+            secretName: etcd-certs
+            defaultMode: 0440
 `
 
 	CtlConfigMap = `
@@ -415,7 +436,8 @@ data:
       name: {{ .Name }}
     spec:
       cidr: {{ .PodSubnet }}
-      ipipMode: Never
+      ipipMode: CrossSubnet
+      vxlanMode: Never
       natOutgoing: true
 `
 
@@ -444,41 +466,38 @@ spec:
         - name: ETCD_ENDPOINTS
           value: https://127.0.0.1:2379
         - name: ETCD_CA_CERT_FILE
-          value: /etc/kubernetes/pki/etcd/ca.crt
+          value: /calico-secrets/etcd-ca
         - name: ETCD_CERT_FILE
-          value: /etc/kubernetes/pki/etcd/client.crt
+          value: /calico-secrets/etcd-cert
         - name: ETCD_KEY_FILE
-          value: /etc/kubernetes/pki/etcd/client.key
+          value: /calico-secrets/etcd-key
         image: {{ .ImageRepository }}/ctl-{{.Arch}}:{{ .Version }}
         imagePullPolicy: IfNotPresent
-        name: configure-calico
+        name: configure
         volumeMounts:
         - mountPath: /etc/config
           name: config-volume
-        - mountPath: /etc/kubernetes
-          name: k8s-certs
+        - mountPath: /calico-secrets
+          name: etcd-certs
           readOnly: true
       hostNetwork: true
       nodeSelector:
         node-role.kubernetes.io/master: ""
       tolerations:
-        - effect: NoSchedule
-          operator: Exists
-        - effect: NoExecute
-          operator: Exists
+        - operator: Exists
       restartPolicy: OnFailure
       volumes:
       - configMap:
-          defaultMode: 420
+          defaultMode: 0420
           items:
           - key: ippool.yaml
             path: calico/ippool.yaml
           name: {{ .Name }}
         name: config-volume
-      - name: k8s-certs
-        hostPath:
-          path: /etc/kubernetes
-          type: DirectoryOrCreate
+      - name: etcd-certs
+        secret:
+          secretName: etcd-certs
+          defaultMode: 0400
 `
 	// for calico/node
 	CalicoClusterRole = `
@@ -566,7 +585,8 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: kube-controllers
-  namespace: kube-system`
+  namespace: kube-system
+`
 
 	CalicoControllersClusterRoleBinding = `
 apiVersion: rbac.authorization.k8s.io/v1
@@ -578,13 +598,9 @@ roleRef:
   kind: ClusterRole
   name: system:kube-controllers
 subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: system:masters
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: system:nodes
 - kind: ServiceAccount
   name: kube-controllers
-  namespace: kube-system`
+  namespace: kube-system
+`
+
 )

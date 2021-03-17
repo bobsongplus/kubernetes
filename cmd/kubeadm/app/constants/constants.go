@@ -123,24 +123,6 @@ const (
 	// APIServerEtcdClientCertCommonName defines apiserver's etcd client certificate common name (CN)
 	APIServerEtcdClientCertCommonName = "kube-apiserver-etcd-client"
 
-	// EtcdClientCertAndKeyBaseName defines etcd client certificate and key base name
-	EtcdClientCertAndKeyBaseName = "etcd/client"
-	// EtcdClientCertName defines etcd client certificate name
-	EtcdClientCertName = "etcd/client.crt"
-	// EtcdClientKeyName defines etcd client key name
-	EtcdClientKeyName = "etcd/client.key"
-	// EtcdClientCertCommonName defines etcd client certificate common name (CN)
-	EtcdClientCertCommonName = "etcd-client"
-
-	// EtcdMetricClientCertAndKeyBaseName defines etcd metric client certificate and key base name
-	EtcdMetricClientCertAndKeyBaseName = "etcd/metric-client"
-	// EtcdMetricClientCertName defines etcd metric client certificate name
-	EtcdMetricClientCertName = "etcd/metric-client.crt"
-	// EtcdMetricClientKeyName defines etcd metric client key name
-	EtcdMetricClientKeyName = "etcd/metric-client.key"
-	// EtcdMetricClientCertCommonName defines etcd metric client certificate common name (CN)
-	EtcdMetricClientCertCommonName = "etcd-metric-client"
-
 	// ServiceAccountKeyBaseName defines SA key base name
 	ServiceAccountKeyBaseName = "sa"
 	// ServiceAccountPublicKeyName defines SA public key base name
@@ -570,9 +552,9 @@ var (
 		16: "3.3.17-0",
 		17: "3.4.3-0",
 		18: "3.4.3-0",
-		19: "3.4.13-0",
-		20: "3.4.13-0",
-		21: "3.4.13-0",
+		19: "3.4.13-3",
+		20: "3.4.13-3",
+		21: "3.4.13-3",
 		22: "3.5.6-0",
 		23: "3.5.6-0",
 		24: "3.5.6-0",

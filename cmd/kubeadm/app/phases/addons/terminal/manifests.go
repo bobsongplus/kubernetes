@@ -57,7 +57,7 @@ spec:
       - name: docker-sock
         hostPath:
           path: /var/run/docker.sock
-          type: FileOrCreate
+          type: Socket
       - name: localtime
         hostPath:
           path: /etc/localtime

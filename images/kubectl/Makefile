@@ -1,4 +1,4 @@
-Version=v1.18.15
+Version=v1.20.4
 ARCH?=amd64
 OUT_DIR?=_output
 DOCKERIZED_OUTPUT_PATH=$(shell pwd)/../../$(OUT_DIR)/dockerized/bin/linux/$(ARCH)
