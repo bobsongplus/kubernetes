@@ -164,8 +164,6 @@ func newCmdInit(out io.Writer, initOptions *initOptions) *cobra.Command {
 	initRunner.AppendPhase(phases.NewKubeConfigPhase())
 	initRunner.AppendPhase(phases.NewTokenAuthFilePhase())
 	initRunner.AppendPhase(phases.NewControlPlanePhase())
-	initRunner.AppendPhase(phases.NewKeepAlivedPhase())
-	initRunner.AppendPhase(phases.NewHaproxyPhase())
 	initRunner.AppendPhase(phases.NewEtcdPhase())
 	initRunner.AppendPhase(phases.NewWaitControlPlanePhase())
 	initRunner.AppendPhase(phases.NewUploadConfigPhase())
@@ -176,7 +174,6 @@ func newCmdInit(out io.Writer, initOptions *initOptions) *cobra.Command {
 	initRunner.AppendPhase(phases.NewKubeletFinalizePhase())
 	initRunner.AppendPhase(phases.NewAddonPhase())
 	initRunner.AppendPhase(phases.NewWebhookPhase())
-	initRunner.AppendPhase(phases.NewlbConfigPhase())
 
 	// sets the data builder function, that will be used by the runner
 	// both when running the entire workflow or single phases

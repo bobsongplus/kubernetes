@@ -54,7 +54,7 @@ func NewKubeletFinalizePhase() workflow.Phase {
 				RunAllSiblings: true,
 			},
 			{
-				Name:         "experimental-cert-rotation",
+				Name:         "cert-rotation",
 				Short:        "Enable kubelet client certificate rotation",
 				InheritFlags: []string{options.CfgPath, options.CertificatesDir},
 				Run:          runKubeletFinalizeCertRotation,

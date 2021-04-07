@@ -14,6 +14,7 @@ go_library(
         "checks_linux.go",
         "checks_unix.go",
         "checks_windows.go",
+        "kernel.go",
         "utils.go",
     ],
     importpath = "k8s.io/kubernetes/cmd/kubeadm/app/preflight",

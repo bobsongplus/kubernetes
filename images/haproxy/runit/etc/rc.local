@@ -1,0 +1,7 @@
+#!/bin/sh
+# create a directory to put enabled service files
+mkdir /etc/service/enabled
+
+cp -a /etc/service/available/confd /etc/service/enabled/
+cp -a /etc/service/available/haproxy /etc/service/enabled/
+

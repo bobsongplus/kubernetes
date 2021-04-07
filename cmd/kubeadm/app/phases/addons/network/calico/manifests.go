@@ -254,16 +254,18 @@ spec:
                 - /bin/calico-node
                 - -felix-live
                 - -bird-live
-            periodSeconds: 10
+            periodSeconds: 30
             initialDelaySeconds: 60
             failureThreshold: 6
+            timeoutSeconds: 10
           readinessProbe:
             exec:
               command:
                 - /bin/calico-node
                 - -felix-ready
                 - -bird-ready
-            periodSeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 10
           volumeMounts:
             - mountPath: /lib/modules
               name: lib-modules
@@ -404,6 +406,8 @@ spec:
             command:
             - /usr/bin/check-status
             - -r
+          periodSeconds: 30
+          timeoutSeconds: 10
         volumeMounts:
           - mountPath: /calico-secrets
             name: etcd-certs
@@ -482,7 +486,7 @@ spec:
           readOnly: true
       hostNetwork: true
       nodeSelector:
-        node-role.kubernetes.io/master: ""
+        node-role.kubernetes.io/control-plane: ""
       tolerations:
         - operator: Exists
       restartPolicy: OnFailure

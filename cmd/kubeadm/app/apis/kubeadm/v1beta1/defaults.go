@@ -20,10 +20,9 @@ import (
 	"net/url"
 	"time"
 
-	"k8s.io/kubernetes/cmd/kubeadm/app/util"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
 )
 
@@ -91,11 +90,11 @@ func SetDefaults_ClusterConfiguration(obj *ClusterConfiguration) {
 	}
 
 	if obj.Networking.PodSubnet == "" {
-		obj.Networking.PodSubnet = util.AcquirePodCIDR(172, 16, 31, util.Reverse)
+		obj.Networking.PodSubnet = kubeadm.AcquirePodCIDR(172, 16, 31, kubeadm.Reverse)
 	}
 
 	if obj.Networking.PodExtraSubnet == "" {
-		obj.Networking.PodExtraSubnet = util.AcquirePodCIDR(172, 16, 31, util.Positive)
+		obj.Networking.PodExtraSubnet = kubeadm.AcquirePodCIDR(172, 16, 31, kubeadm.Positive)
 	}
 
 	if obj.Networking.NodeSubnet == "" {

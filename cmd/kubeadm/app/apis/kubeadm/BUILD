@@ -12,6 +12,7 @@ go_library(
         "apiendpoint.go",
         "bootstraptokenhelpers.go",
         "bootstraptokenstring.go",
+        "cidr.go",
         "doc.go",
         "register.go",
         "types.go",

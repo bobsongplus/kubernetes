@@ -457,7 +457,7 @@ spec:
       hostNetwork: true
       restartPolicy: OnFailure
       nodeSelector:
-        node-role.kubernetes.io/master: ""
+        node-role.kubernetes.io/control-plane: ""
       tolerations:
         - effect: NoSchedule
           operator: Exists

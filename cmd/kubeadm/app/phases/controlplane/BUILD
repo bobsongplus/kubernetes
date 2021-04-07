@@ -29,8 +29,11 @@ go_test(
 go_library(
     name = "go_default_library",
     srcs = [
+        "kubescheduler.go",
         "manifests.go",
+        "podsecuritypolicy.go",
         "volumes.go",
+        "webhook.go",
     ],
     importpath = "k8s.io/kubernetes/cmd/kubeadm/app/phases/controlplane",
     deps = [
@@ -40,9 +43,20 @@ go_library(
         "//cmd/kubeadm/app/images:go_default_library",
         "//cmd/kubeadm/app/phases/certs:go_default_library",
         "//cmd/kubeadm/app/util:go_default_library",
+        "//cmd/kubeadm/app/util/apiclient:go_default_library",
         "//cmd/kubeadm/app/util/staticpod:go_default_library",
+        "//pkg/api/legacyscheme:go_default_library",
         "//staging/src/k8s.io/api/core/v1:go_default_library",
+        "//staging/src/k8s.io/api/policy/v1beta1:go_default_library",
+        "//staging/src/k8s.io/api/rbac/v1:go_default_library",
+        "//staging/src/k8s.io/apimachinery/pkg/api/errors:go_default_library",
+        "//staging/src/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//staging/src/k8s.io/apimachinery/pkg/runtime:go_default_library",
         "//staging/src/k8s.io/apimachinery/pkg/util/sets:go_default_library",
+        "//staging/src/k8s.io/apimachinery/pkg/util/uuid:go_default_library",
+        "//staging/src/k8s.io/client-go/kubernetes:go_default_library",
+        "//staging/src/k8s.io/client-go/kubernetes/scheme:go_default_library",
+        "//staging/src/k8s.io/kubectl/pkg/cmd/util:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
         "//vendor/k8s.io/klog/v2:go_default_library",
         "//vendor/k8s.io/utils/net:go_default_library",
@@ -58,6 +72,10 @@ filegroup(
 
 filegroup(
     name = "all-srcs",
-    srcs = [":package-srcs"],
+    srcs = [
+        ":package-srcs",
+        "//cmd/kubeadm/app/phases/controlplane/haproxy:all-srcs",
+        "//cmd/kubeadm/app/phases/controlplane/keepalived:all-srcs",
+    ],
     tags = ["automanaged"],
 )

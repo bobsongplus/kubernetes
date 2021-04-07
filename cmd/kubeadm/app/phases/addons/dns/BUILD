@@ -37,6 +37,8 @@ go_library(
         "//cmd/kubeadm/app/constants:go_default_library",
         "//cmd/kubeadm/app/features:go_default_library",
         "//cmd/kubeadm/app/images:go_default_library",
+        "//cmd/kubeadm/app/phases/addons/dnsautoscaler:go_default_library",
+        "//cmd/kubeadm/app/phases/addons/dnscache:go_default_library",
         "//cmd/kubeadm/app/util:go_default_library",
         "//cmd/kubeadm/app/util/apiclient:go_default_library",
         "//staging/src/k8s.io/api/apps/v1:go_default_library",

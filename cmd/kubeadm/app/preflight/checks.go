@@ -531,7 +531,7 @@ func (sysver SystemVerificationCheck) Check() (warnings, errorList []error) {
 
 	// run the docker validator only with docker runtime
 	if sysver.IsDocker {
-		//validators = append(validators, &system.DockerValidator{Reporter: reporter})
+		validators = append(validators, &system.DockerValidator{Reporter: reporter})
 	}
 
 	if runtime.GOOS == "linux" {

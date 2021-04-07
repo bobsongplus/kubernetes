@@ -1,0 +1,8 @@
+[template]
+src = "keepalived.conf.tmpl"
+dest = "/etc/keepalived/keepalived.conf"
+prefix = "/registry"
+keys = [
+    "/masterleases",
+]
+reload_cmd = "/sbin/sv reload /etc/service/enabled/keepalived"

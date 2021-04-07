@@ -313,6 +313,8 @@ const (
 	KubeDNS = "kube-dns"
 	// Kubelet defines variable used internally when referring to the Kubelet
 	Kubelet = "kubelet"
+	// Kubectl defines variable used internally when referring to the Kubectl
+	Kubectl = "kubectl"
 
 	// SelfHostingPrefix describes the prefix workloads that are self-hosted by kubeadm has
 	SelfHostingPrefix = "self-hosted-"

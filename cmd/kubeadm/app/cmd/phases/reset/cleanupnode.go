@@ -58,8 +58,8 @@ func runCleanupNode(c workflow.RunData) error {
 	klog.V(1).Infoln("[reset] Getting init system")
 	initSystem, err := initsystem.GetInitSystem()
 	if err != nil {
-		klog.Warningln("[reset] The kubelet service could not be stopped by kubeadm. Unable to detect a supported init system!")
-		klog.Warningln("[reset] Please ensure kubelet is stopped manually")
+		fmt.Println("[reset] The kubelet service could not be stopped by kubeadm. Unable to detect a supported init system!")
+		fmt.Println("[reset] Please ensure kubelet is stopped manually")
 	} else {
 		fmt.Println("[reset] Stopping the kubelet service")
 		if err := initSystem.ServiceStop("kubelet"); err != nil {
@@ -146,7 +146,7 @@ func resetConfigDir(configPathDir, pkiPathDir string) {
 		filepath.Join(configPathDir, kubeadmconstants.ControllerManagerKubeConfigFileName),
 		filepath.Join(configPathDir, kubeadmconstants.SchedulerKubeConfigFileName),
 		filepath.Join(configPathDir, kubeadmconstants.KeepalivedDirectory),
-		filepath.Join(configPathDir, kubeadmconstants.HaproxyDirectory),
+		filepath.Join(configPathDir, kubeadmconstants. HaproxyDirectory),
 		"/etc/systemd/system/kubelet.service",
 	}
 	fmt.Printf("[reset] Deleting files: %v\n", filesToClean)

@@ -32,6 +32,7 @@ go_library(
         "certlist.go",
         "certs.go",
         "doc.go",
+        "encryption.go",
     ],
     importpath = "k8s.io/kubernetes/cmd/kubeadm/app/phases/certs",
     deps = [

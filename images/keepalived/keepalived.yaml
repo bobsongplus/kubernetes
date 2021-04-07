@@ -1,0 +1,35 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: kube-keepalived
+  namespace: kube-system
+  labels:
+    k8s-app: keepalived
+    tier: control-plane
+spec:
+  hostNetwork: true
+  priorityClassName: system-cluster-critical
+  containers:
+    - name: keepalived
+      image: 192.168.1.220/system_containers/keepalived-amd64:2.2.0
+      volumeMounts:
+        - mountPath: /etc/confd/templates
+          name: config
+        - mountPath: /etc/kubernetes/pki
+          name: pki
+      resources:
+        requests:
+          cpu: 100m
+      securityContext:
+        privileged: true
+        capabilities:
+          add: [NET_ADMIN,NET_BROADCAST,NET_RAW]
+  volumes:
+    - name: config
+      hostPath:
+        path: /etc/kubernetes/keepalived
+        type: DirectoryOrCreate
+    - name: pki
+      hostPath:
+        path: /etc/kubernetes/pki
+        type: DirectoryOrCreate

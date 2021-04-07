@@ -406,8 +406,6 @@ func autoConvert_v1beta2_ClusterConfiguration_To_kubeadm_ClusterConfiguration(in
 	out.ClusterName = in.ClusterName
 	out.ApiServerUrl = in.ApiServerUrl
 	out.ApiServerCredential = in.ApiServerCredential
-	out.LoadBalances = *(*[]string)(unsafe.Pointer(&in.LoadBalances))
-	out.Masters = *(*[]string)(unsafe.Pointer(&in.Masters))
 	return nil
 }
 
@@ -446,8 +444,6 @@ func autoConvert_kubeadm_ClusterConfiguration_To_v1beta2_ClusterConfiguration(in
 	out.ClusterName = in.ClusterName
 	out.ApiServerUrl = in.ApiServerUrl
 	out.ApiServerCredential = in.ApiServerCredential
-	out.LoadBalances = *(*[]string)(unsafe.Pointer(&in.LoadBalances))
-	out.Masters = *(*[]string)(unsafe.Pointer(&in.Masters))
 	return nil
 }
 

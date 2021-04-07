@@ -1,0 +1,8 @@
+[template]
+src = "haproxy.cfg.tmpl"
+dest = "/usr/local/etc/haproxy/haproxy.cfg"
+prefix = "/registry"
+keys = [
+    "/masterleases",
+]
+reload_cmd = "/sbin/sv reload /etc/service/enabled/haproxy"

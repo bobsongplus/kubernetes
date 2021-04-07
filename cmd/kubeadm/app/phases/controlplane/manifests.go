@@ -142,8 +142,6 @@ func CreateStaticPodFiles(manifestDir, patchesDir string, cfg *kubeadmapi.Cluste
 
 // getAPIServerCommand builds the right API server command from the given config object and version
 func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint *kubeadmapi.APIEndpoint) []string {
-	auditPolicyFile := filepath.Join(cfg.CertificatesDir, kubeadmconstants.AuditPolicyConfigFileName)
-	auditLogFile := filepath.Join(kubeadmconstants.AuditVolumePath, kubeadmconstants.AuditLogFileName)
 	defaultArguments := map[string]string{
 		"advertise-address":               localAPIEndpoint.AdvertiseAddress,
 		"enable-admission-plugins":        "NodeRestriction,PodSecurityPolicy,Priority",
@@ -179,9 +177,9 @@ func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint 
 		"default-not-ready-toleration-seconds":   "60",
 		"default-unreachable-toleration-seconds": "60",
 		"tls-cipher-suites":   "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256",
-		"audit-policy-file":   auditPolicyFile,
+		"audit-policy-file":   filepath.Join(cfg.CertificatesDir, kubeadmconstants.AuditPolicyConfigFileName),
 		"audit-log-format":    "json",
-		"audit-log-path":      auditLogFile,
+		"audit-log-path":      filepath.Join(kubeadmconstants.AuditVolumePath, kubeadmconstants.AuditLogFileName),
 		"audit-log-maxage":    "30",
 		"audit-log-maxbackup": "10",
 		"audit-log-maxsize":   "100",
@@ -407,9 +405,10 @@ func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 	return command
 }
 
+
+//inspired by https://github.com/kubernetes/kubernetes/blob/v1.20.5/cluster/gce/gci/configure-helper.sh#L1112
 const (
-	AuditPolicy = `
-apiVersion: audit.k8s.io/v1beta1
+	AuditPolicy = `apiVersion: audit.k8s.io/v1beta1
 kind: Policy
 omitStages:
   - "RequestReceived"
@@ -419,7 +418,7 @@ rules:
     verbs: ["watch"]
     resources:
       - group: ""
-        resources: ["endpoints", "services"]
+        resources: ["endpoints", "services", "services/status"]
   - level: None
     users: ["system:unsecured"]
     namespaces: ["kube-system"]
@@ -428,17 +427,17 @@ rules:
       - group: ""
         resources: ["configmaps"]
   - level: None
-    users: ["kubelet"] # legacy kubelet identity
+    users: ["kubelet"]
     verbs: ["get"]
     resources:
       - group: ""
-        resources: ["nodes"]
+        resources: ["nodes", "nodes/status"]
   - level: None
     userGroups: ["system:nodes"]
     verbs: ["get"]
     resources:
       - group: ""
-        resources: ["nodes"]
+        resources: ["nodes", "nodes/status"]
   - level: None
     users:
       - system:kube-controller-manager
@@ -454,7 +453,20 @@ rules:
     verbs: ["get"]
     resources:
       - group: ""
-        resources: ["namespaces"]
+        resources: ["namespaces", "namespaces/status", "namespaces/finalize"]
+  - level: None
+    users: ["cluster-autoscaler"]
+    verbs: ["get", "update"]
+    namespaces: ["kube-system"]
+    resources:
+      - group: ""
+        resources: ["configmaps", "endpoints"]
+  - level: None
+    users:
+      - system:kube-controller-manager
+    verbs: ["get", "list"]
+    resources:
+      - group: "metrics.k8s.io"
   - level: None
     nonResourceURLs:
       - /healthz*
@@ -464,21 +476,42 @@ rules:
     resources:
       - group: ""
         resources: ["events"]
-  - level: None
+  - level: Request
+    users: ["kubelet", "system:node-problem-detector", "system:serviceaccount:kube-system:node-problem-detector"]
+    verbs: ["update","patch"]
     resources:
-    - group: ""
-      resources: ["pods/log", "pods/status"]
+      - group: ""
+        resources: ["nodes/status", "pods/status"]
+    omitStages:
+      - "RequestReceived"
+  - level: Request
+    userGroups: ["system:nodes"]
+    verbs: ["update","patch"]
+    resources:
+      - group: ""
+        resources: ["nodes/status", "pods/status"]
+    omitStages:
+      - "RequestReceived"
+  - level: Request
+    users: ["system:serviceaccount:kube-system:namespace-controller"]
+    verbs: ["deletecollection"]
+    omitStages:
+      - "RequestReceived"
   - level: Metadata
     resources:
       - group: ""
         resources: ["secrets", "configmaps"]
       - group: authentication.k8s.io
         resources: ["tokenreviews"]
+    omitStages:
+      - "RequestReceived"
   - level: Request
     verbs: ["get", "list", "watch"]
     resources:
       - group: ""
       - group: "admissionregistration.k8s.io"
+      - group: "apiextensions.k8s.io"
+      - group: "apiregistration.k8s.io"
       - group: "apps"
       - group: "authentication.k8s.io"
       - group: "authorization.k8s.io"
@@ -486,15 +519,21 @@ rules:
       - group: "batch"
       - group: "certificates.k8s.io"
       - group: "extensions"
+      - group: "metrics.k8s.io"
       - group: "networking.k8s.io"
+      - group: "node.k8s.io"
       - group: "policy"
       - group: "rbac.authorization.k8s.io"
-      - group: "settings.k8s.io"
+      - group: "scheduling.k8s.io"
       - group: "storage.k8s.io"
+    omitStages:
+      - "RequestReceived"
   - level: RequestResponse
     resources:
       - group: ""
       - group: "admissionregistration.k8s.io"
+      - group: "apiextensions.k8s.io"
+      - group: "apiregistration.k8s.io"
       - group: "apps"
       - group: "authentication.k8s.io"
       - group: "authorization.k8s.io"
@@ -502,12 +541,19 @@ rules:
       - group: "batch"
       - group: "certificates.k8s.io"
       - group: "extensions"
+      - group: "metrics.k8s.io"
       - group: "networking.k8s.io"
+      - group: "node.k8s.io"
       - group: "policy"
       - group: "rbac.authorization.k8s.io"
       - group: "settings.k8s.io"
+      - group: "scheduling.k8s.io"
       - group: "storage.k8s.io"
+    omitStages:
+      - "RequestReceived"
   - level: Metadata
+    omitStages:
+      - "RequestReceived"
 `
 )
 

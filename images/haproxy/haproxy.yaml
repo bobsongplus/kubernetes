@@ -1,24 +1,38 @@
 apiVersion: v1
 kind: Pod
 metadata:
-    name: haproxy-master21
+  name: kube-haproxy
+  namespace: kube-system
+  labels:
+    k8s-app: haproxy
+    tier: control-plane
 spec:
   containers:
-  - image: 192.168.1.220/system_containers/haproxy-amd64:2.1.4
-    command:
-    - haproxy
-    args: ["-db", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
+  - image: 192.168.1.220/system_containers/haproxy-amd64:2.2.11
     imagePullPolicy: IfNotPresent
     name: haproxy
+    livenessProbe:
+      failureThreshold: 8
+      httpGet:
+        host: 127.0.0.1
+        path: /stats
+        port: 9000
+      initialDelaySeconds: 60
+      timeoutSeconds: 15
     volumeMounts:
-    - mountPath: /usr/local/etc/haproxy
+    - mountPath: /etc/confd/templates
       name: config
-  enableServiceLinks: true
+    - mountPath: /etc/kubernetes/pki
+      name: pki
   hostNetwork: true
-  priority: 0
-  restartPolicy: Always
+  priorityClassName: system-cluster-critical
   volumes:
-  - hostPath:
+  - name: config
+    hostPath:
       path: /etc/kubernetes/haproxy
-      type: ""
-    name: config
+      type: DirectoryOrCreate
+  - name: pki
+    hostPath:
+      path: /etc/kubernetes/pki
+      type: DirectoryOrCreate
+

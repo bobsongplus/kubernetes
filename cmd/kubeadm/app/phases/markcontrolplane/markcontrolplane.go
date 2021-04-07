@@ -29,7 +29,7 @@ import (
 func MarkControlPlane(client clientset.Interface, controlPlaneName string, taints []v1.Taint) error {
 
 	// TODO: https://github.com/kubernetes/kubeadm/issues/2200
-	fmt.Printf("[mark-control-plane] Marking the node %s as control-plane by adding the labels \"%s=''\" and \"%s='' (deprecated)\"\n",
+	fmt.Printf("[mark-control-plane] Marking %s as control-plane by adding the labels \"%s=''\" and \"%s=''\"\n",
 		controlPlaneName, constants.LabelNodeRoleOldControlPlane, constants.LabelNodeRoleControlPlane)
 
 	if len(taints) > 0 {
@@ -37,7 +37,7 @@ func MarkControlPlane(client clientset.Interface, controlPlaneName string, taint
 		for _, taint := range taints {
 			taintStrs = append(taintStrs, taint.ToString())
 		}
-		fmt.Printf("[mark-control-plane] Marking the node %s as control-plane by adding the taints %v\n", controlPlaneName, taintStrs)
+		fmt.Printf("[mark-control-plane] Marking %s as control-plane by adding the taints %v\n", controlPlaneName, taintStrs)
 	}
 
 	return apiclient.PatchNode(client, controlPlaneName, func(n *v1.Node) {

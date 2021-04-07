@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+exec 2>&1
+CONFD=$(/usr/bin/which confd)
+if [ -z ${ETCD_ENDPOINTS} ]; then
+  exec ${CONFD} -node https://127.0.0.1:2379
+else
+  exec ${CONFD} -node ${ETCD_ENDPOINTS}
+fi
+
+

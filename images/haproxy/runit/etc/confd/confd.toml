@@ -1,0 +1,7 @@
+backend = "etcdv3"
+client_cakeys= "/etc/kubernetes/pki/etcd/ca.crt"
+client_cert = "/etc/kubernetes/pki/etcd/healthcheck-client.crt"
+client_key = "/etc/kubernetes/pki/etcd/healthcheck-client.key"
+confdir = "/etc/confd"
+log-level = "error"
+interval = 10

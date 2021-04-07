@@ -17,7 +17,6 @@ limitations under the License.
 package util
 
 import (
-	"fmt"
 	"net"
 	"net/url"
 	"strconv"
@@ -53,7 +52,7 @@ func GetControlPlaneEndpoint(controlPlaneEndpoint string, localEndpoint *kubeadm
 		localEndpointPort := strconv.Itoa(int(localEndpoint.BindPort))
 		if port != "" {
 			if port != localEndpointPort {
-				fmt.Println("[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address")
+				//fmt.Println("[endpoint] WARNING: port specified in controlPlaneEndpoint overrides bindPort in the controlplane address")
 			}
 		} else {
 			port = localEndpointPort
