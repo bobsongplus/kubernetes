@@ -1,18 +1,18 @@
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: InitConfiguration
 bootstrapTokens:
-- ttl: 0s
+  - ttl: 0s
 nodeRegistration:
   taints:
-  - effect: NoSchedule
-    key: node-role.kubernetes.io/master
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
 localAPIEndpoint:
-  bindPort: {{BINDPORT}}
+  bindPort: {{bindPort}}
   {{advertiseAddress}}
 ---
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
-kubernetesVersion: {{K8S_VERSION}}
+kubernetesVersion: {{kubernetesVersion}}
 imageRepository: {{REGISTRY_SERVER}}/{{REGISTRY_USER}}
 {{controlPlaneEndpoint}}
 apiServer:
@@ -31,8 +31,6 @@ dns:
 {{apiServerUrl}}
 {{apiServerCredential}}
 {{clusterName}}
-{{loadBalances}}
-{{masters}}
 networking:
   plugin: {{networkPlugin}}
   {{networkMode}}

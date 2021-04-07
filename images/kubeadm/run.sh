@@ -3,14 +3,11 @@ REGISTRY_SERVER="index.tenxcloud.com"
 REGISTRY_USER="system_containers"
 K8S_VERSION="v1.20.4"
 ETCD_VERSION="3.4.13-3"
-CALICO_VERSION="v3.18.0"
-HA_BINDPORT="16443"
-MASTER_BINDPORT="6443"
-KUBE_PROXY_MODE="ipvs"
+INTERNAL_BINDPORT="16443"
+DEFAULT_BINDPORT="6443"
 ARCH="amd64"
-kubeadm_dir="."
-kubeadm_config_file="${kubeadm_dir}/kubeadm-config.yaml"
-tmp_file="/tmp/kubeadm-config.yaml"
+kubeadm_config_tmpl="kubeadm-config.yaml"
+kubeadm_config_file="/tmp/kubeadm-config.yaml"
 welcome() {
 message="$(cat <<EOF
 *******************************************************
@@ -84,22 +81,13 @@ echo "}"
 
 
 
-# ${REGISTRY_SERVER} ${REGISTRY_USER}  "node"
+# ${REGISTRY_SERVER} ${REGISTRY_USER}
 PullImage=$(cat <<EOF
   PullImage() {
   echo "Pulling Necessary Images from \${1}"
   docker pull \${1}/\${2}/kube-proxy-${ARCH}:${K8S_VERSION}
   docker pull \${1}/\${2}/kubelet-${ARCH}:${K8S_VERSION}
   docker pull \${1}/\${2}/kubectl-${ARCH}:${K8S_VERSION}
-  docker pull \${1}/\${2}/node-${ARCH}:${CALICO_VERSION}
-  docker pull \${1}/\${2}/cni-${ARCH}:${CALICO_VERSION}
-  if [ \${3} == "master" ]; then
-      docker pull \${1}/\${2}/kube-scheduler-${ARCH}:${K8S_VERSION}
-      docker pull \${1}/\${2}/kube-controller-manager-${ARCH}:${K8S_VERSION}
-      docker pull \${1}/\${2}/kube-apiserver-${ARCH}:${K8S_VERSION}
-      docker pull  \${1}/\${2}/etcd-${ARCH}:${ETCD_VERSION}
-      docker pull \${1}/\${2}/ctl-${ARCH}:${CALICO_VERSION}
-  fi
   }
 EOF
 )
@@ -118,26 +106,10 @@ echo "Uninstall Node Successfully"
 EOF
 }
 
-#Deploy kubernetes master
-kubeadm_init_configure() {
+
+init_configure() {
     local advertiseAddress=""
-    local BINDPORT="${SINGLE_MASTER_BINDPORT}"
-    if [[ -n "${MASTERS}" ]];then
-        BINDPORT="${HA_BINDPORT}"
-    fi
-
-    if [[ -n "${ADDRESS}" ]]; then
-        advertiseAddress="advertiseAddress: ${ADDRESS}"
-    fi
-
-    if [[ -n "${BINDPORT}" ]]; then
-        BINDPORT="${BINDPORT}"
-    fi
-    sed -i -e "s@{{advertiseAddress}}@${advertiseAddress}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{BINDPORT}}@${BINDPORT}@g" "${kubeadm_config_file}"
-}
-
-kubeadm_configure() {
+    local bindPort=""
     local certSANs=""
     local controlPlaneEndpoint=""
     local serverCertSANs=""
@@ -151,7 +123,18 @@ kubeadm_configure() {
     local serviceSubnet=""
     local nodeSubnet=""
     local dnsDomain=""
+    local kubeProxyMode="ipvs"
 
+
+    if [[ -n "${ADDRESS}" ]]; then
+        advertiseAddress="advertiseAddress: ${ADDRESS}"
+    fi
+    # none HA
+    if [[ -n "${BINDPORT}" ]]; then
+        bindPort="${BINDPORT}"
+    else
+        bindPort=${DEFAULT_BINDPORT}
+    fi
 
     if [[ -n "${CERT_EXTRA_SANS}" ]]; then
         serverCertSANs+="serverCertSANs: ["
@@ -168,9 +151,14 @@ kubeadm_configure() {
     if [[ -n "${certSANs}" ]];then
         certSANs+="]"
     fi
-
+    # HA
     if [[ -n "${VIP}" ]]; then
-        controlPlaneEndpoint="controlPlaneEndpoint: ${VIP}:${MASTER_BINDPORT}"
+        if [[ -n "${BINDPORT}" ]]; then
+           controlPlaneEndpoint="controlPlaneEndpoint: ${VIP}:${BINDPORT}"
+        else
+           controlPlaneEndpoint="controlPlaneEndpoint: ${VIP}":${DEFAULT_BINDPORT}
+        fi
+        bindPort=${INTERNAL_BINDPORT}
         if [[ -n "${serverCertSANs}" ]]; then
             serverCertSANs+=",${VIP}"
         else
@@ -183,15 +171,15 @@ kubeadm_configure() {
     fi
 
     if [[ -n "${SERVER_URL}" ]] && [[ -n "${CREDENTIAL}" ]]; then
-        apiServerUrl+="ApiServerUrl: ${SERVER_URL}"
-        apiServerCredential+="ApiServerCredential: ${CREDENTIAL}"
+        apiServerUrl+="apiServerUrl: ${SERVER_URL}"
+        apiServerCredential+="apiServerCredential: ${CREDENTIAL}"
     fi
     if [[ -n "${CLUSTERID}" ]]; then
         clusterName+="clusterName: ${CLUSTERID}"
     fi
 
     if [[ -n "${NETWORK_MODE}" ]]; then
-        networkMode="Mode: ${NETWORK_MODE}"
+        networkMode="mode: ${NETWORK_MODE}"
     fi
 
     if [[ -n "${POD_CIDR}" ]]; then
@@ -213,63 +201,44 @@ kubeadm_configure() {
     if [[ -n "${NETWORK_PLUGIN}" ]]; then
         networkPlugin="${NETWORK_PLUGIN}"
     fi
-    if [[ -n "${MASTERS}" ]];then
-        masters+="Masters: ["
-        delim=""
-        sans=${MASTERS//,/ }
-        for san in ${sans}; do
-            tmp=${delim}${san}
-            masters+=${tmp}
-            delim=","
-        done
-        masters+="]"
-    fi
-    if [[ -n "${LOADBALANCES}" ]];then
-        loadbalances+="LoadBalances: ["
-        delim=""
-        sans=${LOADBALANCES//,/ }
-        for san in ${sans}; do
-            tmp=${delim}${san}
-            loadbalances+=${tmp}
-            delim=","
-        done
-        loadbalances+="]"
-    fi
-
     if [[ -n "${PROXY_MODE}" ]];then
-        KUBE_PROXY_MODE=${PROXY_MODE}
+        kubeProxyMode=${PROXY_MODE}
     fi
 
+    cp "${kubeadm_config_tmpl}" "${kubeadm_config_file}" >/dev/null 2>&1
+    # mac sed diff linux sed usage
+    sed -i  "s@{{advertiseAddress}}@${advertiseAddress}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{bindPort}}@${bindPort}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{kubernetesVersion}}@${K8S_VERSION}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{REGISTRY_SERVER}}@${REGISTRY_SERVER}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{REGISTRY_USER}}@${REGISTRY_USER}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{certSANs}}@${certSANs}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{controlPlaneEndpoint}}@${controlPlaneEndpoint}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{serverCertSANs}}@${serverCertSANs}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{apiServerUrl}}@${apiServerUrl}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{apiServerCredential}}@${apiServerCredential}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{clusterName}}@${clusterName}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{networkMode}}@${networkMode}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{podSubnet}}@${podSubnet}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{podExtraSubnet}}@${podExtraSubnet}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{serviceSubnet}}@${serviceSubnet}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{nodeSubnet}}@${nodeSubnet}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{dnsDomain}}@${dnsDomain}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{networkPlugin}}@${networkPlugin}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{kubeProxyMode}}@${kubeProxyMode}@g" "${kubeadm_config_file}"
 
-    sed -i -e "s@{{K8S_VERSION}}@${K8S_VERSION}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{REGISTRY_SERVER}}@${REGISTRY_SERVER}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{REGISTRY_USER}}@${REGISTRY_USER}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{certSANs}}@${certSANs}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{controlPlaneEndpoint}}@${controlPlaneEndpoint}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{serverCertSANs}}@${serverCertSANs}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{apiServerUrl}}@${apiServerUrl}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{apiServerCredential}}@${apiServerCredential}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{clusterName}}@${clusterName}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{networkMode}}@${networkMode}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{podSubnet}}@${podSubnet}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{podExtraSubnet}}@${podExtraSubnet}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{serviceSubnet}}@${serviceSubnet}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{nodeSubnet}}@${nodeSubnet}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{dnsDomain}}@${dnsDomain}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{networkPlugin}}@${networkPlugin}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{masters}}@${masters}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{loadBalances}}@${loadbalances}@g" "${kubeadm_config_file}"
-    sed -i -e "s@{{kubeProxyMode}}@${KUBE_PROXY_MODE}@g" "${kubeadm_config_file}"
 }
 
 do_init() {
+    cp /kubeadm  /tmp/  > /dev/null 2>&1
     cat <<EOF
 #!/bin/bash
 $(welcome)
 welcome
 ${Clean}
 Clean
-/tmp/kubeadm init  ${KUBEADM_ARGS} --config "${tmp_file}"
+/tmp/kubeadm config images pull --config "${kubeadm_config_file}"
+/tmp/kubeadm init  ${KUBEADM_ARGS} --config "${kubeadm_config_file}"
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"
 else
@@ -277,38 +246,26 @@ else
    exit 1
 fi
 mkdir -p $HOME/.kube
-if [[ -f $HOME/.kube/config ]];then rm -rf $HOME/.kube/config;fi
+if [[ -f $HOME/.kube/config ]];then rm -f $HOME/.kube/config;fi
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 EOF
-    # exit code of kubeadm
-    exit 0
-    #Normal master mode end
 }
 
-install_ctl_binary() {
-    cp /kubeadm  /tmp/  > /dev/null 2>&1
-    cp "${kubeadm_config_file}" "${tmp_file}" >/dev/null 2>&1
-cat <<EOF
-    ${PullImage}
-    PullImage ${REGISTRY_SERVER} ${REGISTRY_USER}  "master"
-
-    if [[ \$? -ne 0  ]];then
-        echo "Kubernetes Enterprise Edition cluster deployed  failed!"
-        exit 1
-    fi
-    cp /tmp/kubeadm /usr/bin/  >/dev/null
+install_binary() {
+    cat <<EOF
+    mv /tmp/kubeadm /usr/bin/  >/dev/null
 
     docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubectl-${ARCH}:${K8S_VERSION} /usr/bin/kubectl /tmp/kubectl
-    rm -rf $(which kubectl)
+    rm -f /usr/bin/kubectl
     mv /tmp/kubectl /usr/bin/  >/dev/null
 
     docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/etcd-${ARCH}:${ETCD_VERSION}  /usr/local/bin/etcdctl /tmp/etcdctl
-    rm -rf $(which etcdctl)
+    rm -f /usr/bin/etcdctl
     mv /tmp/etcdctl /usr/bin/  >/dev/null
 
     docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubectl-${ARCH}:${K8S_VERSION} /usr/bin/calicoctl /tmp/calicoctl
-    rm -rf $(which calicoctl)
+    rm -f /usr/bin/calicoctl
     mv /tmp/calicoctl /usr/bin/  >/dev/null
     $(CalicoConfig)
     CalicoConfig
@@ -316,16 +273,15 @@ EOF
 }
 
 Init(){
-    kubeadm_init_configure
-    kubeadm_configure
-    install_ctl_binary
+    init_configure
     do_init
+    install_binary
 }
 
 Join() {
   #copy kubeadm from containers to /tmp
   cp /kubeadm  /tmp/ > /dev/null 2>&1
-  controlPlaneEndpoint=${MASTER}:${MASTER_BINDPORT}
+  local controlPlaneEndpoint=${MASTER}:${DEFAULT_BINDPORT}
   if [[ -n "${BINDPORT}" ]]; then
     controlPlaneEndpoint=${MASTER}:${BINDPORT}
   fi
@@ -358,9 +314,8 @@ EOF
   if [[ -n "${BINDPORT}" ]]; then
       apiServerBindPort="--apiserver-bind-port ${BINDPORT}"
   else
-      apiServerBindPort="--apiserver-bind-port ${HA_BINDPORT}"
+      apiServerBindPort="--apiserver-bind-port ${INTERNAL_BINDPORT}"
   fi
-  InstallBinary
 
 
   cat <<EOF
@@ -370,9 +325,8 @@ welcome
 ${Clean}
 Clean
 
-${PullImage}
-PullImage ${REGISTRY_SERVER} ${REGISTRY_USER}  "node"
-/tmp/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint}  ${apiServerAdvertiseAddress}  ${apiServerBindPort}   --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH}  --control-plane --certificate-key areyoukidingme ${KUBEADM_ARGS}
+/tmp/kubeadm config images pull --image-repository=${REGISTRY_SERVER}/${REGISTRY_USER}
+/tmp/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint}  ${apiServerAdvertiseAddress}  ${apiServerBindPort}   --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH}  --control-plane --certificate-key areyoukidingme
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"
 else
@@ -380,10 +334,11 @@ else
    exit 1
 fi
 mkdir -p $HOME/.kube
-if [[ -f $HOME/.kube/config ]];then rm -rf $HOME/.kube/config;fi
+if [[ -f $HOME/.kube/config ]];then rm -f $HOME/.kube/config;fi
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 EOF
+   install_binary
    exit 0
     #join control plane end
   fi
@@ -396,14 +351,15 @@ welcome
 ${Clean}
 Clean
 ${PullImage}
-PullImage ${REGISTRY_SERVER} ${REGISTRY_USER}  "node"
-/tmp/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint} --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH} ${KUBEADM_ARGS}
+PullImage ${REGISTRY_SERVER} ${REGISTRY_USER}
+/tmp/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint} --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH}
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"
 else
    echo "Kubernetes Enterprise Edition cluster deployed  failed!"
    exit 1
 fi
+rm -f /tmp/kubeadm
 EOF
 exit 0
 }

@@ -18,16 +18,15 @@ package phases
 
 import (
 	"fmt"
+
+	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-
-	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
-
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
+	bootstraptokenv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/controlplane/haproxy"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/controlplane/keepalived"
 
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
@@ -66,6 +65,8 @@ func NewControlPlanePreparePhase() workflow.Phase {
 			newControlPlanePrepareKubeconfigSubphase(),
 			newControlPlanePrepareControlPlaneSubphase(),
 			newControlPlanePrepareTokenAuthSubphase(),
+			newControlPlanePrepareHAProxySubphase(),
+			newControlPlanePrepareKeepalivedSubphase(),
 		},
 	}
 }
@@ -186,6 +187,24 @@ func newControlPlanePrepareTokenAuthSubphase() workflow.Phase {
 	}
 }
 
+func newControlPlanePrepareHAProxySubphase() workflow.Phase {
+	return workflow.Phase{
+		Name:         "haproxy",
+		Short:        "Generates haproxy manifest for the new control plane components",
+		Run:          runHAProxy,
+		InheritFlags: getControlPlanePreparePhaseFlags("all"),
+	}
+}
+
+func newControlPlanePrepareKeepalivedSubphase() workflow.Phase {
+	return workflow.Phase{
+		Name:         "keepalived",
+		Short:        "Generates keepalived manifest for the new control plane components",
+		Run:          runKeepalived,
+		InheritFlags: getControlPlanePreparePhaseFlags("all"),
+	}
+}
+
 func newControlPlanePrepareCreateEncryptphase() workflow.Phase {
 	//getControlPlanePreparePhaseFlags("certs"),
 	return workflow.Phase{
@@ -211,7 +230,7 @@ func runTokenAuth(c workflow.RunData) error {
 	}
 	var tokenSecret string
 	if data.Cfg().Discovery.BootstrapToken != nil {
-		bts, err := kubeadmapi.NewBootstrapTokenString(data.Cfg().Discovery.BootstrapToken.Token)
+		bts, err := bootstraptokenv1.NewBootstrapTokenString(data.Cfg().Discovery.BootstrapToken.Token)
 		if err != nil {
 			klog.V(3).Infoln("[token-auth] tokenSecret is nil.")
 			return err
@@ -219,6 +238,42 @@ func runTokenAuth(c workflow.RunData) error {
 		tokenSecret = bts.Secret
 	}
 	return controlplane.CreateTokenAuthFile(cfg.CertificatesDir, tokenSecret)
+}
+
+func runHAProxy(c workflow.RunData) error {
+	data, ok := c.(JoinData)
+	if !ok {
+		return errors.New("haproxy phase invoked with an invalid data struct")
+	}
+	if data.Cfg().ControlPlane == nil {
+		return nil
+	}
+	cfg, err := data.InitCfg()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Join(kubeadmconstants.KubernetesDir, kubeadmconstants.HaproxyDirectory), 0700); err != nil {
+		return errors.Wrapf(err, "failed to create haproxy directory %q", kubeadmconstants.HaproxyDirectory)
+	}
+	return haproxy.CreateHaproxyStaticPod(cfg)
+}
+
+func runKeepalived(c workflow.RunData) error {
+	data, ok := c.(JoinData)
+	if !ok {
+		return errors.New("keepalived phase invoked with an invalid data struct")
+	}
+	if data.Cfg().ControlPlane == nil {
+		return nil
+	}
+	cfg, err := data.InitCfg()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Join(kubeadmconstants.KubernetesDir, kubeadmconstants.KeepalivedDirectory), 0700); err != nil {
+		return errors.Wrapf(err, "failed to create keepalived directory %q", kubeadmconstants.KeepalivedDirectory)
+	}
+	return keepalived.CreateKeepalivedStaticPod(cfg)
 }
 
 func runControlPlanePrepareControlPlaneSubphase(c workflow.RunData) error {

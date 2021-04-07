@@ -237,6 +237,9 @@ spec:
       - name: cni-conf
         hostPath:
           path: /etc
+      - name: cni-machine-id
+        hostPath:
+          path: /etc/machine-id
       - name: dbus
         hostPath:
           path: /var/lib/dbus

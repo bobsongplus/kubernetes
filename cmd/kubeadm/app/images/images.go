@@ -23,14 +23,20 @@ import (
 	"k8s.io/klog/v2"
 
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
-	kubeadmapiv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
+	kubeadmapiv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/calico"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/flannel"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/ovn"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/weavenet"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/controlplane/haproxy"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/controlplane/keepalived"
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
 )
 
 // GetGenericImage generates and returns a platform agnostic image (backed by manifest list)
 func GetGenericImage(prefix, image, tag string) string {
-	return fmt.Sprintf("%s/%s:%s", prefix, image, tag)
+	return fmt.Sprintf("%s/%s-%s:%s", prefix, image, runtime.GOARCH, tag)
 }
 
 // GetKubernetesImage generates and returns the image for the components managed in the Kubernetes main repository,
@@ -51,7 +57,7 @@ func GetDNSImage(cfg *kubeadmapi.ClusterConfiguration) string {
 		dnsImageRepository = cfg.DNS.ImageRepository
 	}
 	// Handle the renaming of the official image from "registry.k8s.io/coredns" to "registry.k8s.io/coredns/coredns
-	if dnsImageRepository == kubeadmapiv1beta2.DefaultImageRepository {
+	if dnsImageRepository == kubeadmapiv1.DefaultImageRepository {
 		dnsImageRepository = fmt.Sprintf("%s/coredns", dnsImageRepository)
 	}
 	// DNS uses an imageTag that corresponds to the DNS version matching the Kubernetes version
@@ -87,7 +93,32 @@ func GetEtcdImage(cfg *kubeadmapi.ClusterConfiguration) string {
 	if cfg.Etcd.Local != nil && cfg.Etcd.Local.ImageTag != "" {
 		etcdImageTag = cfg.Etcd.Local.ImageTag
 	}
-	return GetGenericImage(etcdImageRepository, fmt.Sprintf("%s-%s", constants.Etcd, runtime.GOARCH), etcdImageTag)
+	return GetGenericImage(etcdImageRepository, constants.Etcd, etcdImageTag)
+}
+
+// GetNetworkingImage generates and returns the image for networking
+func GetNetworkingImage(cfg *kubeadmapi.ClusterConfiguration) []string {
+	imgs := []string{}
+	repoPrefix := cfg.GetControlPlaneImageRepository()
+	if cfg.Networking.Plugin == constants.Calico {
+		imgs = append(imgs, GetGenericImage(repoPrefix, "node", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "kube-controllers", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "cni", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "ctl", calico.Version))
+	} else if cfg.Networking.Plugin == constants.Flannel {
+		imgs = append(imgs, GetGenericImage(repoPrefix, "flannel", flannel.Version))
+	} else if cfg.Networking.Plugin == constants.Ovn {
+		imgs = append(imgs, GetGenericImage(repoPrefix, "ovn", ovn.Version))
+	} else if cfg.Networking.Plugin == constants.Weave {
+		imgs = append(imgs, GetGenericImage(repoPrefix, "weave-kube", weavenet.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "weave-npc", weavenet.Version))
+	}
+	// HA
+	if len(cfg.ControlPlaneEndpoint) != 0 {
+		imgs = append(imgs, GetGenericImage(repoPrefix, "haproxy", haproxy.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "keepalived", keepalived.Version))
+	}
+	return imgs
 }
 
 // GetControlPlaneImages returns a list of container images kubeadm expects to use on a control plane node
@@ -99,6 +130,8 @@ func GetControlPlaneImages(cfg *kubeadmapi.ClusterConfiguration) []string {
 	imgs = append(imgs, GetKubernetesImage(constants.KubeControllerManager, cfg))
 	imgs = append(imgs, GetKubernetesImage(constants.KubeScheduler, cfg))
 	imgs = append(imgs, GetKubernetesImage(constants.KubeProxy, cfg))
+	imgs = append(imgs, GetKubernetesImage(constants.Kubelet, cfg))
+	imgs = append(imgs, GetKubernetesImage(constants.Kubectl, cfg))
 
 	// pause is not available on the ci image repository so use the default image repository.
 	imgs = append(imgs, GetPauseImage(cfg))
@@ -111,6 +144,7 @@ func GetControlPlaneImages(cfg *kubeadmapi.ClusterConfiguration) []string {
 	// Append the appropriate DNS images
 	imgs = append(imgs, GetDNSImage(cfg))
 
+	imgs = append(imgs, GetNetworkingImage(cfg)...)
 	return imgs
 }
 

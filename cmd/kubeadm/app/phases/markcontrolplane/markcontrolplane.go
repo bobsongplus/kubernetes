@@ -42,7 +42,7 @@ func MarkControlPlane(client clientset.Interface, controlPlaneName string, taint
 		for _, taint := range taints {
 			taintStrs = append(taintStrs, taint.ToString())
 		}
-		fmt.Printf("[mark-control-plane] Marking the node %s as control-plane by adding the taints %v\n", controlPlaneName, taintStrs)
+		fmt.Printf("[mark-control-plane] Marking %s as control-plane by adding the taints %v\n", controlPlaneName, taintStrs)
 	}
 
 	return apiclient.PatchNode(client, controlPlaneName, func(n *v1.Node) {

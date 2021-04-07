@@ -13,7 +13,7 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/pkiutil"
 )
 
-// UploadEtcdMetricClientCerts load the certificates from the disk and upload to a Secret.
+// UploadEtcdClientCerts load the certificates from the disk and upload to a Secret.
 func UploadEtcdClientCerts(client clientset.Interface, cfg *kubeadmapi.InitConfiguration) error {
 	certsDir := cfg.CertificatesDir
 

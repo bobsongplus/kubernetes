@@ -343,6 +343,8 @@ const (
 	CoreDNS = "CoreDNS"
 	// Kubelet defines variable used internally when referring to the Kubelet
 	Kubelet = "kubelet"
+	// Kubectl defines variable used internally when referring to the Kubectl
+	Kubectl = "kubectl"
 
 	// KubeCertificatesVolumeName specifies the name for the Volume that is used for injecting certificates to control plane components (can be both a hostPath volume or a projected, all-in-one volume)
 	KubeCertificatesVolumeName = "k8s-certs"

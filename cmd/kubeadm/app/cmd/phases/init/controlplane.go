@@ -18,6 +18,8 @@ package phases
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 
@@ -26,6 +28,9 @@ import (
 	cmdutil "k8s.io/kubernetes/cmd/kubeadm/app/cmd/util"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/controlplane"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/controlplane/haproxy"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/controlplane/keepalived"
+
 )
 
 var (
@@ -78,6 +83,8 @@ func NewControlPlanePhase() workflow.Phase {
 			newControlPlaneSubphase(kubeadmconstants.KubeAPIServer),
 			newControlPlaneSubphase(kubeadmconstants.KubeControllerManager),
 			newControlPlaneSubphase(kubeadmconstants.KubeScheduler),
+			newControlPlaneHAProxySubphase(),
+			newControlPlaneKeepalivedSubphase(),
 		},
 		Run: runControlPlanePhase,
 	}
@@ -90,6 +97,28 @@ func newControlPlaneSubphase(component string) workflow.Phase {
 		Short:        controlPlanePhaseProperties[component].short,
 		Run:          runControlPlaneSubphase(component),
 		InheritFlags: getControlPlanePhaseFlags(component),
+	}
+	return phase
+}
+
+func newControlPlaneHAProxySubphase() workflow.Phase {
+	phase := workflow.Phase{
+		Name:         "haproxy",
+		Short:        "Generates the haproxy static Pod manifest",
+		Long:         cmdutil.MacroCommandLongDescription,
+		Run:          runControlPlaneHAProxySubphase(),
+		InheritFlags: getControlPlanePhaseFlags("all"),
+	}
+	return phase
+}
+
+func newControlPlaneKeepalivedSubphase() workflow.Phase {
+	phase := workflow.Phase{
+		Name:         "keepalived",
+		Short:        "Generates the keepalived static Pod manifest",
+		Long:         cmdutil.MacroCommandLongDescription,
+		Run:          runControlPlaneKeepalivedSubphase(),
+		InheritFlags: getControlPlanePhaseFlags("all"),
 	}
 	return phase
 }
@@ -149,3 +178,42 @@ func runControlPlaneSubphase(component string) func(c workflow.RunData) error {
 		return controlplane.CreateStaticPodFiles(data.ManifestDir(), data.PatchesDir(), &cfg.ClusterConfiguration, &cfg.LocalAPIEndpoint, data.DryRun(), component)
 	}
 }
+
+func runControlPlaneHAProxySubphase() func(c workflow.RunData) error {
+	return func(c workflow.RunData) error {
+		data, ok := c.(InitData)
+		if !ok {
+			return errors.New("haproxy phase invoked with an invalid data struct")
+		}
+		if data.DryRun() {
+			return nil
+		}
+		if data.Cfg().ControlPlaneEndpoint == "" {
+			return nil
+		}
+		if err := os.MkdirAll(filepath.Join(kubeadmconstants.KubernetesDir, kubeadmconstants.HaproxyDirectory), 0700); err != nil {
+			return errors.Wrapf(err, "failed to create haproxy directory %q", kubeadmconstants.HaproxyDirectory)
+		}
+		return haproxy.CreateHaproxyStaticPod(data.Cfg())
+	}
+}
+
+func runControlPlaneKeepalivedSubphase() func(c workflow.RunData) error {
+	return func(c workflow.RunData) error {
+		data, ok := c.(InitData)
+		if !ok {
+			return errors.New("keepalived phase invoked with an invalid data struct")
+		}
+		if  data.DryRun() {
+			return nil
+		}
+		if data.Cfg().ControlPlaneEndpoint == "" {
+			return nil
+		}
+		if err := os.MkdirAll(filepath.Join(kubeadmconstants.KubernetesDir, kubeadmconstants.KeepalivedDirectory), 0700); err != nil {
+			return errors.Wrapf(err, "failed to create keepalived directory %q", kubeadmconstants.KeepalivedDirectory)
+		}
+		return keepalived.CreateKeepalivedStaticPod(data.Cfg())
+	}
+}
+

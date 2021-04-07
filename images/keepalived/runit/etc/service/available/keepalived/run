@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+while [ ! -f /etc/keepalived/keepalived.conf ]; do
+  echo "keepalived.conf file has not been initialized, delayed 5s starting"
+  sleep 5
+done
+echo "keepalived  started successfully"
+
+exec 2>&1
+KEEPALIVED=$(/usr/bin/which keepalived)
+exec ${KEEPALIVED} --dont-fork --log-console --log-detail --dump-conf -f /etc/keepalived/keepalived.conf

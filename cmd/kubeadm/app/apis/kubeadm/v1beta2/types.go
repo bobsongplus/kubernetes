@@ -113,16 +113,10 @@ type ClusterConfiguration struct {
 	ClusterName string `json:"clusterName,omitempty"`
 
 	// TenxCloud Enterprise Server Address
-	ApiServerUrl string
+	ApiServerUrl string `json:"apiServerUrl,omitempty"`
 
 	// Credential to access TenxCloud Enterprise Server
-	ApiServerCredential string
-
-	//loadbalances haproxy loadbalances ip list, jsut add haproxy static pod on master
-	LoadBalances []string
-
-	//master ip list, will create configmap in kube-system, if loadbalances if empty, will add haproxy static pod on each master
-	Masters []string
+	ApiServerCredential string `json:"apiServerCredential,omitempty"`
 }
 
 // ControlPlaneComponent holds settings common to control plane component of the cluster
