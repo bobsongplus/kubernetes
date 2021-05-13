@@ -70,7 +70,7 @@ spec:
           httpGet:
             host: {{ .LocalDNSAddress }}
             path: /health
-            port: 8080
+            port: 60888
           initialDelaySeconds: 60
           timeoutSeconds: 5
         volumeMounts:
@@ -119,7 +119,7 @@ data:
            force_tcp
         }
         prometheus :9253
-        health {{ .LocalDNSAddress }}:8080
+        health {{ .LocalDNSAddress }}:60888
         }
     in-addr.arpa:53 {
         errors
@@ -149,9 +149,7 @@ data:
         reload
         loop
         bind {{ .LocalDNSAddress }} {{ .DNSServerAddress }}
-        forward . __PILLAR__UPSTREAM__SERVERS__ {
-          force_tcp
-        }
+        forward . __PILLAR__UPSTREAM__SERVERS__
         prometheus :9253
         }
 `

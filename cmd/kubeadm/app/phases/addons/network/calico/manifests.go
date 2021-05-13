@@ -50,7 +50,7 @@ data:
                   "type": "k8s"
              },
             "kubernetes": {
-                "kubeconfig": "/etc/kubernetes/kubelet.conf"
+                "kubeconfig": "/etc/cni/net.d/calico-kubeconfig"
              }
           },{
              "type": "portmap",
