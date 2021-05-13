@@ -3,7 +3,7 @@ package multus
 const (
 	MultusVersion = "v3.6"
 
-	MultusControllerVersion = "v1.0"
+	MultusControllerVersion = "v1.1"
 
 	ClusterRole = `
 kind: ClusterRole
