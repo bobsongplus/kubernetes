@@ -27,7 +27,6 @@ import (
 	dnsaddon "k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/dns"
 	networkaddon "k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network"
 	proxyaddon "k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/proxy"
-	serviceproxyaddon "k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/serviceproxy"
 	terminaladdon "k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/terminal"
 )
 
@@ -152,10 +151,11 @@ func runNetworkAddon(c workflow.RunData) error {
 	if err != nil {
 		return err
 	}
-	err = serviceproxyaddon.EnsureServiceProxyAddon(&cfg.ClusterConfiguration, client)
-	if err != nil {
-		return err
-	}
+	// remove service proxy form tde-v5.3.0
+	//err = serviceproxyaddon.EnsureServiceProxyAddon(&cfg.ClusterConfiguration, client)
+	//if err != nil {
+	//	return err
+	//}
 	return networkaddon.EnsureNetworkAddons(cfg, client)
 }
 
