@@ -20,6 +20,7 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 )
 
+// remove service proxy form tde-v5.3.0
 func EnsureServiceProxyAddon(cfg *kubeadmapi.ClusterConfiguration, client clientset.Interface) error {
 
 	tenxProxyConfigMapBytes, err := kubeadmutil.ParseTemplate(TenxProxyDomainConfigMap, nil)

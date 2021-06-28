@@ -6,15 +6,15 @@
 package flannel
 
 /**
- *  quay.io/coreos/flannel:v0.13.0
- *  quay.io/coreos/flannel:v0.13.0-amd64
+ *  quay.io/coreos/flannel:v0.14.0
+ *  quay.io/coreos/flannel:v0.14.0-amd64
  *  https://github.com/coreos/flannel/blob/master/Documentation/configuration.md
  *  https://github.com/coreos/flannel/blob/master/Documentation/backends.md
  *  https://github.com/coreos/flannel/blob/master/Documentation/kube-flannel.yml
  */
 
 const (
-	Version = "v0.13.0"
+	Version = "v0.14.0"
 
 	ConfigMap = `
 kind: ConfigMap
