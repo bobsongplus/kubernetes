@@ -414,98 +414,43 @@ omitStages:
   - "RequestReceived"
 rules:
   - level: None
-    users: ["system:kube-proxy"]
-    verbs: ["watch"]
-    resources:
-      - group: ""
-        resources: ["endpoints", "services", "services/status"]
-  - level: None
-    users: ["system:unsecured"]
-    namespaces: ["kube-system"]
-    verbs: ["get"]
-    resources:
-      - group: ""
-        resources: ["configmaps"]
-  - level: None
-    users: ["kubelet"]
-    verbs: ["get"]
-    resources:
-      - group: ""
-        resources: ["nodes", "nodes/status"]
-  - level: None
-    userGroups: ["system:nodes"]
-    verbs: ["get"]
-    resources:
-      - group: ""
-        resources: ["nodes", "nodes/status"]
-  - level: None
-    users:
-      - system:kube-controller-manager
-      - system:kube-scheduler
-      - system:serviceaccount:kube-system:endpoint-controller
-    verbs: ["get", "update"]
-    namespaces: ["kube-system"]
-    resources:
-      - group: ""
-        resources: ["endpoints"]
-  - level: None
-    users: ["system:apiserver"]
-    verbs: ["get"]
-    resources:
-      - group: ""
-        resources: ["namespaces", "namespaces/status", "namespaces/finalize"]
-  - level: None
-    users: ["cluster-autoscaler"]
-    verbs: ["get", "update"]
-    namespaces: ["kube-system"]
-    resources:
-      - group: ""
-        resources: ["configmaps", "endpoints"]
-  - level: None
-    users:
-      - system:kube-controller-manager
-    verbs: ["get", "list"]
-    resources:
-      - group: "metrics.k8s.io"
-  - level: None
     nonResourceURLs:
       - /healthz*
       - /version
       - /swagger*
   - level: None
+    users: ["system:serviceaccount:system-monitoring:vm-operator"]
+    verbs: ["update"]
+    resources:
+      - group: ""
+        resources: ["configmaps","serviceaccounts"]
+      - group: "policy"
+        resources: ["podsecuritypolicies"]
+      - group: "apps"
+        resources: ["statefulsets"]
+  - level: None
+    users: ["system:serviceaccount:kube-system:nfs-provisioner"]
+    verbs: ["update"]
+    resources:
+      - group: ""
+        resources: ["configmaps"]
+  - level: None
     resources:
       - group: ""
         resources: ["events"]
-  - level: Request
-    users: ["kubelet", "system:node-problem-detector", "system:serviceaccount:kube-system:node-problem-detector"]
+  - level: None
+    resources:
+      - group: "authorization.k8s.io"
+      - group: "rbac.authorization.k8s.io"
+      - group: "authentication.k8s.io"
+  - level: None
     verbs: ["update","patch"]
     resources:
       - group: ""
-        resources: ["nodes/status", "pods/status"]
-    omitStages:
-      - "RequestReceived"
-  - level: Request
-    userGroups: ["system:nodes"]
-    verbs: ["update","patch"]
-    resources:
-      - group: ""
-        resources: ["nodes/status", "pods/status"]
-    omitStages:
-      - "RequestReceived"
-  - level: Request
-    users: ["system:serviceaccount:kube-system:namespace-controller"]
-    verbs: ["deletecollection"]
-    omitStages:
-      - "RequestReceived"
-  - level: Metadata
-    resources:
-      - group: ""
-        resources: ["secrets", "configmaps"]
-      - group: authentication.k8s.io
-        resources: ["tokenreviews"]
-    omitStages:
-      - "RequestReceived"
-  - level: Request
+        resources: ["nodes/status", "pods/status", "services/status", "endpoints"]
+      - group: "apps"
+        resources: ["statefulsets/status", "deployments/status", "daemonsets/status"]
+  - level: None
     verbs: ["get", "list", "watch"]
     resources:
       - group: ""
@@ -526,8 +471,6 @@ rules:
       - group: "rbac.authorization.k8s.io"
       - group: "scheduling.k8s.io"
       - group: "storage.k8s.io"
-    omitStages:
-      - "RequestReceived"
   - level: RequestResponse
     resources:
       - group: ""
@@ -549,9 +492,6 @@ rules:
       - group: "settings.k8s.io"
       - group: "scheduling.k8s.io"
       - group: "storage.k8s.io"
-    omitStages:
-      - "RequestReceived"
-  - level: Metadata
     omitStages:
       - "RequestReceived"
 `
