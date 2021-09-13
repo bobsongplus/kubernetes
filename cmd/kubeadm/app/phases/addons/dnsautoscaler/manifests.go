@@ -50,9 +50,12 @@ spec:
       - name: autoscaler
         image: {{ .ImageRepository }}/cluster-proportional-autoscaler-{{ .Arch }}:{{ .Version }}
         resources:
-            requests:
-                cpu: "20m"
-                memory: "10Mi"
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
         command:
           - /cluster-proportional-autoscaler
           - --namespace=kube-system
