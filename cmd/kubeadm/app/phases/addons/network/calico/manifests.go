@@ -245,6 +245,9 @@ spec:
           securityContext:
             privileged: true
           resources:
+            limits:
+              cpu: 300m
+              memory: 256Mi
             requests:
               cpu: 300m
               memory: 256Mi
@@ -373,6 +376,9 @@ spec:
         image: {{ .ImageRepository }}/kube-controllers-{{ .Arch }}:{{ .Version }}
         imagePullPolicy: IfNotPresent
         resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
           requests:
             cpu: 200m
             memory: 512Mi
