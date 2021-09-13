@@ -181,8 +181,12 @@ spec:
             path: /status
             port: 6784
         resources:
+          limits:
+            cpu: 300m
+            memory: 512Mi
           requests:
-            cpu: 200m
+            cpu: 300m
+            memory: 512Mi
         securityContext:
           privileged: true
         volumeMounts:
@@ -206,8 +210,12 @@ spec:
               fieldPath: spec.nodeName
         image: {{ .ImageRepository }}/weave-npc-{{ .Arch }}:{{ .Version }}
         resources:
+          limits:
+            cpu: 300m
+            memory: 512Mi
           requests:
-            cpu: 200m
+            cpu: 300m
+            memory: 512Mi
         securityContext:
           privileged: true
         volumeMounts:

@@ -75,9 +75,9 @@ spec:
     metadata:
       labels:
         k8s-app: kube-dns
-    annotations:
-      prometheus.io/port: "9153"
-      prometheus.io/scrape: "true"
+      annotations:
+        prometheus.io/port: "9153"
+        prometheus.io/scrape: "true"
     spec:
       priorityClassName: system-cluster-critical
       serviceAccountName: coredns
@@ -121,7 +121,8 @@ spec:
             port: 8080
             scheme: HTTP
           initialDelaySeconds: 60
-          timeoutSeconds: 5
+          periodSeconds: 30
+          timeoutSeconds: 10
           successThreshold: 1
           failureThreshold: 5
         readinessProbe:
@@ -129,6 +130,10 @@ spec:
             path: /ready
             port: 8181
             scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 10 
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

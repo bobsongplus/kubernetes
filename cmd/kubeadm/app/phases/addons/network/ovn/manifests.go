@@ -244,6 +244,9 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
           resources:
+            limits:
+              cpu: 1000m
+              memory: 512Mi
             requests:
               cpu: 500m
               memory: 300Mi
@@ -289,6 +292,9 @@ spec:
           - name: SSL
             value: "false"
           resources:
+            limits:
+              cpu: 200m
+              memory: 100Mi
             requests:
               cpu: 200m
               memory: 100Mi
