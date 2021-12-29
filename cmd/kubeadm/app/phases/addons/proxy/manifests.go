@@ -84,6 +84,16 @@ spec:
         - --hostname-override=$(NODE_NAME)
         - --kube-api-burst=20
         - --kube-api-qps=10
+        - --config-sync-period=3m0s
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10256
+            scheme: HTTP
+          initialDelaySeconds: 60
+          timeoutSeconds: 20
+          successThreshold: 1
+          failureThreshold: 5
         securityContext:
           privileged: true
         volumeMounts:
