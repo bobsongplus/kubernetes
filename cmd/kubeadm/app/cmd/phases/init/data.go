@@ -18,6 +18,7 @@ package phases
 
 import (
 	"io"
+	"k8s.io/client-go/dynamic"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	clientset "k8s.io/client-go/kubernetes"
@@ -45,6 +46,7 @@ type InitData interface {
 	ExternalCA() bool
 	OutputWriter() io.Writer
 	Client() (clientset.Interface, error)
+	DynamicClient() (dynamic.Interface, error)
 	Tokens() []string
 	PatchesDir() string
 }

@@ -18,7 +18,7 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
-	kubeadmapiv1beta1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1"
+	kubeadmapiv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
@@ -88,11 +88,11 @@ func CreateCalicoAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, 
 	}
 	//PHASE 3: create calico ctl job to configure ip pool
 	if cfg.Networking.Mode == kubeadmconstants.NetworkIPV6Mode { // ipv6
-		if err := createCalicoIPPool(kubeadmapiv1beta1.DefaultServicesIpv6Subnet, kubeadmapiv1beta1.DefaultPodIpv6Subnet, "default-ipv6pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
+		if err := createCalicoIPPool(kubeadmapiv1.DefaultServicesIpv6Subnet, kubeadmapiv1.DefaultPodIpv6Subnet, "default-ipv6pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
 			return err
 		}
 	} else if cfg.Networking.Mode == kubeadmconstants.NetworkDualStackMode { // ipv4 & ipv6
-		if err := createCalicoIPPool(kubeadmapiv1beta1.DefaultServicesIpv6Subnet, kubeadmapiv1beta1.DefaultPodIpv6Subnet, "default-ipv6pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
+		if err := createCalicoIPPool(kubeadmapiv1.DefaultServicesIpv6Subnet, kubeadmapiv1.DefaultPodIpv6Subnet, "default-ipv6pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
 			return err
 		}
 		if err := createCalicoIPPool(cfg.Networking.ServiceSubnet, defaultSubnet, "default-ipv4pool", cfg.GetControlPlaneImageRepository(), client); err != nil {

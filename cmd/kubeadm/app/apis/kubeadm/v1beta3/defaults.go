@@ -20,6 +20,8 @@ import (
 	"net/url"
 	"time"
 
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,6 +37,12 @@ const (
 	DefaultServicesSubnet = "10.96.0.0/12"
 	// DefaultClusterDNSIP defines default DNS IP
 	DefaultClusterDNSIP = "10.96.0.10"
+	// DefaultNodeSubnet defines default node subnet for ovn
+	DefaultNodeSubnet = "172.32.0.0/16"
+	// DefaultServicesIp6Subnet  defines default service subnet range for ipv6
+	DefaultServicesIpv6Subnet = "fd10:24e2:f998:72d6::/64"
+	// DefaultPodIp6Subnet defines default pod subnet range for ipv6
+	DefaultPodIpv6Subnet = "fd20:24e2:f998:72d6::/64"
 	// DefaultKubernetesVersion defines default kubernetes version
 	DefaultKubernetesVersion = "stable-1"
 	// DefaultAPIBindPort defines default API port
@@ -87,6 +95,18 @@ func SetDefaults_ClusterConfiguration(obj *ClusterConfiguration) {
 
 	if obj.Networking.ServiceSubnet == "" {
 		obj.Networking.ServiceSubnet = DefaultServicesSubnet
+	}
+
+	if obj.Networking.PodSubnet == "" {
+		obj.Networking.PodSubnet = kubeadm.AcquirePodCIDR(172, 16, 31, kubeadm.Reverse)
+	}
+
+	if obj.Networking.PodExtraSubnet == "" {
+		obj.Networking.PodExtraSubnet = kubeadm.AcquirePodCIDR(172, 16, 31, kubeadm.Positive)
+	}
+
+	if obj.Networking.NodeSubnet == "" {
+		obj.Networking.NodeSubnet = DefaultNodeSubnet
 	}
 
 	if obj.Networking.DNSDomain == "" {

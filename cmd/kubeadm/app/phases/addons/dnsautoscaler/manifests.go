@@ -60,7 +60,7 @@ spec:
           - /cluster-proportional-autoscaler
           - --namespace=kube-system
           - --configmap=coredns-autoscaler
-          - --target={{.Target}}
+          - --target=Deployment/coredns
           - --default-params={"linear":{"coresPerReplica":256,"nodesPerReplica":16,"preventSinglePointFailure":true,"includeUnschedulableNodes":true}}
           - --logtostderr=true
           - --v=2

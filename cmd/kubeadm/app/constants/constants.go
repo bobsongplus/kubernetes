@@ -468,7 +468,7 @@ const (
 	// EncryptionConfigFileName is config file for Encrypting Secret Data at Rest.
 	EncryptionConfigFileName string = "encryption-config.yaml"
 
-	// audit-policy.yaml specifies the name for config file that is used for audit the API Server
+	// AuditPolicyConfigFileName audit-policy.yaml specifies the name for config file that is used for audit the API Server
 	AuditPolicyConfigFileName string = "audit-policy.yaml"
 
 	// AuditVolumeName specifies the name for the Volume that is used for audit the API Server
@@ -480,18 +480,17 @@ const (
 	// AuditLogFileName specifies the name for the log file that is used for audit the API Server
 	AuditLogFileName string = "audit.log"
 
-	// node local dns cache address
+	// NodeLocalDNSAddress node local dns cache address
 	NodeLocalDNSAddress = "169.254.0.10"
-
-	// For backwards compatible, leave it empty if unset
+	
 	Calico string = "calico"
-	// If nothing exists at the given path, an empty directory will be created there
-	// as needed with file mode 0755, having the same group and ownership with Kubelet.
+
+	CalicoOperator string = "calico-operator"
+
 	Flannel string = "flannel"
-	// A directory must exist at the given path
+
 	Canal string = "canal"
-	// If nothing exists at the given path, an empty file will be created there
-	// as needed with file mode 0644, having the same group and ownership with Kubelet.
+
 	Macvlan string = "macvlan"
 
 	Ovn string = "ovn"

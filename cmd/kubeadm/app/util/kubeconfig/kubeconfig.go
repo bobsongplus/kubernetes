@@ -22,6 +22,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"k8s.io/client-go/dynamic"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -87,6 +88,25 @@ func ToClientSet(config *clientcmdapi.Config) (*clientset.Clientset, error) {
 	}
 
 	client, err := clientset.NewForConfig(clientConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create API client")
+	}
+	return client, nil
+}
+
+// DynamicClientFromFile returns a ready-to-use dynamic client from a kubeconfig file
+func DynamicClientFromFile(path string) (dynamic.Interface, error) {
+	config, err := clientcmd.LoadFromFile(path)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load admin kubeconfig")
+	}
+	overrides := clientcmd.ConfigOverrides{Timeout: "10s"}
+	clientConfig, err := clientcmd.NewDefaultClientConfig(*config, &overrides).ClientConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create API client configuration from kubeconfig")
+	}
+
+	client, err := dynamic.NewForConfig(clientConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create API client")
 	}

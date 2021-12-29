@@ -21,20 +21,13 @@ import (
 )
 
 func DnsAutoscalerAddOn(cfg *kubeadmapi.ClusterConfiguration, client clientset.Interface) error {
-	var target string
-	if cfg.DNS.Type == kubeadmapi.KubeDNS {
-		target = "Deployment/kube-dns"
-	} else {
-		target = "Deployment/coredns"
-	}
-	deploymentBytes, err := kubeadmutil.ParseTemplate(CoreDnsAutoscaler, struct{ ImageRepository, Arch, Version, Target string }{
+	deploymentBytes, err := kubeadmutil.ParseTemplate(CoreDnsAutoscaler, struct{ ImageRepository, Arch, Version string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
 		Arch:            runtime.GOARCH,
 		Version:         CoreDnsAutoscalerVersion,
-		Target:          target,
 	})
 	if err != nil {
-		return fmt.Errorf("error when parsing kube dns autoscaler template: %v", err)
+		return fmt.Errorf("error when parsing dns autoscaler template: %v", err)
 	}
 	if err := createDnsAutoscaler(deploymentBytes, client); err != nil {
 		return err

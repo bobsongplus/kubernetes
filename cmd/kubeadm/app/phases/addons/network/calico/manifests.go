@@ -7,7 +7,8 @@
 package calico
 
 const (
-	Version = "v3.18.4"
+	Version         = "v3.18.4"
+	OperatorVersion = "v1.25.3"
 
 	//This ConfigMap is used to configure a self-hosted Calico installation.
 	NodeConfigMap = `
@@ -613,4 +614,351 @@ subjects:
   namespace: kube-system
 `
 
+	// calico operator
+
+	OperatorClusterRole = `
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: calico-operator
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - pods
+      - podtemplates
+      - services
+      - endpoints
+      - events
+      - configmaps
+      - secrets
+      - serviceaccounts
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - delete
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - patch
+      - list
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+      - clusterrolebindings
+      - rolebindings
+      - roles
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - delete
+      - watch
+      - bind
+      - escalate
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - daemonsets
+      - statefulsets
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - delete
+      - watch
+  - apiGroups:
+      - apps
+    resourceNames:
+      - calico-operator
+    resources:
+      - deployments/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - operator.tigera.io
+    resources:
+      - '*'
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - patch
+      - delete
+      - watch
+  - apiGroups:
+    - networking.k8s.io
+    resources:
+    - networkpolicies
+    verbs:
+      - create
+      - update
+      - delete
+      - get
+      - list
+      - watch
+  - apiGroups:
+    - crd.projectcalico.org
+    resources:
+    - felixconfigurations
+    verbs:
+    - create
+    - patch
+    - list
+    - get
+    - watch
+  - apiGroups:
+    - crd.projectcalico.org
+    resources:
+    - ippools
+    - kubecontrollersconfigurations
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+      - scheduling.k8s.io
+    resources:
+      - priorityclasses
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - delete
+      - watch
+  - apiGroups:
+      - policy
+    resources:
+      - poddisruptionbudgets
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - delete
+      - watch
+  - apiGroups:
+      - apiregistration.k8s.io
+    resources:
+      - apiservices
+    verbs:
+      - list
+      - watch
+      - create 
+      - update
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - list
+      - watch
+      - create
+      - update
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - delete
+      - watch
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    resourceNames:
+      - system
+    verbs:
+      - use
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - certificates.k8s.io
+    resources:
+      - certificatesigningrequests
+    verbs:
+      - list
+`
+	OperatorClusterRoleBinding = `
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: calico-operator
+subjects:
+- kind: ServiceAccount
+  name: calico-operator
+  namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: calico-operator
+  apiGroup: rbac.authorization.k8s.io
+`
+	OperatorServiceAccount = `
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: calico-operator
+  namespace: kube-system
+`
+	OperatorDeployment = `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calico-operator
+  namespace: kube-system
+  labels:
+    k8s-app: calico-operator
+    network:  calico
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: calico-operator
+      k8s-app: calico-operator
+  template:
+    metadata:
+      labels:
+        name: calico-operator
+        k8s-app: calico-operator
+        network:  calico
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+      - operator: Exists
+      serviceAccountName: calico-operator
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+      - name: calico-operator
+        image: {{ .ImageRepository }}/calico-operator:{{ .Version }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - operator
+        args:
+        - -zap-log-level=error
+        volumeMounts:
+        - name: var-lib-calico
+          readOnly: true
+          mountPath: /var/lib/calico
+        env:
+        - name: WATCH_NAMESPACE
+          value: ""
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: "calico-operator"
+        - name: TIGERA_OPERATOR_INIT_IMAGE_VERSION
+          value: {{ .Version }}
+        envFrom:
+        - configMapRef:
+            name: kubernetes-services-endpoint
+            optional: true
+      volumes:
+      - name: var-lib-calico
+        hostPath:
+          path: /var/lib/calico
+`
+
+	// calico operator crds
+	Installation = `
+apiVersion: operator.tigera.io/v1
+kind: Installation
+metadata:
+  name: default
+  namespace: kube-system
+spec:
+  variant: Calico
+  registry: {{ .Registry }}
+  imagePath: {{ .ImagePath }}
+  calicoNetwork:
+    bgp: Enabled
+    hostPorts: Enabled
+    ipPools:
+      - blockSize: 26
+        cidr: {{ .PodSubnet }}
+        encapsulation: IPIP  
+        natOutgoing: Enabled
+        nodeSelector: all()
+    linuxDataplane: Iptables
+    nodeAddressAutodetectionV4:
+      firstFound: true
+    nodeAddressAutodetectionV6:
+      firstFound: true
+  cni:
+    ipam:
+      type: Calico
+    type: Calico
+  controlPlaneReplicas: 2
+  controlPlaneTolerations:
+  - operator: Exists
+  componentResources:
+  - componentName: Node
+    resourceRequirements:
+      limits:
+        cpu: 300m
+        memory: 256Mi
+      requests:
+        cpu: 300m
+        memory: 256Mi
+  - componentName: Typha
+    resourceRequirements:
+      limits:
+        cpu: 300m
+        memory: 512Mi
+      requests:
+        cpu: 300m
+        memory: 512Mi
+  - componentName: KubeControllers
+    resourceRequirements:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 200m
+        memory: 512Mi
+  flexVolumePath: None
+  nodeUpdateStrategy:
+    type: OnDelete
+  nonPrivileged: Disabled
+`
+
+	APIServer = `
+apiVersion: operator.tigera.io/v1
+kind: APIServer
+metadata:
+  name: default
+  namespace: kube-system
+spec: {}
+`
 )

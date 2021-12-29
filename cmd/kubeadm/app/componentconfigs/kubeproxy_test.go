@@ -52,14 +52,14 @@ func TestKubeProxyDefault(t *testing.T) {
 		name       string
 		clusterCfg kubeadmapi.ClusterConfiguration
 		endpoint   kubeadmapi.APIEndpoint
-		expected   kubeProxyConfig
+		expected   KubeProxyConfig
 	}{
 		{
 			name:       "No specific defaulting works",
 			clusterCfg: kubeadmapi.ClusterConfiguration{},
 			endpoint:   kubeadmapi.APIEndpoint{},
-			expected: kubeProxyConfig{
-				config: kubeproxyconfig.KubeProxyConfiguration{
+			expected: KubeProxyConfig{
+				Config: kubeproxyconfig.KubeProxyConfiguration{
 					FeatureGates: map[string]bool{},
 					BindAddress:  kubeadmapiv1.DefaultProxyBindAddressv6,
 					ClientConnection: componentbaseconfig.ClientConnectionConfiguration{
@@ -74,8 +74,8 @@ func TestKubeProxyDefault(t *testing.T) {
 			endpoint: kubeadmapi.APIEndpoint{
 				AdvertiseAddress: "1.2.3.4",
 			},
-			expected: kubeProxyConfig{
-				config: kubeproxyconfig.KubeProxyConfiguration{
+			expected: KubeProxyConfig{
+				Config: kubeproxyconfig.KubeProxyConfiguration{
 					FeatureGates: map[string]bool{},
 					BindAddress:  kubeadmapiv1.DefaultProxyBindAddressv4,
 					ClientConnection: componentbaseconfig.ClientConnectionConfiguration{
@@ -92,14 +92,26 @@ func TestKubeProxyDefault(t *testing.T) {
 				},
 			},
 			endpoint: kubeadmapi.APIEndpoint{},
-			expected: kubeProxyConfig{
-				config: kubeproxyconfig.KubeProxyConfiguration{
+			expected: KubeProxyConfig{
+				Config: kubeproxyconfig.KubeProxyConfiguration{
 					FeatureGates: map[string]bool{},
 					BindAddress:  kubeadmapiv1.DefaultProxyBindAddressv6,
 					ClientConnection: componentbaseconfig.ClientConnectionConfiguration{
 						Kubeconfig: kubeproxyKubeConfigFileName,
 					},
 					ClusterCIDR: "192.168.0.0/16",
+				},
+			},
+		},
+		{
+
+			endpoint: kubeadmapi.APIEndpoint{},
+			expected: KubeProxyConfig{
+				Config: kubeproxyconfig.KubeProxyConfiguration{
+					BindAddress: kubeadmapiv1.DefaultProxyBindAddressv6,
+					ClientConnection: componentbaseconfig.ClientConnectionConfiguration{
+						Kubeconfig: kubeproxyKubeConfigFileName,
+					},
 				},
 			},
 		},
@@ -111,7 +123,7 @@ func TestKubeProxyDefault(t *testing.T) {
 			expected := test.expected
 			expected.configBase.GroupVersion = kubeproxyconfig.SchemeGroupVersion
 
-			got := &kubeProxyConfig{
+			got := &KubeProxyConfig{
 				configBase: configBase{
 					GroupVersion: kubeproxyconfig.SchemeGroupVersion,
 				},
@@ -142,10 +154,10 @@ func runKubeProxyFromTest(t *testing.T, perform func(gvk schema.GroupVersionKind
 	if cfg == nil {
 		t.Fatal("no config loaded where it should have been")
 	}
-	if kubeproxyCfg, ok := cfg.(*kubeProxyConfig); !ok {
+	if kubeproxyCfg, ok := cfg.(*KubeProxyConfig); !ok {
 		t.Fatalf("found different object type than expected: %s", reflect.TypeOf(cfg))
-	} else if kubeproxyCfg.config.ClusterCIDR != clusterCIDR {
-		t.Fatalf("unexpected control value (clusterDomain):\n\tgot: %q\n\texpected: %q", kubeproxyCfg.config.ClusterCIDR, clusterCIDR)
+	} else if kubeproxyCfg.Config.ClusterCIDR != clusterCIDR {
+		t.Fatalf("unexpected control value (clusterDomain):\n\tgot: %q\n\texpected: %q", kubeproxyCfg.Config.ClusterCIDR, clusterCIDR)
 	}
 }
 

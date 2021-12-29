@@ -31,6 +31,7 @@ spec:
     spec:
       serviceAccountName: kubectl
       hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       tolerations:
       - operator: Exists
       containers:
@@ -38,7 +39,7 @@ spec:
           image: {{ .ImageRepository }}/kubectl-{{ .Arch }}:{{ .Version }}
           resources:
             limits:
-              cpu: 2000m
+              cpu: 1000m
               memory: 512Mi
             requests:
               cpu: 500m

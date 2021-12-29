@@ -135,6 +135,14 @@ type ClusterConfiguration struct {
 	// The cluster name
 	// +optional
 	ClusterName string `json:"clusterName,omitempty"`
+
+	// TenxCloud Enterprise Server Address
+	// +optional
+	ApiServerUrl string `json:"apiServerUrl,omitempty"`
+
+	// Credential to access TenxCloud Enterprise Server
+	// +optional
+	ApiServerCredential string `json:"apiServerCredential,omitempty"`
 }
 
 // ControlPlaneComponent holds settings common to control plane component of the cluster
@@ -247,9 +255,21 @@ type Networking struct {
 	// PodSubnet is the subnet used by pods.
 	// +optional
 	PodSubnet string `json:"podSubnet,omitempty"`
+	// PodExtraSubnet is the subnet used by pods.
+	// +optional
+	PodExtraSubnet string `json:"podExtraSubnet,omitempty"`
 	// DNSDomain is the dns domain used by k8s services. Defaults to "cluster.local".
 	// +optional
 	DNSDomain string `json:"dnsDomain,omitempty"`
+
+	// +optional
+	NodeSubnet string `json:"nodeSubnet,omitempty"`
+	// Network Plugin: calico ....
+	// +optional
+	Plugin string  `json:"plugin,omitempty"`
+	// Network Mode: ipv4, ipv6, dual-stack
+	// +optional
+	Mode string `json:"mode,omitempty"`
 }
 
 // Etcd contains elements describing Etcd configuration.

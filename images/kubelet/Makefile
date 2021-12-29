@@ -1,4 +1,4 @@
-Version=v1.20.8
+Version=v1.22.1
 CNI_VERSION=v0.9.1
 
 ARCH?=amd64
@@ -13,7 +13,7 @@ compress:
 	upx --best -o kubelet ${DOCKERIZED_OUTPUT_PATH}/kubelet
 
 build: compress
-	docker build -t 192.168.1.220/system_containers/kubelet-amd64:${Version}  .
+	docker build -t 172.22.50.227/system_containers/kubelet-amd64:${Version}  .
 
 clean:
 	rm -f ./$(shell basename $(shell pwd)) >/dev/null

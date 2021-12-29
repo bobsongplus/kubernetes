@@ -1,13 +1,13 @@
 #!/bin/bash
 REGISTRY_SERVER="index.tenxcloud.com"
 REGISTRY_USER="system_containers"
-K8S_VERSION="v1.20.8"
-ETCD_VERSION="3.4.13-3"
+K8S_VERSION="v1.22.1"
+ETCD_VERSION="3.5.0-0"
 INTERNAL_BINDPORT="16443"
 DEFAULT_BINDPORT="6443"
 ARCH="amd64"
-kubeadm_config_tmpl="kubeadm-config.yaml"
-kubeadm_config_file="/tmp/kubeadm-config.yaml"
+kubeadm_config_tmpl="kubeadm.yaml"
+kubeadm_config_file="/tmp/kubeadm.yaml"
 welcome() {
 message="$(cat <<EOF
 *******************************************************

@@ -1,4 +1,4 @@
-FROM  192.168.1.220/build-image/debian-base-amd64:buster-v1.2.0
+FROM  k8s.gcr.io/build-image/debian-base:buster-v1.8.0
 
 LABEL vendor="TenxCloud Incorporated" \
       maintainer=weiwei@tenxcloud.com

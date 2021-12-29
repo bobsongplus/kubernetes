@@ -23,6 +23,7 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 )
 
 // a package local type for testing purposes.
@@ -48,5 +49,6 @@ func (t *testInitData) KubeletDir() string                   { return "" }
 func (t *testInitData) ExternalCA() bool                     { return false }
 func (t *testInitData) OutputWriter() io.Writer              { return nil }
 func (t *testInitData) Client() (clientset.Interface, error) { return nil, nil }
+func (t *testInitData) ExtensionsClient() (apiextensionsclientset.Interface, error) { return nil, nil }
 func (t *testInitData) Tokens() []string                     { return nil }
 func (t *testInitData) PatchesDir() string                   { return "" }

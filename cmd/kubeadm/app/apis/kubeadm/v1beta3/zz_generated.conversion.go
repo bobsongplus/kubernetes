@@ -333,6 +333,8 @@ func autoConvert_v1beta3_ClusterConfiguration_To_kubeadm_ClusterConfiguration(in
 	out.ImageRepository = in.ImageRepository
 	out.FeatureGates = *(*map[string]bool)(unsafe.Pointer(&in.FeatureGates))
 	out.ClusterName = in.ClusterName
+	out.ApiServerUrl = in.ApiServerUrl
+	out.ApiServerCredential = in.ApiServerCredential
 	return nil
 }
 
@@ -364,6 +366,8 @@ func autoConvert_kubeadm_ClusterConfiguration_To_v1beta3_ClusterConfiguration(in
 	// INFO: in.CIImageRepository opted out of conversion generation
 	out.FeatureGates = *(*map[string]bool)(unsafe.Pointer(&in.FeatureGates))
 	out.ClusterName = in.ClusterName
+	out.ApiServerUrl = in.ApiServerUrl
+	out.ApiServerCredential = in.ApiServerCredential
 	return nil
 }
 
@@ -686,7 +690,11 @@ func Convert_kubeadm_LocalEtcd_To_v1beta3_LocalEtcd(in *kubeadm.LocalEtcd, out *
 func autoConvert_v1beta3_Networking_To_kubeadm_Networking(in *Networking, out *kubeadm.Networking, s conversion.Scope) error {
 	out.ServiceSubnet = in.ServiceSubnet
 	out.PodSubnet = in.PodSubnet
+	out.PodExtraSubnet = in.PodExtraSubnet
 	out.DNSDomain = in.DNSDomain
+	out.NodeSubnet = in.NodeSubnet
+	out.Plugin = in.Plugin
+	out.Mode = in.Mode
 	return nil
 }
 
@@ -698,7 +706,11 @@ func Convert_v1beta3_Networking_To_kubeadm_Networking(in *Networking, out *kubea
 func autoConvert_kubeadm_Networking_To_v1beta3_Networking(in *kubeadm.Networking, out *Networking, s conversion.Scope) error {
 	out.ServiceSubnet = in.ServiceSubnet
 	out.PodSubnet = in.PodSubnet
+	out.PodExtraSubnet = in.PodExtraSubnet
 	out.DNSDomain = in.DNSDomain
+	out.NodeSubnet = in.NodeSubnet
+	out.Plugin = in.Plugin
+	out.Mode = in.Mode
 	return nil
 }
 
