@@ -7,7 +7,6 @@ package canal
 
 import (
 	"fmt"
-	"runtime"
 	"strings"
 
 	apps "k8s.io/api/apps/v1"
@@ -38,11 +37,10 @@ func CreateCanalAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Interf
 	if err != nil {
 		return fmt.Errorf("error when parsing canal configmap template: %v", err)
 	}
-	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, FlannelVersion, CalicoVersion, EtcdEndPoints, Arch string }{
+	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, FlannelVersion, CalicoVersion, EtcdEndPoints string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
 		FlannelVersion:  FlannelVersion,
 		CalicoVersion:   CalicoVersion,
-		Arch:            runtime.GOARCH,
 		EtcdEndPoints:   endpoints,
 	})
 	if err != nil {
@@ -52,9 +50,8 @@ func CreateCanalAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Interf
 		return err
 	}
 	//PHASE 2: create kube controllers containers
-	policyControllerDeploymentBytes, err := kubeadmutil.ParseTemplate(KubeController, struct{ ImageRepository, Arch, CalicoVersion string }{
+	policyControllerDeploymentBytes, err := kubeadmutil.ParseTemplate(KubeController, struct{ ImageRepository, CalicoVersion string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		CalicoVersion:   CalicoVersion,
 	})
 	if err != nil {

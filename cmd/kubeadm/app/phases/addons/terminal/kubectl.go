@@ -7,7 +7,6 @@ package terminal
 
 import (
 	"fmt"
-	"runtime"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -22,9 +21,8 @@ import (
 
 func EnsureTerminalAddon(cfg *kubeadmapi.ClusterConfiguration, client clientset.Interface) error {
 	//PHASE 1: create terminal containers
-	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Arch, Version string }{
+	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Version string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         cfg.KubernetesVersion,
 	})
 	if err != nil {

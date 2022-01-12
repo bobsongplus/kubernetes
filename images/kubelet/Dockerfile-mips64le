@@ -1,0 +1,10 @@
+FROM  172.22.50.227/mips64le/debian-base-mips64le:buster-v1.7.0
+
+LABEL vendor="TenxCloud Incorporated" \
+      maintainer=weiwei@tenxcloud.com
+
+RUN echo "deb http://mirrors.huaweicloud.com/debian/ buster main non-free contrib" > /etc/apt/sources.list \
+    && clean-install util-linux
+ADD cni-plugins-linux-mips64le-v0.9.1.tgz  /opt/cni/bin/
+COPY kubelet /kubelet
+

@@ -2,6 +2,7 @@ package dnscache
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	apps "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
@@ -15,7 +16,6 @@ import (
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 	kubeproxyconfig "k8s.io/kubernetes/pkg/proxy/apis/config"
-	"runtime"
 )
 
 func CreateNodeDnsCacheAddOn(cfg *kubeadmapi.ClusterConfiguration, client clientset.Interface) error {
@@ -45,9 +45,8 @@ func CreateNodeDnsCacheAddOn(cfg *kubeadmapi.ClusterConfiguration, client client
 	if err != nil {
 		return fmt.Errorf("error when parsing coredns cache configmap template: %v", err)
 	}
-	daemonSetBytes, err := kubeadmutil.ParseTemplate(CoreDnsCache, struct{ ImageRepository, Arch, Version, LocalDNSAddress, LocalIP string }{
+	daemonSetBytes, err := kubeadmutil.ParseTemplate(CoreDnsCache, struct{ ImageRepository, Version, LocalDNSAddress, LocalIP string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         DnsCacheVersion,
 		LocalDNSAddress: kubeadmconstants.NodeLocalDNSAddress,
 		LocalIP:         localIP,

@@ -8,7 +8,6 @@ package ovnkube
 import (
 	"context"
 	"fmt"
-	"runtime"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -41,9 +40,8 @@ func CreateOvnKubeAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Inte
 		return err
 	}
 	//PHASE 2: create ovn South/North Bound Database
-	dbDeploymentBytes, err := kubeadmutil.ParseTemplate(DBDeploy, struct{ ImageRepository, Arch string }{
+	dbDeploymentBytes, err := kubeadmutil.ParseTemplate(DBDeploy, struct{ ImageRepository string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 	})
 	if err != nil {
 		return fmt.Errorf("error when parsing ovn South/North Bound Database template: %v", err)
@@ -53,9 +51,8 @@ func CreateOvnKubeAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Inte
 	}
 
 	//PHASE 3: create ovn Northd
-	northdDeploymentBytes, err := kubeadmutil.ParseTemplate(NorthdDeploy, struct{ ImageRepository, Arch string }{
+	northdDeploymentBytes, err := kubeadmutil.ParseTemplate(NorthdDeploy, struct{ ImageRepository string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 	})
 	if err != nil {
 		return fmt.Errorf("error when parsing ovn Northd template: %v", err)
@@ -64,9 +61,8 @@ func CreateOvnKubeAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Inte
 		return err
 	}
 	//PHASE 3: create ovn Openflow Controller
-	daemonSetBytes, err := kubeadmutil.ParseTemplate(Controller, struct{ ImageRepository, Arch string }{
+	daemonSetBytes, err := kubeadmutil.ParseTemplate(Controller, struct{ ImageRepository string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 	})
 	if err != nil {
 		return fmt.Errorf("error when parsing ovn Openflow Controller template: %v", err)

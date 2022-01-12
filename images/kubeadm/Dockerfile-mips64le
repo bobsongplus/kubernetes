@@ -1,4 +1,4 @@
-FROM 172.22.50.227/arm64/alpine-arm64:3.14-bash
+FROM mips64le/debian:buster-slim
 
 LABEL vendor="TenxCloud Incorporated" \
       maintainer=weiwei@tenxcloud.com

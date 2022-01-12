@@ -7,7 +7,6 @@ package dnsautoscaler
 
 import (
 	"fmt"
-	"runtime"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -27,9 +26,8 @@ func DnsAutoscalerAddOn(cfg *kubeadmapi.ClusterConfiguration, client clientset.I
 	} else {
 		target = "Deployment/coredns"
 	}
-	deploymentBytes, err := kubeadmutil.ParseTemplate(CoreDnsAutoscaler, struct{ ImageRepository, Arch, Version, Target string }{
+	deploymentBytes, err := kubeadmutil.ParseTemplate(CoreDnsAutoscaler, struct{ ImageRepository, Version, Target string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         CoreDnsAutoscalerVersion,
 		Target:          target,
 	})

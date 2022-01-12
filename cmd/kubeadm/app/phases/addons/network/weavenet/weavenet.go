@@ -8,7 +8,6 @@ package weavenet
 
 import (
 	"fmt"
-	"runtime"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -69,9 +68,8 @@ func CreateWeaveNetAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration
 		return err
 	}
 
-	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Arch, Version, PodSubnet string }{
+	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Version, PodSubnet string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         Version,
 		PodSubnet:       defaultSubnet,
 	})

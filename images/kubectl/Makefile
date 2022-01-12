@@ -11,7 +11,13 @@ compress:
 	upx --best --ultra-brute -o kubectl ${DOCKERIZED_OUTPUT_PATH}/kubectl
 
 build: compress
-	docker build -t 192.168.1.220/system_containers/kubectl-amd64:${Version}  .
+	docker build -t 172.22.50.227/system_containers/kubectl-amd64:${Version}  .
+
+arm64:
+	docker build  --platform=linux/arm64 -t 172.22.50.227/arm64/kubectl:${Version} -f Dockerfile-arm64 .
+
+mips64le:
+	docker build --platform=linux/mips64le -t 172.22.50.227/mips64le/kubectl:${Version} -f Dockerfile-mips64le .
 
 clean:
 	rm -f ./$(shell basename $(shell pwd)) >/dev/null

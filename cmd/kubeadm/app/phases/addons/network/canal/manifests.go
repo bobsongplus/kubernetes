@@ -120,7 +120,7 @@ spec:
       terminationGracePeriodSeconds: 0
       initContainers:
         - name: install-cni
-          image: {{ .ImageRepository }}/cni-{{.Arch}}:{{ .CalicoVersion }}
+          image: {{ .ImageRepository }}/cni:{{ .CalicoVersion }}
           imagePullPolicy: IfNotPresent
           command: ["/install-cni.sh"]
           resources:
@@ -171,7 +171,7 @@ spec:
               name: cni-net-dir
       containers:
         - name: flannel
-          image: {{ .ImageRepository }}/flannel-{{.Arch}}:{{ .FlannelVersion }}
+          image: {{ .ImageRepository }}/flannel:{{ .FlannelVersion }}
           command:
           - /opt/bin/flanneld
           args:
@@ -248,7 +248,7 @@ spec:
               name: k8s-certs
               readOnly: true
         - name: calico-node
-          image: {{ .ImageRepository }}/node-{{.Arch}}:{{ .CalicoVersion }}
+          image: {{ .ImageRepository }}/node:{{ .CalicoVersion }}
           env:
             - name: ETCD_ENDPOINTS
               valueFrom:
@@ -390,7 +390,7 @@ spec:
       serviceAccountName: kube-controllers
       containers:
       - name: kube-controller
-        image: {{ .ImageRepository }}/kube-controllers-{{.Arch}}:{{ .CalicoVersion }}-fixed
+        image: {{ .ImageRepository }}/kube-controllers:{{ .CalicoVersion }}-fixed
         imagePullPolicy: IfNotPresent
         env:
           - name: ETCD_ENDPOINTS

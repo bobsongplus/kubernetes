@@ -5,7 +5,6 @@ K8S_VERSION="v1.20.8"
 ETCD_VERSION="3.4.13-3"
 INTERNAL_BINDPORT="16443"
 DEFAULT_BINDPORT="6443"
-ARCH="amd64"
 kubeadm_config_tmpl="kubeadm-config.yaml"
 kubeadm_config_file="/tmp/kubeadm-config.yaml"
 welcome() {
@@ -85,9 +84,9 @@ echo "}"
 PullImage=$(cat <<EOF
   PullImage() {
   echo "Pulling Necessary Images from \${1}"
-  docker pull \${1}/\${2}/kube-proxy-${ARCH}:${K8S_VERSION}
-  docker pull \${1}/\${2}/kubelet-${ARCH}:${K8S_VERSION}
-  docker pull \${1}/\${2}/kubectl-${ARCH}:${K8S_VERSION}
+  docker pull \${1}/\${2}/kube-proxy:${K8S_VERSION}
+  docker pull \${1}/\${2}/kubelet:${K8S_VERSION}
+  docker pull \${1}/\${2}/kubectl:${K8S_VERSION}
   }
 EOF
 )
@@ -256,15 +255,15 @@ install_binary() {
     cat <<EOF
     mv /tmp/kubeadm /usr/bin/  >/dev/null
 
-    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubectl-${ARCH}:${K8S_VERSION} /usr/bin/kubectl /tmp/kubectl
+    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubectl:${K8S_VERSION} /usr/bin/kubectl /tmp/kubectl
     rm -f /usr/bin/kubectl
     mv /tmp/kubectl /usr/bin/  >/dev/null
 
-    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/etcd-${ARCH}:${ETCD_VERSION}  /usr/local/bin/etcdctl /tmp/etcdctl
+    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/etcd:${ETCD_VERSION}  /usr/local/bin/etcdctl /tmp/etcdctl
     rm -f /usr/bin/etcdctl
     mv /tmp/etcdctl /usr/bin/  >/dev/null
 
-    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubectl-${ARCH}:${K8S_VERSION} /usr/bin/calicoctl /tmp/calicoctl
+    docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubectl:${K8S_VERSION} /usr/bin/calicoctl /tmp/calicoctl
     rm -f /usr/bin/calicoctl
     mv /tmp/calicoctl /usr/bin/  >/dev/null
     $(CalicoConfig)

@@ -1,0 +1,6 @@
+FROM mips64le/debian:buster-slim
+COPY docker-linux-mips64le-19.03.11.ce /usr/bin/docker
+
+LABEL vendor="TenxCloud Incorporated" \
+      maintainer=weiwei@tenxcloud.com
+

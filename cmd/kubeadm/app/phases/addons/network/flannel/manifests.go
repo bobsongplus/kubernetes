@@ -93,20 +93,15 @@ spec:
                     operator: In
                     values:
                       - linux
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - {{.Arch}}
       hostNetwork: true
       nodeSelector:
-        beta.kubernetes.io/arch: {{.Arch}}
-        beta.kubernetes.io/os: linux
+        kubernetes.io/os: linux
       tolerations:
       - operator: Exists
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: {{ .ImageRepository }}/flannel-{{.Arch}}:{{ .Version }}
+        image: {{ .ImageRepository }}/flannel:{{ .Version }}
         command:
         - cp
         args:
@@ -120,7 +115,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: {{ .ImageRepository }}/flannel-{{.Arch}}:{{ .Version }}
+        image: {{ .ImageRepository }}/flannel:{{ .Version }}
         command:
         - /opt/bin/flanneld
         args:

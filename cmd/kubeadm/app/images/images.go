@@ -18,7 +18,6 @@ package images
 
 import (
 	"fmt"
-	"runtime"
 
 	"k8s.io/klog/v2"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
@@ -36,7 +35,7 @@ const extraHyperKubeNote = ` The "useHyperKubeImage" field will be removed from 
 
 // GetGenericImage generates and returns a platform agnostic image (backed by manifest list)
 func GetGenericImage(prefix, image, tag string) string {
-	return fmt.Sprintf("%s/%s-%s:%s", prefix, image, runtime.GOARCH, tag)
+	return fmt.Sprintf("%s/%s:%s", prefix, image, tag)
 }
 
 // GetKubernetesImage generates and returns the image for the components managed in the Kubernetes main repository,

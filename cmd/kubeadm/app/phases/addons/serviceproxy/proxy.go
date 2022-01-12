@@ -7,7 +7,6 @@ package serviceproxy
 
 import (
 	"fmt"
-	"runtime"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -33,9 +32,8 @@ func EnsureServiceProxyAddon(cfg *kubeadmapi.ClusterConfiguration, client client
 		return fmt.Errorf("error when parsing service-proxy kube-certs configmap template: %v", err)
 	}
 
-	tenxProxyDaemonSetBytes, err := kubeadmutil.ParseTemplate(TenxProxyDaemonSet, struct{ ImageRepository, Arch, TenxProxyVersion, HarpoxyExporterVersion string }{
+	tenxProxyDaemonSetBytes, err := kubeadmutil.ParseTemplate(TenxProxyDaemonSet, struct{ ImageRepository, TenxProxyVersion, HarpoxyExporterVersion string }{
 		ImageRepository:        cfg.GetControlPlaneImageRepository(),
-		Arch:                   runtime.GOARCH,
 		TenxProxyVersion:       TenxProxyVersion,
 		HarpoxyExporterVersion: HarpoxyExporterVersion,
 	})

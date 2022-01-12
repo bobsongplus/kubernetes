@@ -125,13 +125,13 @@ spec:
     spec:
       hostNetwork: true
       nodeSelector:
-        kubernetes.io/arch: amd64
+        kubernetes.io/os: linux
       tolerations:
         - operator: Exists
       serviceAccountName: multus
       containers:
         - name: multus
-          image: {{ .ImageRepository }}/multus-{{.Arch}}:{{ .Version }}
+          image: {{ .ImageRepository }}/multus:{{ .Version }}
           command: ["/entrypoint.sh"]
           args:
             - "--multus-conf-file=/tmp/multus-conf/00-multus.conf"
@@ -192,7 +192,7 @@ spec:
       - operator: Exists
       containers:
       - name: multus
-        image: {{ .ImageRepository }}/multus-controller-{{.Arch}}:{{ .Version }}
+        image: {{ .ImageRepository }}/multus-controller:{{ .Version }}
         args:
           - "--plugins={{ .Plugins }}"
         resources:

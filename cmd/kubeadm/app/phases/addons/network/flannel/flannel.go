@@ -7,7 +7,6 @@ package flannel
 
 import (
 	"fmt"
-	"runtime"
 	"strings"
 
 	apps "k8s.io/api/apps/v1"
@@ -30,9 +29,8 @@ func CreateFlannelAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration,
 		return err
 	}
 	endpoints := strings.ReplaceAll(controlPlaneEndpoint, fmt.Sprintf("%d", cfg.LocalAPIEndpoint.BindPort), fmt.Sprintf("%d", kubeadmconstants.EtcdListenClientPort))
-	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Arch, Version, EtcdEndPoints string }{
+	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Version, EtcdEndPoints string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         Version,
 		EtcdEndPoints:   endpoints,
 	})
