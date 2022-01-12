@@ -99,8 +99,7 @@ spec:
         component: calico
     spec:
       nodeSelector:
-        beta.kubernetes.io/os: linux
-        beta.kubernetes.io/arch: {{ .Arch }}
+        kubernetes.io/os: linux
       hostNetwork: true
       tolerations:
       - operator: Exists
@@ -109,7 +108,7 @@ spec:
       priorityClassName: system-node-critical
       initContainers:
         - name: install-cni
-          image: {{ .ImageRepository }}/cni-{{ .Arch }}:{{ .Version }}
+          image: {{ .ImageRepository }}/cni:{{ .Version }}
           imagePullPolicy: IfNotPresent
           command: ["/opt/cni/bin/install"]
           resources:
@@ -155,7 +154,7 @@ spec:
             privileged: true
       containers:
         - name: calico-node
-          image: {{ .ImageRepository }}/node-{{ .Arch }}:{{ .Version }}
+          image: {{ .ImageRepository }}/node:{{ .Version }}
           envFrom:
             - configMapRef:
                 name: kubernetes-services-endpoint
@@ -367,14 +366,13 @@ spec:
     spec:
       hostNetwork: true
       nodeSelector:
-        beta.kubernetes.io/os: linux
-        beta.kubernetes.io/arch: {{ .Arch }}
+        kubernetes.io/os: linux
       tolerations:
         - operator: Exists
       serviceAccountName: kube-controllers
       containers:
       - name: kube-controller
-        image: {{ .ImageRepository }}/kube-controllers-{{ .Arch }}:{{ .Version }}
+        image: {{ .ImageRepository }}/kube-controllers:{{ .Version }}
         imagePullPolicy: IfNotPresent
         resources:
           limits:
@@ -482,7 +480,7 @@ spec:
           value: /calico-secrets/etcd-cert
         - name: ETCD_KEY_FILE
           value: /calico-secrets/etcd-key
-        image: {{ .ImageRepository }}/ctl-{{.Arch}}:{{ .Version }}
+        image: {{ .ImageRepository }}/ctl:{{ .Version }}
         imagePullPolicy: IfNotPresent
         name: configure
         volumeMounts:

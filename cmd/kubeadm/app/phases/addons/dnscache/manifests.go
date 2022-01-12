@@ -42,10 +42,9 @@ spec:
       - operator: "Exists"
       nodeSelector:
         kubernetes.io/os: linux
-        kubernetes.io/arch: {{ .Arch }}
       containers:
       - name: cache
-        image: {{ .ImageRepository }}/k8s-dns-node-cache-{{ .Arch }}:{{ .Version }}
+        image: {{ .ImageRepository }}/k8s-dns-node-cache:{{ .Version }}
         resources:
           requests:
             cpu: 200m

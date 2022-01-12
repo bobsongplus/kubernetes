@@ -12,7 +12,7 @@ tde: compress
 	docker build  -t 172.22.50.227/system_containers/tde:${Version}  .
 
 arm64:
-	docker build  -t 172.22.50.227/system_containers/tde-arm64:${Version}  .
+	docker build  -t 172.22.50.227/arm64/tde:${Version} -f Dockerfile-arm64   .
 
 
 clean:

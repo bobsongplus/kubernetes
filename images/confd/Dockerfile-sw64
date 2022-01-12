@@ -1,0 +1,9 @@
+FROM 172.22.50.227/system_containers/golang-sw:1.16.4-buster
+
+LABEL vendor="TenxCloud Incorporated" \
+      maintainer=weiwei@tenxcloud.com
+
+RUN mkdir -p /go/src/github.com/kelseyhightower && cd /go/src/github.com/kelseyhightower  && git clone https://github.com/kelseyhightower/confd.git && cd confd && git checkout -b v0.16.0 v0.16.0 \
+    && CGO_ENABLED=0 GO111MODULE=off GOOS=linux GOARCH=sw64 go build -ldflags "-w -s -X main.GitSHA=7217b0c -X main.Version=v0.16.0" -o /confd .
+
+

@@ -55,7 +55,7 @@ spec:
       hostPID: true
       containers:
       - name: nb-ovsdb
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
+        image: {{ .ImageRepository }}/ovn:latest
         imagePullPolicy: IfNotPresent
         command: ["/root/ovnkube.sh", "nb-ovsdb"]
         securityContext:
@@ -100,7 +100,7 @@ spec:
         - name: healthz
           containerPort: 10256
       - name: sb-ovsdb
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
+        image: {{ .ImageRepository }}/ovn:latest
         imagePullPolicy: IfNotPresent
         command: ["/root/ovnkube.sh", "sb-ovsdb"]
         securityContext:
@@ -241,7 +241,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
       - name: run-ovn-northd
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
+        image: {{ .ImageRepository }}/ovn:latest
         imagePullPolicy: IfNotPresent
         command: ["/root/ovnkube.sh", "run-ovn-northd"]
         securityContext:
@@ -307,7 +307,7 @@ spec:
         - name: healthz
           containerPort: 10257
       - name: ovnkube-master
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
+        image: {{ .ImageRepository }}/ovn:latest
         imagePullPolicy: IfNotPresent
         command: ["/root/ovnkube.sh", "ovn-master"]
         securityContext:
@@ -457,7 +457,7 @@ spec:
       hostPID: true
       containers:
       - name: ovs-daemons
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
+        image: {{ .ImageRepository }}/ovn:latest
         imagePullPolicy: IfNotPresent
         command: ["/root/ovnkube.sh", "ovs-server"]
         livenessProbe:
@@ -499,7 +499,7 @@ spec:
               name: ovn-config
               key: k8s_apiserver
       - name: ovn-controller
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
+        image: {{ .ImageRepository }}/ovn:latest
         imagePullPolicy: IfNotPresent
         command: ["/root/ovnkube.sh", "ovn-controller"]
         securityContext:
@@ -563,7 +563,7 @@ spec:
         - name: healthz
           containerPort: 10258
       - name: ovn-node
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:latest
+        image: {{ .ImageRepository }}/ovn:latest
         imagePullPolicy: IfNotPresent
         command: ["/root/ovnkube.sh", "ovn-node"]
         securityContext:

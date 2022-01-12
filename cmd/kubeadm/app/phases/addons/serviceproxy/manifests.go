@@ -162,7 +162,7 @@ spec:
         - /run.sh
         - --plugins=tenx-proxy --watch=watchsrvs --emailReceiver=weiwei@tenxcloud.com
           --config=/etc/tenx/domain.json
-        image: {{ .ImageRepository }}/tenx-proxy-{{ .Arch }}:{{ .TenxProxyVersion }}
+        image: {{ .ImageRepository }}/tenx-proxy:{{ .TenxProxyVersion }}
         imagePullPolicy: IfNotPresent
         name: service-proxy
         volumeMounts:
@@ -181,7 +181,7 @@ spec:
         - sh
         - -c
         - sleep 10 && haproxy_exporter --haproxy.scrape-uri=unix:/run/haproxy/haproxy.sock
-        image: {{ .ImageRepository }}/haproxy-exporter-{{ .Arch }}:{{.HarpoxyExporterVersion}}
+        image: {{ .ImageRepository }}/haproxy-exporter:{{.HarpoxyExporterVersion}}
         imagePullPolicy: IfNotPresent
         name: exporter
         ports:

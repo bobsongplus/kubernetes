@@ -2,7 +2,6 @@ package multus
 
 import (
 	"fmt"
-	"runtime"
 	"strings"
 
 	apps "k8s.io/api/apps/v1"
@@ -31,18 +30,16 @@ import (
 */
 
 func CreateMultusAddon(cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
-	deploymentBytes, err := kubeadmutil.ParseTemplate(Deployment, struct{ ImageRepository, Arch, Version, Plugins string }{
+	deploymentBytes, err := kubeadmutil.ParseTemplate(Deployment, struct{ ImageRepository, Version, Plugins string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         MultusControllerVersion,
 		Plugins:         cfg.Networking.Plugin,
 	})
 	if err := createMultusController(deploymentBytes, client); err != nil {
 		return err
 	}
-	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Arch, Version string }{
+	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Version string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         MultusVersion,
 	})
 	if err != nil {

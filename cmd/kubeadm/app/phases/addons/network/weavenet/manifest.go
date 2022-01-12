@@ -143,7 +143,7 @@ spec:
     spec:
       initContainers:
       - name: weave-init
-        image: {{ .ImageRepository }}/weave-kube-{{ .Arch }}:{{ .Version }}
+        image: {{ .ImageRepository }}/weave-kube:{{ .Version }}
         command:
         - /home/weave/init.sh
         securityContext:
@@ -174,7 +174,7 @@ spec:
               fieldPath: spec.nodeName
         - name: IPALLOC_RANGE
           value: {{ .PodSubnet }}
-        image: {{ .ImageRepository }}/weave-kube-{{ .Arch }}:{{ .Version }}
+        image: {{ .ImageRepository }}/weave-kube:{{ .Version }}
         readinessProbe:
           httpGet:
             host: 127.0.0.1
@@ -208,7 +208,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        image: {{ .ImageRepository }}/weave-npc-{{ .Arch }}:{{ .Version }}
+        image: {{ .ImageRepository }}/weave-npc:{{ .Version }}
         resources:
           limits:
             cpu: 300m

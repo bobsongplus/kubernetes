@@ -48,7 +48,7 @@ spec:
       priorityClassName: system-cluster-critical
       containers:
       - name: autoscaler
-        image: {{ .ImageRepository }}/cluster-proportional-autoscaler-{{ .Arch }}:{{ .Version }}
+        image: {{ .ImageRepository }}/cluster-proportional-autoscaler:{{ .Version }}
         resources:
           limits:
             cpu: 100m

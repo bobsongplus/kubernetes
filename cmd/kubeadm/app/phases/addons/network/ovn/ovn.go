@@ -8,7 +8,6 @@ package ovn
 import (
 	"crypto/x509"
 	"fmt"
-	"runtime"
 
 	"github.com/google/uuid"
 	apps "k8s.io/api/apps/v1"
@@ -38,17 +37,15 @@ func CreateOvnAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, cli
 		return fmt.Errorf("error when label kubernetes master: %v", err)
 	}
 	//PHASE 1: create native ovn
-	ovnCentralDeploymentBytes, err := kubeadmutil.ParseTemplate(OvnCentralDeployment, struct{ ImageRepository, Arch, Version string }{
+	ovnCentralDeploymentBytes, err := kubeadmutil.ParseTemplate(OvnCentralDeployment, struct{ ImageRepository, Version string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         Version,
 	})
 	if err != nil {
 		return fmt.Errorf("error when parsing ovn-central deployment template: %v", err)
 	}
-	ovnHostDaemonSetBytes, err := kubeadmutil.ParseTemplate(OvnHostDaemonSet, struct{ ImageRepository, Arch, Version string }{
+	ovnHostDaemonSetBytes, err := kubeadmutil.ParseTemplate(OvnHostDaemonSet, struct{ ImageRepository, Version string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         Version,
 	})
 	if err != nil {
@@ -58,9 +55,8 @@ func CreateOvnAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, cli
 		return err
 	}
 	//PHASE 2: create custom ovn
-	ovnControllerDeploymentBytes, err := kubeadmutil.ParseTemplate(OvnControllerDeployment, struct{ ImageRepository, Arch, Version, PodSubnet, NodeSubnet string }{
+	ovnControllerDeploymentBytes, err := kubeadmutil.ParseTemplate(OvnControllerDeployment, struct{ ImageRepository, Version, PodSubnet, NodeSubnet string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         Version,
 		PodSubnet:       defaultSubnet,
 		NodeSubnet:      cfg.Networking.NodeSubnet,
@@ -68,18 +64,16 @@ func CreateOvnAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, cli
 	if err != nil {
 		return fmt.Errorf("error when parsing ovn-controller deployment template: %v", err)
 	}
-	ovnDaemonDaemonSetBytes, err := kubeadmutil.ParseTemplate(OvnDaemonDaemonSet, struct{ ImageRepository, Arch, Version, ServiceSubnet string }{
+	ovnDaemonDaemonSetBytes, err := kubeadmutil.ParseTemplate(OvnDaemonDaemonSet, struct{ ImageRepository, Version, ServiceSubnet string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         Version,
 		ServiceSubnet:   cfg.Networking.ServiceSubnet,
 	})
 	if err != nil {
 		return fmt.Errorf("error when parsing ovn-daemon daemonset template: %v", err)
 	}
-	ovnInspectorDaemonSetBytes, err := kubeadmutil.ParseTemplate(OvnInspectorDaemonSet, struct{ ImageRepository, Arch, Version string }{
+	ovnInspectorDaemonSetBytes, err := kubeadmutil.ParseTemplate(OvnInspectorDaemonSet, struct{ ImageRepository, Version string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         Version,
 	})
 	if err != nil {

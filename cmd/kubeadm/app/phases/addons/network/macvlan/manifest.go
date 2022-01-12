@@ -25,7 +25,7 @@ spec:
       initContainers:
         - name: install-cni
           command: ["/install-cni.sh"]
-          image: {{ .ImageRepository }}/dhcp-daemon-{{.Arch}}:{{ .Version }}
+          image: {{ .ImageRepository }}/dhcp-daemon:{{ .Version }}
           env:
             - name: CNI_CONF_NAME
               value: "50-macvlan.conflist"
@@ -35,7 +35,7 @@ spec:
             - mountPath: /host/etc/cni/net.d
               name: cni-net-dir
         - name: clean-sock
-          image: {{ .ImageRepository }}/dhcp-daemon-{{.Arch}}:{{ .Version }}
+          image: {{ .ImageRepository }}/dhcp-daemon:{{ .Version }}
           command: ["/bin/sh"]
           args: ["-c", "rm -f /host/run/cni/dhcp.sock"]
           volumeMounts:
@@ -47,7 +47,7 @@ spec:
             - /dhcp
             - daemon
             - -hostprefix=/host
-          image: {{ .ImageRepository }}/dhcp-daemon-{{.Arch}}:{{ .Version }}
+          image: {{ .ImageRepository }}/dhcp-daemon:{{ .Version }}
           imagePullPolicy: IfNotPresent
           resources:
             limits:

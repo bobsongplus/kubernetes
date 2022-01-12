@@ -7,7 +7,6 @@ package macvlan
 
 import (
 	"fmt"
-	"runtime"
 
 	apps "k8s.io/api/apps/v1"
 	kuberuntime "k8s.io/apimachinery/pkg/runtime"
@@ -24,9 +23,8 @@ import (
 
 func CreateMacVlanAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
 	//PHASE 2: create dhcp containers
-	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Arch, Version string }{
+	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Version string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         Version,
 	})
 

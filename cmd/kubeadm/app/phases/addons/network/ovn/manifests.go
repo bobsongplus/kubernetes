@@ -218,7 +218,7 @@ spec:
       shareProcessNamespace: true
       containers:
         - name: ovn-central
-          image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+          image: {{ .ImageRepository }}/ovn:{{ .Version }}
           imagePullPolicy: IfNotPresent
           command: ["/ovn/start-central.sh"]
           securityContext:
@@ -285,7 +285,7 @@ spec:
             failureThreshold: 5
             timeoutSeconds: 45
         - name: ovn-exporter
-          image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+          image: {{ .ImageRepository }}/ovn:{{ .Version }}
           imagePullPolicy: IfNotPresent
           command: ["/ovn/start-exporter.sh"]
           env:
@@ -395,7 +395,7 @@ spec:
       hostPID: true
       containers:
         - name: host
-          image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+          image: {{ .ImageRepository }}/ovn:{{ .Version }}
           imagePullPolicy: IfNotPresent
           command: ["/ovn/start-host.sh"]
           securityContext:
@@ -584,7 +584,7 @@ spec:
       hostNetwork: true
       containers:
         - name: ovn-controller
-          image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+          image: {{ .ImageRepository }}/ovn:{{ .Version }}
           imagePullPolicy: IfNotPresent
           command:
           - /ovn/start-controller.sh
@@ -670,7 +670,7 @@ spec:
       hostPID: true
       initContainers:
       - name: install-cni
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+        image: {{ .ImageRepository }}/ovn:{{ .Version }}
         imagePullPolicy: IfNotPresent
         command: ["/ovn/install-cni.sh"]
         securityContext:
@@ -681,7 +681,7 @@ spec:
             name: cni-bin
       containers:
       - name: cniserver
-        image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+        image: {{ .ImageRepository }}/ovn:{{ .Version }}
         imagePullPolicy: IfNotPresent
         command:
           - sh
@@ -787,7 +787,7 @@ spec:
       hostPID: true
       containers:
         - name: inspector
-          image: {{ .ImageRepository }}/ovn-{{.Arch}}:{{ .Version }}
+          image: {{ .ImageRepository }}/ovn:{{ .Version }}
           command: ["/ovn/ovn-inspector", "--external-address=114.114.114.114", "--external-dns=tenxcloud.com"]
           imagePullPolicy: IfNotPresent
           securityContext:

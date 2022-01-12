@@ -1,0 +1,13 @@
+FROM 172.22.50.227/mips64le/docker:19.03.11.ce AS builder
+FROM calico/ctl:v3.18.4-mips64le AS ctl
+FROM mips64le/debian:buster-slim
+
+LABEL vendor="TenxCloud Incorporated" \
+      maintainer=weiwei@tenxcloud.com
+
+RUN echo "deb http://mirrors.huaweicloud.com/debian/ buster main non-free contrib" > /etc/apt/sources.list \
+    &&  apt-get update && apt-get install -y curl
+COPY --from=builder /usr/bin/docker /usr/bin/docker
+COPY --from=ctl     /calicoctl     /usr/bin/calicoctl
+ADD kubectl /usr/bin/
+CMD sleep infinity

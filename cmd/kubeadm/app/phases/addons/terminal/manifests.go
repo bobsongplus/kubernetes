@@ -36,7 +36,7 @@ spec:
       - operator: Exists
       containers:
         - name: kubectl
-          image: {{ .ImageRepository }}/kubectl-{{ .Arch }}:{{ .Version }}
+          image: {{ .ImageRepository }}/kubectl:{{ .Version }}
           resources:
             limits:
               cpu: 1000m
