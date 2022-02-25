@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -15,10 +14,10 @@ import (
 
 func CreateHaproxyStaticPod(cfg *kubeadmapi.InitConfiguration) error {
 	var port string
-	if strings.IndexAny(cfg.ControlPlaneEndpoint,":") == -1 {
+	if strings.IndexAny(cfg.ControlPlaneEndpoint, ":") == -1 {
 		port = string(cfg.LocalAPIEndpoint.BindPort)
 	} else {
-		port = strings.Split(cfg.ControlPlaneEndpoint,":")[1]
+		port = strings.Split(cfg.ControlPlaneEndpoint, ":")[1]
 	}
 	haproxyCfgBytes, err := kubeadmutil.ParseTemplateWithDelims(HAProxyCfg, struct{ Port string }{
 		Port: port,
@@ -30,9 +29,8 @@ func CreateHaproxyStaticPod(cfg *kubeadmapi.InitConfiguration) error {
 	if err := ioutil.WriteFile(haproxyCfgFile, haproxyCfgBytes, 0644); err != nil {
 		return errors.Wrapf(err, "failed to write haproxy.cfg file %s", haproxyCfgFile)
 	}
-	haproxyBytes, err := kubeadmutil.ParseTemplate(HAProxy, struct{ ImageRepository, Arch, Version string }{
+	haproxyBytes, err := kubeadmutil.ParseTemplate(HAProxy, struct{ ImageRepository, Version string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         Version,
 	})
 	if err != nil {

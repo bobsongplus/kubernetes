@@ -4,7 +4,7 @@ const (
 	Version = "2.2.11"
 
 	DefaultHaproxyCfg = "haproxy.cfg.tmpl"
-	DefaultHaproxy  = "haproxy.yaml"
+	DefaultHaproxy    = "haproxy.yaml"
 
 	HAProxyCfg = `
 global
@@ -86,9 +86,16 @@ metadata:
     tier: control-plane
 spec:
   containers:
-  - image: {{ .ImageRepository }}/haproxy-{{.Arch}}:{{.Version}}
+  - image: {{ .ImageRepository }}/haproxy:{{.Version}}
     imagePullPolicy: IfNotPresent
     name: haproxy
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 200m
+        memory: 512Mi
     livenessProbe:
       failureThreshold: 8
       httpGet:
@@ -115,4 +122,3 @@ spec:
       type: DirectoryOrCreate
 `
 )
-

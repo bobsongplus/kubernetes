@@ -204,7 +204,7 @@ func runControlPlaneKeepalivedSubphase() func(c workflow.RunData) error {
 		if !ok {
 			return errors.New("keepalived phase invoked with an invalid data struct")
 		}
-		if  data.DryRun() {
+		if data.DryRun() {
 			return nil
 		}
 		if data.Cfg().ControlPlaneEndpoint == "" {
@@ -216,4 +216,3 @@ func runControlPlaneKeepalivedSubphase() func(c workflow.RunData) error {
 		return keepalived.CreateKeepalivedStaticPod(data.Cfg())
 	}
 }
-

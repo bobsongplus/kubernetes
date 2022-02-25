@@ -1,12 +1,13 @@
+FROM --platform=linux/mips64le 172.22.50.227/mips64le/confd:v0.16.0
 FROM mips64le/debian:bullseye-slim
 
 LABEL vendor="TenxCloud Incorporated" \
       maintainer=weiwei@tenxcloud.com
 
-COPY runit/ /
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
-    apk add --no-cache runit && rm -rf /var/cache/apk/* &&  \
-    wget -qc -O /usr/bin/confd https://github.com/kelseyhightower/confd/releases/download/v0.16.0/confd-0.16.0-linux-amd64 && \
-    chmod +x /usr/bin/confd
+COPY runit-mips64le/ /
+ADD haproxy-mips64le-v2.2.11.tar.xz /
+COPY --from=0 /confd /usr/bin/confd
+RUN echo "deb http://mirrors.huaweicloud.com/debian/ bullseye main non-free contrib" > /etc/apt/sources.list && \
+    apt-get update && apt-get install -y runit procps tree && chmod +x /usr/bin/confd
 
 ENTRYPOINT ["start_runit"]

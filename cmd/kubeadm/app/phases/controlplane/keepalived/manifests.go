@@ -4,7 +4,7 @@ const (
 	Version = "2.2.0"
 
 	DefaultKeepalivedCfg = "keepalived.conf.tmpl"
-	DefaultKeepalived  = "keepalived.yaml"
+	DefaultKeepalived    = "keepalived.yaml"
 
 	KeepalivedCfg = `
 global_defs {
@@ -65,15 +65,19 @@ spec:
   priorityClassName: system-cluster-critical
   containers:
     - name: keepalived
-      image: {{ .ImageRepository }}/keepalived-{{.Arch}}:{{.Version}}
+      image: {{ .ImageRepository }}/keepalived:{{.Version}}
+      resources:
+        limits:
+          cpu: 200m
+          memory: 512Mi
+        requests:
+          cpu: 200m
+          memory: 512Mi
       volumeMounts:
         - mountPath: /etc/confd/templates
           name: config
         - mountPath: /etc/kubernetes/pki
           name: pki
-      resources:
-        requests:
-          cpu: 100m
       securityContext:
         privileged: true
         capabilities:
@@ -89,4 +93,3 @@ spec:
         type: DirectoryOrCreate
 `
 )
-

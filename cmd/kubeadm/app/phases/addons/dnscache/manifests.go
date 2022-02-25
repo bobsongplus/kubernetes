@@ -10,10 +10,9 @@ package dnscache
  */
 
 const (
+	DnsCacheVersion = "1.17.0"
 
-	DnsCacheVersion  = "1.17.0"
-
-	CoreDnsCache =`
+	CoreDnsCache = `
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -52,7 +51,7 @@ spec:
           limits:
             cpu: 200m
             memory: 512Mi
-        args: [ "-localip", "{{ .LocalIP }}", "-conf", "/etc/Corefile", "-interfacename", "dns"]
+        args: [ "-localip", "{{ .LocalDNSAddress }}", "-conf", "/etc/Corefile", "-interfacename", "dns"]
         securityContext:
           privileged: true
         ports:
@@ -113,7 +112,7 @@ data:
         }
         reload
         loop
-        bind {{ .LocalDNSAddress }} {{ .DNSServerAddress }}
+        bind {{ .LocalDNSAddress }}
         forward . __PILLAR__CLUSTER__DNS__  {
            force_tcp
         }
@@ -125,7 +124,7 @@ data:
         cache 30
         reload
         loop
-        bind {{ .LocalDNSAddress }} {{ .DNSServerAddress }}
+        bind {{ .LocalDNSAddress }}
         forward .  __PILLAR__CLUSTER__DNS__  {
            force_tcp
         }
@@ -136,7 +135,7 @@ data:
         cache 30
         reload
         loop
-        bind {{ .LocalDNSAddress }} {{ .DNSServerAddress }}
+        bind {{ .LocalDNSAddress }}
         forward .  __PILLAR__CLUSTER__DNS__  {
            force_tcp
         }
@@ -147,10 +146,9 @@ data:
         cache 30
         reload
         loop
-        bind {{ .LocalDNSAddress }} {{ .DNSServerAddress }}
+        bind {{ .LocalDNSAddress }}
         forward . __PILLAR__UPSTREAM__SERVERS__
         prometheus :9253
         }
 `
-
 )

@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -34,9 +33,8 @@ func CreateKeepalivedStaticPod(cfg *kubeadmapi.InitConfiguration) error {
 	if err := ioutil.WriteFile(keepalivedCfgFile, keepalivedCfgBytes, 0644); err != nil {
 		return errors.Wrapf(err, "failed to write keepalived.conf file %s", keepalivedCfgFile)
 	}
-	keepalivedBytes, err := kubeadmutil.ParseTemplate(Keepalived, struct{ ImageRepository, Arch, Version string }{
+	keepalivedBytes, err := kubeadmutil.ParseTemplate(Keepalived, struct{ ImageRepository, Version string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
-		Arch:            runtime.GOARCH,
 		Version:         Version,
 	})
 	if err != nil {

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ports="6443 9000"
+ports="6443"
 for x in $ports; do
   </dev/tcp/127.0.0.1/$x
   if [[ $? -eq 0 ]]; then
