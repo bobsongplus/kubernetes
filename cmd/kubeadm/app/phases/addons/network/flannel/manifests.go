@@ -1,15 +1,15 @@
 package flannel
 
 /**
- *  quay.io/coreos/flannel:v0.14.0
- *  quay.io/coreos/flannel:v0.14.0-amd64
+ *  docker pull flannelcni/flannel:v0.17.0
+ *  docker pull flannelcni/flannel-cni-plugin:v1.0.1
  *  https://github.com/coreos/flannel/blob/master/Documentation/configuration.md
  *  https://github.com/coreos/flannel/blob/master/Documentation/backends.md
  *  https://github.com/coreos/flannel/blob/master/Documentation/kube-flannel.yml
  */
 
 const (
-	Version = "v0.14.0"
+	Version = "v0.17.0"
 
 	ConfigMap = `
 kind: ConfigMap
@@ -24,7 +24,7 @@ data:
   cni-conf.json: |
     {
       "name": "flannel",
-      "cniVersion":"0.3.1",
+      "cniVersion":"1.0.1",
       "plugins": [
         {
           "type": "flannel",
@@ -95,7 +95,18 @@ spec:
       - operator: Exists
       serviceAccountName: flannel
       initContainers:
-      - name: install-cni
+      - name: install-cni-plugin
+        image: {{ .ImageRepository }}/flannel-cni-plugin:v1.0.1
+        command:
+        - cp
+        args:
+        - -f
+        - /flannel
+        - /opt/cni/bin/flannel
+        volumeMounts:
+        - name: cni-plugin
+        mountPath: /opt/cni/bin
+      - name: install-cni-cfg
         image: {{ .ImageRepository }}/flannel:{{ .Version }}
         command:
         - cp
@@ -126,7 +137,7 @@ spec:
         securityContext:
           privileged: false
           capabilities:
-            add: ["NET_ADMIN"]
+            add: ["NET_ADMIN", "NET_RAW"]
         env:
         - name: POD_NAME
           valueFrom:
@@ -141,6 +152,8 @@ spec:
           mountPath: /run/flannel
         - name: flannel-cfg
           mountPath: /etc/kube-flannel/
+        - name: xtables-lock
+          mountPath: /run/xtables.lock
         - name: etc-resolv-conf
           mountPath: /etc/resolv.conf
           readOnly: true
@@ -148,12 +161,19 @@ spec:
         - name: run
           hostPath:
             path: /run/flannel
+        - name: cni-plugin
+          hostPath:
+            path: /opt/cni/bin
         - name: cni
           hostPath:
             path: /etc/cni/net.d
         - name: flannel-cfg
           configMap:
             name: flannel-cfg
+        - name: xtables-lock
+          hostPath:
+            path: /run/xtables.lock
+            type: FileOrCreate
         - name: etc-resolv-conf
           hostPath:
             path: /etc/resolv.conf
