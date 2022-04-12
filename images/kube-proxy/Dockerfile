@@ -1,4 +1,4 @@
-FROM k8s.gcr.io/build-image/debian-iptables:buster-v1.6.5
+FROM k8s.gcr.io/build-image/debian-iptables:buster-v1.6.7
 
 LABEL vendor="TenxCloud Incorporated" \
       maintainer=weiwei@tenxcloud.com

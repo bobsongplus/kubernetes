@@ -1,4 +1,4 @@
-Version=v1.22.1
+Version=v1.22.8
 
 ARCH?=amd64
 OUT_DIR?=_output
@@ -11,7 +11,7 @@ compress:
 	upx --best --ultra-brute -o kube-scheduler ${DOCKERIZED_OUTPUT_PATH}/kube-scheduler
 
 build: compress
-	docker build -t 172.22.50.227/system_containers/kube-scheduler-${ARCH}:${Version}  .
+	docker build -t 172.22.50.227/system_containers/kube-scheduler:${Version}  .
 
 clean:
 	rm -f ./$(shell basename $(shell pwd)) >/dev/null
