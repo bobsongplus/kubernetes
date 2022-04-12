@@ -18,6 +18,7 @@ package images
 
 import (
 	"fmt"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/macvlan"
 
 	"k8s.io/klog/v2"
 
@@ -99,15 +100,35 @@ func GetEtcdImage(cfg *kubeadmapi.ClusterConfiguration) string {
 func GetNetworkingImage(cfg *kubeadmapi.ClusterConfiguration) []string {
 	imgs := []string{}
 	repoPrefix := cfg.GetControlPlaneImageRepository()
-	if cfg.Networking.Plugin == constants.Calico {
+	if cfg.Networking.Plugin == constants.CalicoK8S {
 		imgs = append(imgs, GetGenericImage(repoPrefix, "node", calico.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "kube-controllers", calico.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "cni", calico.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "ctl", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "typha", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "apiserver", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "calico-bootstraper", calico.BootstraperVersion))
+	} else if cfg.Networking.Plugin == constants.Calico {
+		imgs = append(imgs, GetGenericImage(repoPrefix, "node", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "kube-controllers", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "cni", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "ctl", calico.Version))
+	} else if cfg.Networking.Plugin == constants.CalicoOperator {
+		imgs = append(imgs, GetGenericImage(repoPrefix, "node", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "kube-controllers", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "cni", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "ctl", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "typha", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "apiserver", calico.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "calico-operator", calico.OperatorVersion))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "calico-bootstraper", calico.BootstraperVersion))
 	} else if cfg.Networking.Plugin == constants.Flannel {
 		imgs = append(imgs, GetGenericImage(repoPrefix, "flannel", flannel.Version))
 	} else if cfg.Networking.Plugin == constants.Ovn {
 		imgs = append(imgs, GetGenericImage(repoPrefix, "ovn", ovn.Version))
+	} else if cfg.Networking.Plugin == constants.Macvlan {
+		imgs = append(imgs, GetGenericImage(repoPrefix, "whereabouts", macvlan.WhereAboutsVersion))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "whereabouts-bootstraper", macvlan.WhereAboutsBootstrapterVersion))
 	} else if cfg.Networking.Plugin == constants.Weave {
 		imgs = append(imgs, GetGenericImage(repoPrefix, "weave-kube", weavenet.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "weave-npc", weavenet.Version))

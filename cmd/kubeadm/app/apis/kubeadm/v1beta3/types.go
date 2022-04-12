@@ -266,10 +266,7 @@ type Networking struct {
 	NodeSubnet string `json:"nodeSubnet,omitempty"`
 	// Network Plugin: calico ....
 	// +optional
-	Plugin string  `json:"plugin,omitempty"`
-	// Network Mode: ipv4, ipv6, dual-stack
-	// +optional
-	Mode string `json:"mode,omitempty"`
+	Plugin string `json:"plugin,omitempty"`
 }
 
 // Etcd contains elements describing Etcd configuration.

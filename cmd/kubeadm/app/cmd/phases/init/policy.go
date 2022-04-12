@@ -22,7 +22,7 @@ func NewPolicyPhase() workflow.Phase {
 }
 
 func runPolicy(c workflow.RunData) error {
-	_, client, _, err := getInitData(c)
+	_, client, err := getInitData(c)
 	if err != nil {
 		return err
 	}

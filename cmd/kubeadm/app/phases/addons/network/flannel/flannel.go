@@ -100,17 +100,3 @@ func createFlannel(daemonSetBytes, configBytes []byte, client clientset.Interfac
 	return apiclient.CreateOrUpdateDaemonSet(client, daemonSet)
 
 }
-
-func currentIsMasterPlugin(cfg *kubeadmapi.InitConfiguration) string {
-	plugins := strings.Split(cfg.Networking.Plugin,",")
-	if len(plugins) == 1 {
-           return cfg.Networking.PodSubnet
-	} else if len(plugins) ==2 {
-		if plugins[0] == "flannel" {//calico,ovn,weave != flannel
-			return cfg.Networking.PodSubnet
-		} else {
-			return cfg.Networking.PodExtraSubnet
-		}
-	}
-	return ""
-}

@@ -15,7 +15,9 @@ package dnsautoscaler
  * Autoscaling parameters could be tuned by modifying the kube-dns-autoscaler ConfigMap in kube-system namespace.
  *
  * gcr.io/google-containers/cluster-proportional-autoscaler-amd64:1.6.0
- * k8s.gcr.io/cpa/cluster-proportional-autoscaler-amd64:1.8.3
+ * k8s.gcr.io/cpa/cluster-proportional-autoscaler-amd64:1.8.5
+ *
+ * https://console.cloud.google.com/gcr/images/k8s-artifacts-prod/us/cpa
  *
  * http://kubernetes.io/docs/tasks/administer-cluster/dns-horizontal-autoscaling/
  * https://github.com/kubernetes-incubator/cluster-proportional-autoscaler/
@@ -25,7 +27,7 @@ package dnsautoscaler
  */
 
 const (
-	CoreDnsAutoscalerVersion = "1.8.3"
+	CoreDnsAutoscalerVersion = "1.8.5"
 
 	CoreDnsAutoscaler = `
 apiVersion: apps/v1

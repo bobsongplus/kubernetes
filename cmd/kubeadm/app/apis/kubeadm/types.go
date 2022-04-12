@@ -249,19 +249,17 @@ type NodeRegistrationOptions struct {
 type Networking struct {
 	// ServiceSubnet is the subnet used by k8s services. Defaults to "10.96.0.0/12".
 	ServiceSubnet string
-	// PodSubnet is the subnet used by pods.
+	// PodSubnet is the subnet used by eth0.
 	PodSubnet string
-	// PodExtraSubnet is the subnet used by pods.
+	// PodExtraSubnet is the subnet used by eth1.
 	PodExtraSubnet string
 	// DNSDomain is the dns domain used by k8s services. Defaults to "cluster.local".
 	DNSDomain string
 
-	//NodeSubnet
+	//NodeSubnet is the subnet used by ovn node switch cidr
 	NodeSubnet string
 	// Network Plugin: calico ....
 	Plugin string
-	// Network Mode: ipv4, ipv6, dual-stack
-	Mode string
 }
 
 // Etcd contains elements describing Etcd configuration.

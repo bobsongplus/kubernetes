@@ -1,28 +1,20 @@
 package calico
 
 import (
-	"context"
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"strings"
-
 	apps "k8s.io/api/apps/v1"
+	batch "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	kuberuntime "k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
-
-	"sigs.k8s.io/yaml"
 )
 
-func CreateCalicoOperatorAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, client clientset.Interface, dynamic dynamic.Interface) error {
+func CreateCalicoOperatorAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
 	//PHASE 1: create calico operator
 	operatorDeploymentBytes, err := kubeadmutil.ParseTemplate(OperatorDeployment, struct{ ImageRepository, Version string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
@@ -35,7 +27,15 @@ func CreateCalicoOperatorAddon(defaultSubnet string, cfg *kubeadmapi.InitConfigu
 		return err
 	}
 	//PHASE 2: create calico Components(calico-node,calico-apiserver,typha,kube-controller)
-	if err := createCalicoComponents(defaultSubnet, cfg, dynamic); err != nil {
+	calicoBootstraperJobBytes, err := kubeadmutil.ParseTemplate(BootstraperJob, struct{ ImageRepository, PodSubnet, Version string }{
+		ImageRepository: cfg.ImageRepository,
+		PodSubnet:       defaultSubnet,
+		Version:         BootstraperVersion,
+	})
+	if err != nil {
+		return fmt.Errorf("error when parsing calico bootstraper job template: %v", err)
+	}
+	if err := createCalicoBootstraper(calicoBootstraperJobBytes, client); err != nil {
 		return fmt.Errorf("error when create calico & apiserver: %v", err)
 	}
 	fmt.Println("[addons] Applied essential addon: calico")
@@ -85,34 +85,21 @@ func createCalicoOperator(deploymentBytes []byte, client clientset.Interface) er
 	return apiclient.CreateOrUpdateDeployment(client, deployment)
 }
 
-func createCalicoComponents(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, dynamic dynamic.Interface) error {
-	// 1. calico installation
-	var calicoGVR = schema.GroupVersionResource{Group: "operator.tigera.io", Version: "v1", Resource: "installations"}
-	installation := &unstructured.Unstructured{}
-	//PHASE 1: create calico operator
-	imageRepository := strings.Split(cfg.GetControlPlaneImageRepository(), "/")
-	InstallationBytes, err := kubeadmutil.ParseTemplate(Installation, struct{ Registry, ImagePath, PodSubnet string }{
-		Registry:  imageRepository[0],
-		ImagePath: imageRepository[1],
-		PodSubnet: defaultSubnet,
-	})
-	if err != nil {
-		return fmt.Errorf("error when parsing calico installation template: %v", err)
+func createCalicoBootstraper(JobBytes []byte, client clientset.Interface) error {
+	//PHASE 1:  RBAC used with calico-operator
+	serviceAccount := &v1.ServiceAccount{}
+	if err := kuberuntime.DecodeInto(scheme.Codecs.UniversalDecoder(), []byte(BootstraperServiceAccount), serviceAccount); err != nil {
+		return fmt.Errorf("unable to decode calico bootstraper  serviceAccount %v", err)
 	}
-	if err := yaml.Unmarshal(InstallationBytes, installation); err != nil {
-		return fmt.Errorf("can't unmarshal YAML: %v", err)
-	}
-	if _, err := dynamic.Resource(calicoGVR).Create(context.TODO(), installation, metav1.CreateOptions{}); err != nil {
+	// Create the serviceAccount for calico bootstraper  or update it in case it already exists
+	if err := apiclient.CreateOrUpdateServiceAccount(client, serviceAccount); err != nil {
 		return err
 	}
-	// 2 calico apiserver
-	var apiserverGVR = schema.GroupVersionResource{Group: "operator.tigera.io", Version: "v1", Resource: "apiservers"}
-	apiserver := &unstructured.Unstructured{}
-	if err := yaml.Unmarshal([]byte(APIServer), apiserver); err != nil {
-		return fmt.Errorf("can't unmarshal YAML: %v", err)
+
+	//PHASE 2 : create job to configure calico bootstraper
+	job := &batch.Job{}
+	if err := kuberuntime.DecodeInto(scheme.Codecs.UniversalDecoder(), JobBytes, job); err != nil {
+		return fmt.Errorf("unable to decode calico bootstraper Job %v", err)
 	}
-	if _, err := dynamic.Resource(apiserverGVR).Create(context.TODO(), apiserver, metav1.CreateOptions{}); err != nil {
-		return err
-	}
-	return nil
+	return apiclient.CreateOrUpdateJob(client, job)
 }

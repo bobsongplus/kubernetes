@@ -7,7 +7,7 @@ package calico
 
 import (
 	"fmt"
-	"net"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/calico"
 	"strings"
 
 	apps "k8s.io/api/apps/v1"
@@ -19,7 +19,6 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
-	kubeadmapiv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
@@ -28,17 +27,17 @@ import (
 func CreateCalicoAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
 	//PHASE 1: create calico node containers
 	var iPAutoDetection, iP6AutoDetection, assignIpv4, assignIpv6 string
-	if GetNetworkMode(defaultSubnet) == NetworkIPV6Mode { // ipv6
+	if calico.GetNetworkMode(defaultSubnet) == calico.NetworkIPV6Mode { // only ipv6
 		iPAutoDetection = "none"
 		iP6AutoDetection = "autodetect"
 		assignIpv4 = "false"
 		assignIpv6 = "true"
-	} else if GetNetworkMode(defaultSubnet) == NetworkDualStackMode { // ipv4 & ipv6
+	} else if calico.GetNetworkMode(defaultSubnet) == calico.NetworkDualStackMode { // ipv4 & ipv6
 		iPAutoDetection = "autodetect"
 		iP6AutoDetection = "autodetect"
 		assignIpv4 = "true"
 		assignIpv6 = "true"
-	} else { // ipv4
+	} else { // only ipv4
 		iPAutoDetection = "autodetect"
 		iP6AutoDetection = "none"
 		assignIpv4 = "true"
@@ -89,18 +88,20 @@ func CreateCalicoAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, 
 		return err
 	}
 	//PHASE 3: create calico ctl job to configure ip pool
-	if GetNetworkMode(defaultSubnet) == NetworkIPV6Mode { // ipv6
-		if err := createCalicoIPPool(kubeadmapiv1.DefaultServicesIpv6Subnet, kubeadmapiv1.DefaultPodIpv6Subnet, "default-ipv6pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
+	if calico.GetNetworkMode(defaultSubnet) == calico.NetworkIPV6Mode { // only ipv6
+		if err := createCalicoIPPool(cfg.Networking.ServiceSubnet, defaultSubnet, "default-ipv6pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
 			return err
 		}
-	} else if GetNetworkMode(defaultSubnet) == NetworkDualStackMode { // ipv4 & ipv6
-		if err := createCalicoIPPool(kubeadmapiv1.DefaultServicesIpv6Subnet, kubeadmapiv1.DefaultPodIpv6Subnet, "default-ipv6pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
+	} else if calico.GetNetworkMode(defaultSubnet) == calico.NetworkDualStackMode { // ipv4 & ipv6
+		serviceSubnet := strings.Split(cfg.Networking.ServiceSubnet, ",")
+		podSubnet := strings.Split(defaultSubnet, ",")
+		if err := createCalicoIPPool(serviceSubnet[0], podSubnet[0], "default-ipv4pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
 			return err
 		}
-		if err := createCalicoIPPool(cfg.Networking.ServiceSubnet, defaultSubnet, "default-ipv4pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
+		if err := createCalicoIPPool(serviceSubnet[1], podSubnet[1], "default-ipv6pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
 			return err
 		}
-	} else { // ipv4
+	} else { // only ipv4
 		if err := createCalicoIPPool(cfg.Networking.ServiceSubnet, defaultSubnet, "default-ipv4pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
 			return err
 		}
@@ -267,31 +268,4 @@ func createCalicoIPPool(serviceSubnet, podSubnet, name, imageRepository string, 
 		return err
 	}
 	return nil
-}
-
-type NetworkMode string
-
-const (
-	//NetworkIPV4Mode IPv4 mode
-	NetworkIPV4Mode NetworkMode = "ipv4"
-	//NetworkIPV6Mode  IPv6 mode
-	NetworkIPV6Mode NetworkMode = "ipv6"
-	//NetworkDualStackMode IPv4/IPv6 dual-stack
-	NetworkDualStackMode NetworkMode = "dual-stack"
-)
-
-func GetNetworkMode(cidr string) NetworkMode {
-	subnets := strings.Split(cidr, ",")
-	if len(subnets) == 2 {
-		return NetworkDualStackMode
-	}
-	ip, _, err := net.ParseCIDR(cidr)
-	if err != nil {
-		fmt.Errorf("error: parseCIDR %s : %v", cidr, err)
-	}
-	if ip.To4() == nil {
-		return NetworkIPV6Mode
-	} else {
-		return NetworkIPV4Mode
-	}
 }

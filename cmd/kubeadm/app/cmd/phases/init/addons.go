@@ -18,8 +18,6 @@ package phases
 
 import (
 	"github.com/pkg/errors"
-	"k8s.io/client-go/dynamic"
-
 	clientset "k8s.io/client-go/kubernetes"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/options"
@@ -106,26 +104,22 @@ func NewAddonPhase() workflow.Phase {
 	}
 }
 
-func getInitData(c workflow.RunData) (*kubeadmapi.InitConfiguration, clientset.Interface, dynamic.Interface, error) {
+func getInitData(c workflow.RunData) (*kubeadmapi.InitConfiguration, clientset.Interface, error) {
 	data, ok := c.(InitData)
 	if !ok {
-		return nil, nil, nil, errors.New("addon phase invoked with an invalid data struct")
+		return nil, nil, errors.New("addon phase invoked with an invalid data struct")
 	}
 	cfg := data.Cfg()
 	client, err := data.Client()
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
-	dynamicClient, err := data.DynamicClient()
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	return cfg, client, dynamicClient, err
+	return cfg, client, err
 }
 
 // runCoreDNSAddon installs CoreDNS addon to a Kubernetes cluster
 func runCoreDNSAddon(c workflow.RunData) error {
-	cfg, client, _, err := getInitData(c)
+	cfg, client, err := getInitData(c)
 	if err != nil {
 		return err
 	}
@@ -134,7 +128,7 @@ func runCoreDNSAddon(c workflow.RunData) error {
 
 // runKubeProxyAddon installs KubeProxy addon to a Kubernetes cluster
 func runKubeProxyAddon(c workflow.RunData) error {
-	cfg, client, _, err := getInitData(c)
+	cfg, client, err := getInitData(c)
 	if err != nil {
 		return err
 	}
@@ -143,7 +137,7 @@ func runKubeProxyAddon(c workflow.RunData) error {
 
 // runTerminalAddon installs network addon to a Kubernetes cluster
 func runTerminalAddon(c workflow.RunData) error {
-	cfg, client, _, err := getInitData(c)
+	cfg, client, err := getInitData(c)
 	if err != nil {
 		return err
 	}
@@ -152,7 +146,7 @@ func runTerminalAddon(c workflow.RunData) error {
 
 // runNetworkAddon installs network addon to a Kubernetes cluster
 func runNetworkAddon(c workflow.RunData) error {
-	cfg, client, dynamic, err := getInitData(c)
+	cfg, client, err := getInitData(c)
 	if err != nil {
 		return err
 	}
@@ -161,7 +155,7 @@ func runNetworkAddon(c workflow.RunData) error {
 	//if err != nil {
 	//	return err
 	//}
-	return networkaddon.EnsureNetworkAddons(cfg, client, dynamic)
+	return networkaddon.EnsureNetworkAddons(cfg, client)
 }
 
 // runStorageAddon installs storage addon to a Kubernetes cluster

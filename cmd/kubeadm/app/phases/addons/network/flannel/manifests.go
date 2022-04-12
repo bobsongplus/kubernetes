@@ -24,7 +24,7 @@ data:
   cni-conf.json: |
     {
       "name": "flannel",
-      "cniVersion":"1.0.1",
+      "cniVersion":"0.3.1",
       "plugins": [
         {
           "type": "flannel",
@@ -105,7 +105,7 @@ spec:
         - /opt/cni/bin/flannel
         volumeMounts:
         - name: cni-plugin
-        mountPath: /opt/cni/bin
+          mountPath: /opt/cni/bin
       - name: install-cni-cfg
         image: {{ .ImageRepository }}/flannel:{{ .Version }}
         command:

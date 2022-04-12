@@ -192,11 +192,25 @@ func CreateOrUpdateService(client clientset.Interface, svc *v1.Service) error {
 func CreateOrUpdateJob(client clientset.Interface, job *batch.Job) error {
 	if _, err := client.BatchV1().Jobs(job.ObjectMeta.Namespace).Create(context.TODO(), job, metav1.CreateOptions{}); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
-			return fmt.Errorf("unable to create a new calicoctl Job: %v", err)
+			return fmt.Errorf("unable to create a new Job: %v", err)
 		}
 
 		if _, err := client.BatchV1().Jobs(job.ObjectMeta.Namespace).Update(context.TODO(), job, metav1.UpdateOptions{}); err != nil {
-			return fmt.Errorf("unable to update the calicoctl Job: %v", err)
+			return fmt.Errorf("unable to update the Job: %v", err)
+		}
+	}
+	return nil
+}
+
+// CreateOrUpdateCronJob creates a CronJob if the target resource doesn't exist. If the resource exists already, this function will update the resource instead.
+func CreateOrUpdateCronJob(client clientset.Interface, cronjob *batch.CronJob) error {
+	if _, err := client.BatchV1().CronJobs(cronjob.ObjectMeta.Namespace).Create(context.TODO(), cronjob, metav1.CreateOptions{}); err != nil {
+		if !apierrors.IsAlreadyExists(err) {
+			return fmt.Errorf("unable to create a new CronJob: %v", err)
+		}
+
+		if _, err := client.BatchV1().CronJobs(cronjob.ObjectMeta.Namespace).Update(context.TODO(), cronjob, metav1.UpdateOptions{}); err != nil {
+			return fmt.Errorf("unable to update the CronJob: %v", err)
 		}
 	}
 	return nil

@@ -18,6 +18,7 @@ package phases
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -74,9 +75,17 @@ func runUploadCerts(c workflow.RunData) error {
 	if !data.SkipCertificateKeyPrint() {
 		fmt.Printf("[upload-certs] Using certificate key:\n%s\n", data.CertificateKey())
 	}
-    // upload etcd client certs
-	if err := copycerts.UploadEtcdClientCerts(client, data.Cfg()); err != nil {
-		return errors.Wrap(err, "error uploading etcd client certs")
+
+	plugins := strings.Split(data.Cfg().Networking.Plugin, ",")
+	// upload etcd client certs
+	if plugins[0] == kubeadmconstants.Calico {
+		if err := copycerts.UploadEtcdClientCerts(client, data.Cfg()); err != nil {
+			return errors.Wrap(err, "error uploading etcd client certs")
+		}
+	} else if plugins[0] == kubeadmconstants.CalicoK8S {
+		if err := copycerts.UploadCalicoAPIServerCerts(client, data.Cfg()); err != nil {
+			return errors.Wrap(err, "error uploading calico apiserver certs")
+		}
 	}
 
 	return nil

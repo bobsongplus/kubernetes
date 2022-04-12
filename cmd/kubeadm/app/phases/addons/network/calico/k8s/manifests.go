@@ -7,9 +7,7 @@
 package calico
 
 const (
-	Version            = "v3.22.2"
-	OperatorVersion    = "v1.25.8"
-	BootstraperVersion = "v1.0"
+	Version = "v3.22.2"
 
 	//This ConfigMap is used to configure a self-hosted Calico installation.
 	NodeConfigMap = `
@@ -19,10 +17,7 @@ metadata:
   name: calico-config
   namespace: kube-system
 data:
-  etcd_endpoints: {{ .EtcdEndPoints }}
-  etcd_ca: "/calico-secrets/etcd-ca"
-  etcd_cert: "/calico-secrets/etcd-cert"
-  etcd_key: "/calico-secrets/etcd-key"
+  typha_service_name: "calico-typha"
   calico_backend: "bird"
   veth_mtu: "0"
   ip: {{ .IPAutoDetection }}
@@ -36,10 +31,8 @@ data:
         "plugins": [
           {
             "type": "calico",
-            "etcd_endpoints": "__ETCD_ENDPOINTS__",
-            "etcd_key_file": "__ETCD_KEY_FILE__",
-            "etcd_cert_file": "__ETCD_CERT_FILE__",
-            "etcd_ca_cert_file": "__ETCD_CA_CERT_FILE__",
+            "datastore_type": "kubernetes",
+            "nodename": "__KUBERNETES_NODE_NAME__",
             "log_level": "__LOG_LEVEL__",
             "log_file_path": "__LOG_FILE_PATH__",
             "mtu": __CNI_MTU__,
@@ -89,6 +82,7 @@ metadata:
 spec:
   selector:
     matchLabels:
+      network: calico
       k8s-app: calico
       component: calico
   updateStrategy:
@@ -96,6 +90,7 @@ spec:
   template:
     metadata:
       labels:
+        network: calico
         k8s-app: calico
         component: calico
     spec:
@@ -121,11 +116,6 @@ spec:
                 name: kubernetes-services-endpoint
                 optional: true
           env:
-            - name: ETCD_ENDPOINTS
-              valueFrom:
-                configMapKeyRef:
-                  name: calico-config
-                  key: etcd_endpoints
             - name: CNI_NETWORK_CONFIG
               valueFrom:
                 configMapKeyRef:
@@ -138,6 +128,10 @@ spec:
                 configMapKeyRef:
                   name: calico-config
                   key: veth_mtu
+            - name: KUBERNETES_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
             - name: LOG_LEVEL
               value: "error"
             - name: SLEEP
@@ -149,8 +143,6 @@ spec:
               name: cni-bin-dir
             - mountPath: /host/etc/cni/net.d
               name: cni-net-dir
-            - mountPath: /calico-secrets
-              name: etcd-certs
           securityContext:
             privileged: true
       containers:
@@ -161,26 +153,19 @@ spec:
                 name: kubernetes-services-endpoint
                 optional: true
           env:
-            - name: ETCD_ENDPOINTS
+            - name: DATASTORE_TYPE
+              value: "kubernetes"
+            - name: FELIX_TYPHAK8SSERVICENAME
               valueFrom:
                 configMapKeyRef:
                   name: calico-config
-                  key: etcd_endpoints
-            - name: ETCD_CA_CERT_FILE
+                  key: typha_service_name
+            - name: WAIT_FOR_DATASTORE
+              value: "true"
+            - name: NODENAME
               valueFrom:
-                configMapKeyRef:
-                  name: calico-config
-                  key: etcd_ca
-            - name: ETCD_KEY_FILE
-              valueFrom:
-                configMapKeyRef:
-                  name: calico-config
-                  key: etcd_key
-            - name: ETCD_CERT_FILE
-              valueFrom:
-                configMapKeyRef:
-                  name: calico-config
-                  key: etcd_cert
+                fieldRef:
+                  fieldPath: spec.nodeName
             - name: CALICO_NETWORKING_BACKEND
               valueFrom:
                 configMapKeyRef:
@@ -292,8 +277,6 @@ spec:
             - mountPath: /var/lib/calico
               name: var-lib-calico
               readOnly: false
-            - mountPath: /calico-secrets
-              name: etcd-certs
             - mountPath: /sys/fs/
               name: sysfs
               mountPropagation: Bidirectional
@@ -333,17 +316,12 @@ spec:
           hostPath:
             path: /var/log/calico/cni
             type: DirectoryOrCreate
-        - name: etcd-certs
-          secret:
-            secretName: etcd-certs
-            defaultMode: 0400
 `
 
 	// This manifest installs the calico/kube-controllers container on each master.
 	// using kube-controllers only if you're using the etcd Datastore
 	// See https://github.com/projectcalico/kube-controllers
-	//     https://docs.projectcalico.org/archive/v3.18/reference/kube-controllers/configuration
-	//     https://github.com/kubernetes/contrib/tree/master/election
+	//     https://docs.projectcalico.org/archive/v3.22/reference/kube-controllers/configuration
 
 	//The calico/kube-controllers container includes the following controllers:
 	//1> policy controller: watches network policies and programs Calico policies.
@@ -356,30 +334,30 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kube-controller
+  name: calico-kube-controller
   namespace: kube-system
   labels:
-    k8s-app: kube-controller
+    k8s-app: calico-kube-controller
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      k8s-app: kube-controller
+      network: calico
+      k8s-app: calico-kube-controller
   template:
     metadata:
-      name: kube-controller
-      namespace: kube-system
       labels:
-        k8s-app: kube-controller
+        network: calico
+        k8s-app: calico-kube-controller
     spec:
-      hostNetwork: true
       nodeSelector:
         kubernetes.io/os: linux
       tolerations:
         - operator: Exists
-      serviceAccountName: kube-controllers
+      serviceAccountName: calico-kube-controller
+      priorityClassName: system-cluster-critical
       containers:
       - name: kube-controller
         image: {{ .ImageRepository }}/kube-controllers:{{ .Version }}
@@ -387,33 +365,15 @@ spec:
         resources:
           limits:
             cpu: 200m
-            memory: 512Mi
+            memory: 256Mi
           requests:
             cpu: 200m
-            memory: 512Mi
+            memory: 256Mi
         env:
-          - name: ETCD_ENDPOINTS
-            valueFrom:
-              configMapKeyRef:
-                name: calico-config
-                key: etcd_endpoints
-          - name: ETCD_CA_CERT_FILE
-            valueFrom:
-              configMapKeyRef:
-                name: calico-config
-                key: etcd_ca
-          - name: ETCD_KEY_FILE
-            valueFrom:
-              configMapKeyRef:
-                name: calico-config
-                key: etcd_key
-          - name: ETCD_CERT_FILE
-            valueFrom:
-              configMapKeyRef:
-                name: calico-config
-                key: etcd_cert
-          - name: AUTO_HOST_ENDPOINTS
-            value: enabled
+          - name: ENABLED_CONTROLLERS
+            value: node
+          - name: DATASTORE_TYPE
+            value: kubernetes
           - name: LOG_LEVEL
             value: error
         livenessProbe:
@@ -430,104 +390,12 @@ spec:
             command:
             - /usr/bin/check-status
             - -r
+          initialDelaySeconds: 60
+          failureThreshold: 6
           periodSeconds: 30
           timeoutSeconds: 20
-        volumeMounts:
-          - mountPath: /calico-secrets
-            name: etcd-certs
-            readOnly: true
-      volumes:
-        - name: etcd-certs
-          secret:
-            secretName: etcd-certs
-            defaultMode: 0440
 `
 
-	CtlConfigMap = `
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Name }}
-  namespace: kube-system
-  labels:
-    networking.projectcalico.org/name: {{ .Name }}
-  annotations:
-    networking.kubernetes.io/pod-cidr: {{ .PodSubnet }}
-    networking.kubernetes.io/service-cidr: {{ .ServiceSubnet }}
-    networking.projectcalico.org/cidr: {{ .PodSubnet }}
-    networking.projectcalico.org/name: {{ .Name }}
-data:
-  ippool.yaml: |-
-    apiVersion: projectcalico.org/v3
-    kind: IPPool
-    metadata:
-      name: {{ .Name }}
-    spec:
-      cidr: {{ .PodSubnet }}
-      ipipMode: Always
-      vxlanMode: Never
-      natOutgoing: true
-`
-
-	CtlJob = `
-apiVersion: batch/v1
-kind: Job
-metadata:
-  labels:
-    k8s-app: {{ .Name }}
-  name: configure-{{ .Name }}
-  namespace: kube-system
-spec:
-  completions: 1
-  parallelism: 1
-  ttlSecondsAfterFinished: 86400
-  template:
-    metadata:
-      labels:
-        k8s-app: {{ .Name }}
-    spec:
-      containers:
-      - args:
-        - apply
-        - -f
-        - /etc/config/calico/ippool.yaml
-        env:
-        - name: ETCD_ENDPOINTS
-          value: https://127.0.0.1:2379
-        - name: ETCD_CA_CERT_FILE
-          value: /calico-secrets/etcd-ca
-        - name: ETCD_CERT_FILE
-          value: /calico-secrets/etcd-cert
-        - name: ETCD_KEY_FILE
-          value: /calico-secrets/etcd-key
-        image: {{ .ImageRepository }}/ctl:{{ .Version }}
-        imagePullPolicy: IfNotPresent
-        name: configure
-        volumeMounts:
-        - mountPath: /etc/config
-          name: config-volume
-        - mountPath: /calico-secrets
-          name: etcd-certs
-          readOnly: true
-      hostNetwork: true
-      nodeSelector:
-        node-role.kubernetes.io/control-plane: ""
-      tolerations:
-        - operator: Exists
-      restartPolicy: OnFailure
-      volumes:
-      - configMap:
-          defaultMode: 0420
-          items:
-          - key: ippool.yaml
-            path: calico/ippool.yaml
-          name: {{ .Name }}
-        name: config-volume
-      - name: etcd-certs
-        secret:
-          secretName: etcd-certs
-          defaultMode: 0400
-`
 	// for calico/node
 	CalicoClusterRole = `
 kind: ClusterRole
@@ -555,6 +423,7 @@ rules:
     verbs:
       - watch
       - list
+      - get
   - apiGroups: [""]
     resources:
       - configmaps
@@ -565,6 +434,101 @@ rules:
       - nodes/status
     verbs:
       - patch
+      - update
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - networkpolicies
+    verbs:
+      - watch
+      - list
+  - apiGroups: [""]
+    resources:
+      - pods
+      - namespaces
+      - serviceaccounts
+    verbs:
+      - list
+      - watch
+  - apiGroups: [""]
+    resources:
+      - pods/status
+    verbs:
+      - patch
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - globalfelixconfigs
+      - felixconfigurations
+      - bgppeers
+      - globalbgpconfigs
+      - bgpconfigurations
+      - ippools
+      - ipreservations
+      - ipamblocks
+      - globalnetworkpolicies
+      - globalnetworksets
+      - networkpolicies
+      - networksets
+      - clusterinformations
+      - hostendpoints
+      - blockaffinities
+      - caliconodestatuses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - ippools
+      - felixconfigurations
+      - clusterinformations
+    verbs:
+      - create
+      - update
+  - apiGroups: [ "crd.projectcalico.org" ]
+    resources:
+      - caliconodestatuses
+    verbs:
+      - update
+  - apiGroups: [""]
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - bgpconfigurations
+      - bgppeers
+    verbs:
+      - create
+      - update
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - blockaffinities
+      - ipamblocks
+      - ipamhandles
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - delete
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - ipamconfigs
+    verbs:
+      - get
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - blockaffinities
+    verbs:
+      - watch
+  - apiGroups: ["apps"]
+    resources:
+      - daemonsets
+    verbs:
+      - get
 `
 
 	CalicoServiceAccount = `
@@ -593,33 +557,71 @@ subjects:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: system:kube-controllers
+  name: system:calico-kube-controller
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  - namespaces
-  - nodes
-  - serviceaccounts
-  verbs:
-  - watch
-  - list
-  - get
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - networkpolicies
-  verbs:
-  - watch
-  - list
+  - apiGroups: [""]
+    resources:
+      - nodes
+    verbs:
+      - watch
+      - list
+      - get
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - ippools
+      - ipreservations
+    verbs:
+      - list
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - blockaffinities
+      - ipamblocks
+      - ipamhandles
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - delete
+      - watch
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - hostendpoints
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - delete
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - clusterinformations
+    verbs:
+      - get
+      - create
+      - update
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - kubecontrollersconfigurations
+    verbs:
+      - get
+      - create
+      - update
+      - watch
 `
 
 	CalicoControllersServiceAccount = `
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: kube-controllers
+  name: calico-kube-controller
   namespace: kube-system
 `
 
@@ -627,233 +629,283 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: system:kube-controllers
+  name: system:calico-kube-controller
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: system:kube-controllers
+  name: system:calico-kube-controller
 subjects:
 - kind: ServiceAccount
-  name: kube-controllers
+  name: calico-kube-controller
   namespace: kube-system
 `
 
-	// calico operator
+	// for calico-typha
+	Typha = `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calico-typha
+  namespace: kube-system
+  labels:
+    network: calico
+    k8s-app: calico-typha
+spec:
+  replicas: 2
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      network: calico
+      k8s-app: calico-typha
+  template:
+    metadata:
+      labels:
+        network: calico
+        k8s-app: calico-typha
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: 'true'
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+      hostNetwork: true
+      tolerations:
+      - operator: Exists
+      serviceAccountName: calico-node
+      priorityClassName: system-cluster-critical
+      securityContext:
+        fsGroup: 65534
+      containers:
+      - image: {{ .ImageRepository }}/typha:{{ .Version }}
+        name: typha
+        ports:
+          - containerPort: 5473
+            name: calico-typha
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 200m
+            memory: 256Mi
+        envFrom:
+          - configMapRef:
+              name: kubernetes-services-endpoint
+              optional: true
+        env:
+          - name: TYPHA_LOGSEVERITYSCREEN
+            value: "error"
+          - name: TYPHA_LOGFILEPATH
+            value: "none"
+          - name: TYPHA_LOGSEVERITYSYS
+            value: "none"
+          - name: TYPHA_CONNECTIONREBALANCINGMODE
+            value: "kubernetes"
+          - name: TYPHA_DATASTORETYPE
+            value: "kubernetes"
+          - name: TYPHA_HEALTHENABLED
+            value: "true"
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 9098
+            host: localhost
+          periodSeconds: 30
+          initialDelaySeconds: 30
+          timeoutSeconds: 10
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: 9098
+            host: localhost
+          periodSeconds: 10
+          timeoutSeconds: 10
+`
+	// for calico-apiserver
+	APIServerDeployment = `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: calico-apiserver
+  name: calico-apiserver
+  namespace: kube-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      network: calico
+      k8s-app: calico-apiserver
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        network: calico
+        k8s-app: calico-apiserver
+    spec:
+      containers:
+      - name: calico-apiserver
+        args:
+        - --secure-port=5443
+        - -v=1
+        env:
+        - name: DATASTORE_TYPE
+          value: kubernetes
+        image: {{ .ImageRepository }}/apiserver:{{ .Version }}
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 200m
+            memory: 256Mi
+        securityContext:
+          privileged: false
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /code/apiserver.local.config/certificates
+          name: calico-apiserver
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      serviceAccountName: calico-apiserver
+      tolerations:
+      - operator: Exists
+      volumes:
+      - name: calico-apiserver
+        secret:
+          secretName: calico-apiserver
+`
 
-	OperatorClusterRole = `
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: calico-operator
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - namespaces
-      - pods
-      - podtemplates
-      - services
-      - endpoints
-      - events
-      - configmaps
-      - secrets
-      - serviceaccounts
-    verbs:
-      - create
-      - get
-      - list
-      - update
-      - delete
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - nodes
-    verbs:
-      - get
-      - patch
-      - list
-      - watch
-  - apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - clusterroles
-      - clusterrolebindings
-      - rolebindings
-      - roles
-    verbs:
-      - create
-      - get
-      - list
-      - update
-      - delete
-      - watch
-      - bind
-      - escalate
-  - apiGroups:
-      - apps
-    resources:
-      - deployments
-      - daemonsets
-      - statefulsets
-    verbs:
-      - create
-      - get
-      - list
-      - patch
-      - update
-      - delete
-      - watch
-  - apiGroups:
-      - apps
-    resourceNames:
-      - calico-operator
-    resources:
-      - deployments/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - operator.tigera.io
-    resources:
-      - '*'
-    verbs:
-      - create
-      - get
-      - list
-      - update
-      - patch
-      - delete
-      - watch
-  - apiGroups:
-    - networking.k8s.io
-    resources:
-    - networkpolicies
-    verbs:
-      - create
-      - update
-      - delete
-      - get
-      - list
-      - watch
-  - apiGroups:
-    - crd.projectcalico.org
-    resources:
-    - felixconfigurations
-    verbs:
-    - create
-    - patch
-    - list
-    - get
-    - watch
-  - apiGroups:
-    - crd.projectcalico.org
-    resources:
-    - ippools
-    - kubecontrollersconfigurations
-    verbs:
-    - get
-    - list
-    - watch
-  - apiGroups:
-      - scheduling.k8s.io
-    resources:
-      - priorityclasses
-    verbs:
-      - create
-      - get
-      - list
-      - update
-      - delete
-      - watch
-  - apiGroups:
-      - policy
-    resources:
-      - poddisruptionbudgets
-    verbs:
-      - create
-      - get
-      - list
-      - update
-      - delete
-      - watch
-  - apiGroups:
-      - apiregistration.k8s.io
-    resources:
-      - apiservices
-    verbs:
-      - list
-      - watch
-      - create 
-      - update
-  - apiGroups:
-      - apiextensions.k8s.io
-    resources:
-      - customresourcedefinitions
-    verbs:
-      - get
-      - create
-  - apiGroups:
-      - coordination.k8s.io
-    resources:
-      - leases
-    verbs:
-      - create
-      - get
-      - list
-      - update
-      - delete
-      - watch
-  - apiGroups:
-      - policy
-    resources:
-      - podsecuritypolicies
-    resourceNames:
-      - system
-    verbs:
-      - use
-  - apiGroups:
-      - policy
-    resources:
-      - podsecuritypolicies
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - delete
-  - apiGroups:
-      - certificates.k8s.io
-    resources:
-      - certificatesigningrequests
-    verbs:
-      - list
-`
-	OperatorClusterRoleBinding = `
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: calico-operator
-subjects:
-- kind: ServiceAccount
-  name: calico-operator
-  namespace: kube-system
-- kind: ServiceAccount
-  name: calico-bootstraper
-  namespace: kube-system
-roleRef:
-  kind: ClusterRole
-  name: calico-operator
-  apiGroup: rbac.authorization.k8s.io
-`
-	OperatorServiceAccount = `
+	APIServerServiceAccount = `
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: calico-operator
+  name: calico-apiserver 
   namespace: kube-system
 `
 
+	APIServerClusterRole = `
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:calico-apiserver
+rules:
+- apiGroups:
+  - extensions
+  - networking.k8s.io
+  - ""
+  resources:
+  - networkpolicies
+  - nodes
+  - namespaces
+  - pods
+  - serviceaccounts
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - crd.projectcalico.org
+  resources:
+  - globalnetworkpolicies
+  - networkpolicies
+  - clusterinformations
+  - hostendpoints
+  - globalnetworksets
+  - networksets
+  - bgpconfigurations
+  - bgppeers
+  - felixconfigurations
+  - kubecontrollersconfigurations
+  - ippools
+  - ipreservations
+  - ipamblocks
+  - blockaffinities
+  - caliconodestatuses
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - delete
+- apiGroups:
+    - ""
+  resourceNames:
+    - extension-apiserver-authentication
+  resources:
+    - configmaps
+  verbs:
+    - list
+    - watch
+    - get
+- apiGroups:
+    - rbac.authorization.k8s.io
+  resources:
+    - clusterroles
+    - clusterrolebindings
+    - roles
+    - rolebindings
+  verbs:
+    - get
+    - list
+    - watch
+- apiGroups:
+    - admissionregistration.k8s.io
+  resources:
+    - mutatingwebhookconfigurations
+    - validatingwebhookconfigurations
+  verbs:
+    - get
+    - list
+    - watch
+- apiGroups:
+  - policy
+  resourceNames:
+  - system
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
+`
+
+	APIServerClusterRoleBinding = `
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:calico-apiserver
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:calico-apiserver
+subjects:
+- kind: ServiceAccount
+  name: calico-apiserver
+  namespace: kube-system
+`
+
+	APIServerClusterRoleBindingDelegator = `
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:calico-apiserver-delegator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+- kind: ServiceAccount
+  name: calico-apiserver
+  namespace: kube-system
+`
+
+	// for calico-bootstraper
 	BootstraperServiceAccount = `
 apiVersion: v1
 kind: ServiceAccount
@@ -862,67 +914,62 @@ metadata:
   namespace: kube-system
 `
 
-	OperatorDeployment = `
-apiVersion: apps/v1
-kind: Deployment
+	BootstraperClusterRole = `
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
-  name: calico-operator
-  namespace: kube-system
-  labels:
-    k8s-app: calico-operator
-    network:  calico
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      name: calico-operator
-      k8s-app: calico-operator
-      network:  calico
-  template:
-    metadata:
-      labels:
-        name: calico-operator
-        k8s-app: calico-operator
-        network:  calico
-    spec:
-      nodeSelector:
-        kubernetes.io/os: linux
-      tolerations:
-      - operator: Exists
-      serviceAccountName: calico-operator
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
-      containers:
-      - name: calico-operator
-        image: {{ .ImageRepository }}/calico-operator:{{ .Version }}
-        imagePullPolicy: IfNotPresent
-        command:
-        - operator
-        args:
-        - -zap-log-level=error
-        volumeMounts:
-        - name: var-lib-calico
-          readOnly: true
-          mountPath: /var/lib/calico
-        env:
-        - name: WATCH_NAMESPACE
-          value: ""
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        - name: OPERATOR_NAME
-          value: "calico-operator"
-        - name: TIGERA_OPERATOR_INIT_IMAGE_VERSION
-          value: {{ .Version }}
-        envFrom:
-        - configMapRef:
-            name: kubernetes-services-endpoint
-            optional: true
-      volumes:
-      - name: var-lib-calico
-        hostPath:
-          path: /var/lib/calico
+  name: system:calico-bootstraper
+rules:
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - create
+      - update
+      - get
+  - apiGroups:
+      - operator.tigera.io
+    resources:
+      - installations
+      - apiservers
+    verbs:
+      - create
+  - apiGroups:
+      - apiregistration.k8s.io
+    resources:
+      - apiservices
+    verbs:
+      - create
+  - apiGroups:
+      - crd.projectcalico.org
+    resources:
+      - ippools
+    verbs:
+      - create
+  - apiGroups:
+      - policy
+    resourceNames:
+      - system
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - use
+`
+
+	BootstraperClusterRoleBinding = `
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: calico-bootstraper
+subjects:
+  - kind: ServiceAccount
+    name: calico-bootstraper
+    namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:calico-bootstraper
 `
 
 	BootstraperJob = `
@@ -949,14 +996,24 @@ spec:
       containers:
         - args:
             - --cidr={{ .PodSubnet }}
+            - --kubeconfig=/etc/kubernetes/admin.conf
             - --imageRepository={{ .ImageRepository }}
           image: {{ .ImageRepository }}/calico-bootstraper:{{ .Version }}
           imagePullPolicy: IfNotPresent
           name: bootstraper
+          volumeMounts:
+            - name: kubeconfig
+              mountPath: /etc/kubernetes
+              readOnly: true
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""
       tolerations:
         - operator: Exists
       restartPolicy: OnFailure
+      volumes:
+        - name: kubeconfig
+          hostPath:
+            path: /etc/kubernetes
+            type: DirectoryOrCreate
 `
 )

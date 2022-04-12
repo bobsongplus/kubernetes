@@ -2,13 +2,14 @@ package network
 
 import (
 	"fmt"
-	"k8s.io/client-go/dynamic"
 	"strings"
 
 	clientset "k8s.io/client-go/kubernetes"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
-	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/calico"
+	calicooperator "k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/calico"
+	calicoetcd "k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/calico/etcd"
+	calicok8s "k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/calico/k8s"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/canal"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/flannel"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/macvlan"
@@ -18,16 +19,16 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/weavenet"
 )
 
-func EnsureNetworkAddons(cfg *kubeadmapi.InitConfiguration, client clientset.Interface, dynamic dynamic.Interface) error {
+func EnsureNetworkAddons(cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
 	var err error
 	plugins := strings.Split(cfg.Networking.Plugin, ",")
 	if len(plugins) == 1 { // single network plugin
-		return pickNetworkPlugin(cfg.Networking.Plugin, cfg.Networking.PodSubnet, cfg, client, dynamic)
+		return pickNetworkPlugin(cfg.Networking.Plugin, cfg.Networking.PodSubnet, cfg, client)
 	} else if len(plugins) == 2 { // multus network plugin
-		if err = pickNetworkPlugin(plugins[0], cfg.Networking.PodSubnet, cfg, client, dynamic); err != nil {
+		if err = pickNetworkPlugin(plugins[0], cfg.Networking.PodSubnet, cfg, client); err != nil {
 			return fmt.Errorf("init master network plugins failed ")
 		}
-		if err = pickNetworkPlugin(plugins[1], cfg.Networking.PodExtraSubnet, cfg, client, dynamic); err != nil {
+		if err = pickNetworkPlugin(plugins[1], cfg.Networking.PodExtraSubnet, cfg, client); err != nil {
 			return fmt.Errorf("init extra network plugins failed")
 		}
 		err = multus.CreateMultusAddon(cfg, client)
@@ -37,14 +38,18 @@ func EnsureNetworkAddons(cfg *kubeadmapi.InitConfiguration, client clientset.Int
 	return err
 }
 
-func pickNetworkPlugin(networkPlugin, defaultSubnet string, cfg *kubeadmapi.InitConfiguration, client clientset.Interface, dynamic dynamic.Interface) error {
+func pickNetworkPlugin(networkPlugin, defaultSubnet string, cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
 	switch networkPlugin {
 	case kubeadmconstants.Calico:
-		if err := calico.CreateCalicoAddon(defaultSubnet, cfg, client); err != nil {
-			return fmt.Errorf("error setup calico addon: %v", err)
+		if err := calicoetcd.CreateCalicoAddon(defaultSubnet, cfg, client); err != nil {
+			return fmt.Errorf("error setup calico-etcd addon: %v", err)
+		}
+	case kubeadmconstants.CalicoK8S:
+		if err := calicok8s.CreateCalicoAddon(defaultSubnet, cfg, client); err != nil {
+			return fmt.Errorf("error setup calico-k8s addon: %v", err)
 		}
 	case kubeadmconstants.CalicoOperator:
-		if err := calico.CreateCalicoOperatorAddon(defaultSubnet, cfg, client, dynamic); err != nil {
+		if err := calicooperator.CreateCalicoOperatorAddon(defaultSubnet, cfg, client); err != nil {
 			return fmt.Errorf("error setup calico operator addon: %v", err)
 		}
 	case kubeadmconstants.Flannel:
@@ -74,8 +79,8 @@ func pickNetworkPlugin(networkPlugin, defaultSubnet string, cfg *kubeadmapi.Init
 		}
 	default:
 		fmt.Printf("[%s] network plugin is not yet supported, setting calico by default.\n", cfg.Networking.Plugin)
-		if err := calico.CreateCalicoAddon(defaultSubnet, cfg, client); err != nil {
-			return fmt.Errorf("error setup calico addon: %v", err)
+		if err := calicoetcd.CreateCalicoAddon(defaultSubnet, cfg, client); err != nil {
+			return fmt.Errorf("error setup default calico-etcd addon: %v", err)
 		}
 	}
 	return nil

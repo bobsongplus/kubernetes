@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"k8s.io/client-go/dynamic"
 	"github.com/lithammer/dedent"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -107,7 +106,6 @@ type initData struct {
 	dryRunDir               string
 	externalCA              bool
 	client                  clientset.Interface
-	dynamicClient           dynamic.Interface
 	outputWriter            io.Writer
 	uploadCerts             bool
 	skipCertificateKeyPrint bool
@@ -531,28 +529,6 @@ func (d *initData) Client() (clientset.Interface, error) {
 		}
 	}
 	return d.client, nil
-}
-
-func (d *initData) DynamicClient() (dynamic.Interface, error) {
-	if d.dynamicClient == nil {
-		if d.dryRun {
-			svcSubnetCIDR, err := kubeadmconstants.GetKubernetesServiceCIDR(d.cfg.Networking.ServiceSubnet)
-			if err != nil {
-				return nil, errors.Wrapf(err, "unable to get internal Kubernetes Service IP from the given service CIDR (%s)", d.cfg.Networking.ServiceSubnet)
-			}
-			// If we're dry-running, we should create a faked client that answers some GETs in order to be able to do the full init flow and just logs the rest of requests
-			dryRunGetter := apiclient.NewInitDryRunGetter(d.cfg.NodeRegistration.Name, svcSubnetCIDR.String())
-			d.client = apiclient.NewDryRunClient(dryRunGetter, os.Stdout)
-		} else {
-			// If we're acting for real, we should create a connection to the API server and wait for it to come up
-			var err error
-			d.dynamicClient, err = kubeconfigutil.DynamicClientFromFile(d.KubeConfigPath())
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	return d.dynamicClient, nil
 }
 
 // Tokens returns an array of token strings.

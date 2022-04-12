@@ -2,7 +2,9 @@ package dnscache
 
 /*
  *
- * k8s.gcr.io/dns/k8s-dns-node-cache-amd64:1.17.0
+ * k8s.gcr.io/dns/k8s-dns-node-cache-amd64:1.21.4
+ *
+ * https://console.cloud.google.com/gcr/images/k8s-artifacts-prod/us/dns
  *
  * https://github.com/kubernetes/dns/tree/master/cmd/node-cache
  * https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns/nodelocaldns
@@ -10,7 +12,7 @@ package dnscache
  */
 
 const (
-	DnsCacheVersion = "1.17.0"
+	DnsCacheVersion = "1.21.4"
 
 	CoreDnsCache = `
 apiVersion: apps/v1

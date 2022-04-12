@@ -1,5 +1,5 @@
 FROM 172.22.50.227/mips64le/docker:19.03.11.ce AS builder
-FROM calico/ctl:v3.22.1-mips64le AS ctl
+FROM calico/ctl:v3.22.2-mips64le AS ctl
 FROM mips64le/debian:buster-slim
 
 LABEL vendor="TenxCloud Incorporated" \

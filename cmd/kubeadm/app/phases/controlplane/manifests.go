@@ -93,11 +93,11 @@ func GetStaticPodSpecs(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmap
 	}
 
 	// Expose kube-scheduler metrics for prometheus to scrape
-	KubeScheduler := staticPodSpecs[kubeadmconstants.KubeScheduler]
-	KubeScheduler.Annotations = map[string]string{"prometheus.io/scrape": "true"}
-	port := v1.ContainerPort{Name: "scrape", ContainerPort: 10251}
-	KubeScheduler.Spec.Containers[0].Ports = []v1.ContainerPort{port}
-	staticPodSpecs[kubeadmconstants.KubeScheduler] = KubeScheduler
+	//KubeScheduler := staticPodSpecs[kubeadmconstants.KubeScheduler]
+	//KubeScheduler.Annotations = map[string]string{"prometheus.io/scrape": "true"}
+	//port := v1.ContainerPort{Name: "scrape", ContainerPort: 10251}
+	//KubeScheduler.Spec.Containers[0].Ports = []v1.ContainerPort{port}
+	//staticPodSpecs[kubeadmconstants.KubeScheduler] = KubeScheduler
 	return staticPodSpecs
 }
 
@@ -171,22 +171,22 @@ func CreateStaticPodFiles(manifestDir, patchesDir string, cfg *kubeadmapi.Cluste
 // getAPIServerCommand builds the right API server command from the given config object and version
 func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint *kubeadmapi.APIEndpoint) []string {
 	defaultArguments := map[string]string{
-		"advertise-address":               localAPIEndpoint.AdvertiseAddress,
-		"enable-admission-plugins":        "NodeRestriction,PodSecurityPolicy,Priority",
-		"service-cluster-ip-range":        cfg.Networking.ServiceSubnet,
-		"service-account-key-file":        filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPublicKeyName),
+		"advertise-address":                localAPIEndpoint.AdvertiseAddress,
+		"enable-admission-plugins":         "NodeRestriction,PodSecurityPolicy,Priority",
+		"service-cluster-ip-range":         cfg.Networking.ServiceSubnet,
+		"service-account-key-file":         filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPublicKeyName),
 		"service-account-signing-key-file": filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),
 		"service-account-issuer":           fmt.Sprintf("https://kubernetes.default.svc.%s", cfg.Networking.DNSDomain),
-		"client-ca-file":                  filepath.Join(cfg.CertificatesDir, kubeadmconstants.CACertName),
-		"tls-cert-file":                   filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerCertName),
-		"tls-private-key-file":            filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerKeyName),
-		"kubelet-client-certificate":      filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerKubeletClientCertName),
-		"kubelet-client-key":              filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerKubeletClientKeyName),
-		"token-auth-file":                 filepath.Join(cfg.CertificatesDir, "tokens.csv"),
-		"enable-bootstrap-token-auth":     "true",
-		"secure-port":                     fmt.Sprintf("%d", localAPIEndpoint.BindPort),
-		"allow-privileged":                "true",
-		"kubelet-preferred-address-types": "InternalIP,ExternalIP,Hostname",
+		"client-ca-file":                   filepath.Join(cfg.CertificatesDir, kubeadmconstants.CACertName),
+		"tls-cert-file":                    filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerCertName),
+		"tls-private-key-file":             filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerKeyName),
+		"kubelet-client-certificate":       filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerKubeletClientCertName),
+		"kubelet-client-key":               filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerKubeletClientKeyName),
+		"token-auth-file":                  filepath.Join(cfg.CertificatesDir, "tokens.csv"),
+		"enable-bootstrap-token-auth":      "true",
+		"secure-port":                      fmt.Sprintf("%d", localAPIEndpoint.BindPort),
+		"allow-privileged":                 "true",
+		"kubelet-preferred-address-types":  "InternalIP,ExternalIP,Hostname",
 		// add options to configure the front proxy.  Without the generated client cert, this will never be useable
 		// so add it unconditionally with recommended values
 		"requestheader-username-headers":         "X-Remote-User",
@@ -204,14 +204,14 @@ func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint 
 		"kubelet-timeout":                        "5s",
 		"default-not-ready-toleration-seconds":   "60",
 		"default-unreachable-toleration-seconds": "60",
-		"tls-cipher-suites":   "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256",
-		"audit-policy-file":   filepath.Join(cfg.CertificatesDir, kubeadmconstants.AuditPolicyConfigFileName),
-		"audit-log-format":    "json",
-		"audit-log-path":      filepath.Join(kubeadmconstants.AuditVolumePath, kubeadmconstants.AuditLogFileName),
-		"audit-log-maxage":    "30",
-		"audit-log-maxbackup": "10",
-		"audit-log-maxsize":   "100",
-		"profiling":           "false",
+		"tls-cipher-suites":                      "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256",
+		"audit-policy-file":                      filepath.Join(cfg.CertificatesDir, kubeadmconstants.AuditPolicyConfigFileName),
+		"audit-log-format":                       "json",
+		"audit-log-path":                         filepath.Join(kubeadmconstants.AuditVolumePath, kubeadmconstants.AuditLogFileName),
+		"audit-log-maxage":                       "30",
+		"audit-log-maxbackup":                    "10",
+		"audit-log-maxsize":                      "100",
+		"profiling":                              "false",
 	}
 	if certphase.UseEncryption {
 		defaultArguments["encryption-provider-config"] = filepath.Join(cfg.CertificatesDir, kubeadmconstants.EncryptionConfigFileName)
@@ -332,7 +332,6 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 
 	defaultArguments := map[string]string{
 		"port":                                  "0",
-		"bind-address":                          "127.0.0.1",
 		"leader-elect":                          "true",
 		"kubeconfig":                            kubeconfigFile,
 		"authentication-kubeconfig":             kubeconfigFile,
@@ -378,13 +377,13 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 			defaultArguments["service-cluster-ip-range"] = cfg.Networking.ServiceSubnet
 		}
 	}
-	// override subnet
-	plugins := strings.Split(cfg.Networking.Plugin,",")
-	if len(plugins) == 2 {
-		if plugins[1] == kubeadmconstants.Flannel {
-			defaultArguments["cluster-cidr"] = cfg.Networking.PodExtraSubnet
-		}
-	}
+	//// override subnet
+	//plugins := strings.Split(cfg.Networking.Plugin, ",")
+	//if len(plugins) == 2 {
+	//	if plugins[1] == kubeadmconstants.Flannel {
+	//		defaultArguments["cluster-cidr"] = cfg.Networking.PodExtraSubnet
+	//	}
+	//}
 
 	// Set cluster name
 	if cfg.ClusterName != "" {
@@ -402,7 +401,6 @@ func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 	kubeconfigFile := filepath.Join(kubeadmconstants.KubernetesDir, kubeadmconstants.SchedulerKubeConfigFileName)
 	defaultArguments := map[string]string{
 		"port":                      "0",
-		"bind-address":              "127.0.0.1",
 		"leader-elect":              "true",
 		"policy-configmap":          "kube-scheduler",
 		"kubeconfig":                kubeconfigFile,
@@ -415,7 +413,6 @@ func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 	command = append(command, kubeadmutil.BuildArgumentListFromMap(defaultArguments, cfg.Scheduler.ExtraArgs)...)
 	return command
 }
-
 
 //inspired by https://github.com/kubernetes/kubernetes/blob/v1.20.5/cluster/gce/gci/configure-helper.sh#L1112
 const (

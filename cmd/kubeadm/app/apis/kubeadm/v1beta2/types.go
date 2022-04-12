@@ -236,9 +236,7 @@ type Networking struct {
 
 	NodeSubnet string `json:"nodeSubnet,omitempty"`
 	// Network Plugin: calico ....
-	Plugin string  `json:"plugin,omitempty"`
-	// Network Mode: ipv4, ipv6, dual-stack
-	Mode string `json:"mode,omitempty"`
+	Plugin string `json:"plugin,omitempty"`
 }
 
 // BootstrapToken describes one bootstrap token, stored as a Secret in the cluster

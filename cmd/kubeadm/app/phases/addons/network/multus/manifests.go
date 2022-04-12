@@ -1,9 +1,9 @@
 package multus
 
 const (
-	MultusVersion = "v3.6"
+	MultusVersion = "v3.8"
 
-	MultusControllerVersion = "v1.1"
+	MultusControllerVersion = "v1.2"
 
 	ClusterRole = `
 kind: ClusterRole
@@ -110,11 +110,13 @@ metadata:
   labels:
     app: multus
     name: multus
+    k8s-app: multus
 spec:
   selector:
     matchLabels:
       app: multus
       name: multus
+      k8s-app: multus
   updateStrategy:
     type: OnDelete
   template:
@@ -122,6 +124,7 @@ spec:
       labels:
         app: multus
         name: multus
+        k8s-app: multus
     spec:
       hostNetwork: true
       nodeSelector:
@@ -131,7 +134,7 @@ spec:
       serviceAccountName: multus
       containers:
         - name: multus
-          image: {{ .ImageRepository }}/multus:{{ .Version }}
+          image: {{ .ImageRepository }}/multus-cni:{{ .Version }}
           command: ["/entrypoint.sh"]
           args:
             - "--multus-conf-file=/tmp/multus-conf/00-multus.conf"
@@ -179,11 +182,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: multus-controller
+      k8s-app: multus-controller
   template:
     metadata:
       labels:
-        app: multus-controller
+        k8s-app: multus-controller
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
@@ -203,5 +206,4 @@ spec:
             cpu: "100m"
             memory: "50Mi"
 `
-
 )

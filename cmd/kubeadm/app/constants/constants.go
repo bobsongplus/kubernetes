@@ -453,15 +453,10 @@ const (
 	// The group of users that are allowed to read the service account private key.
 	ServiceAccountKeyReadersGroupName string = "kubeadm-sa-key-readers"
 
-	// IPv4 mode
-	NetworkIPV4Mode = "ipv4"
-	// IPv6 mode
-	NetworkIPV6Mode = "ipv6"
-	// IPv4/IPv6 dual-stack
-	NetworkDualStackMode = "dual-stack"
-
-	// KubeadmEtcdMetricCertsSecret specifies in what Secret in the kube-system namespace the etcd certificates should be stored
+	// EtcdCertsSecret specifies in what Secret in the kube-system namespace the etcd client certificates should be stored
 	EtcdCertsSecret = "etcd-certs"
+	// CalicoAPIServerSecret specifies in what Secret in the kube-system namespace the calico apiserver server certificates should be stored
+	CalicoAPIServerSecret = "calico-apiserver"
 
 	OvnCertsSecret = "ovn-certs"
 
@@ -482,8 +477,12 @@ const (
 
 	// NodeLocalDNSAddress node local dns cache address
 	NodeLocalDNSAddress = "169.254.0.10"
-	
+
+	// Calico calico with etcd store
 	Calico string = "calico"
+
+	// CalicoK8S calico with k8s store
+	CalicoK8S string = "calico-k8s"
 
 	CalicoOperator string = "calico-operator"
 
