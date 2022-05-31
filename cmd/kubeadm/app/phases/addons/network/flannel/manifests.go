@@ -1,15 +1,23 @@
 package flannel
 
 /**
- *  docker pull flannelcni/flannel:v0.17.0
- *  docker pull flannelcni/flannel-cni-plugin:v1.0.1
+ *  docker pull flannelcni/flannel:v0.18.1
+ *  docker pull flannelcni/flannel-cni-plugin:v1.1.0
  *  https://github.com/coreos/flannel/blob/master/Documentation/configuration.md
  *  https://github.com/coreos/flannel/blob/master/Documentation/backends.md
  *  https://github.com/coreos/flannel/blob/master/Documentation/kube-flannel.yml
+ *
+ *  Flannel supports dual-stack mode requirements:
+ *
+ *  1. v1.0.1 of flannel binary from containernetworking/plugins
+ *  2. Nodes must have an ipv4 and ipv6 address in the main interface
+ *  3. Nodes must have an ipv4 and ipv6 address default route
+ *  4. vxlan support ipv6 tunnel require kernel version >= 3.12 # https://vincent.bernat.ch/en/blog/2017-vxlan-linux
+ *  5. dual-stack is only supported for vxlan, wireguard or host-gw(linux) backends.
  */
 
 const (
-	Version = "v0.17.0"
+	Version = "v0.18.1"
 
 	ConfigMap = `
 kind: ConfigMap
@@ -52,7 +60,10 @@ data:
     }
   net-conf.json: |
     {
-      "Network": "{{ .PodSubnet }}",
+      "EnableIPv4": {{ .EnableIPv4 }},
+      "Network": "{{ .IPv4Network }}",
+      "EnableIPv6": {{ .EnableIPv6 }},
+      "IPv6Network": "{{ .IPv6Network }}",
       "Backend": {
         "Type": "{{ .Backend }}"
       }
@@ -96,7 +107,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni-plugin
-        image: {{ .ImageRepository }}/flannel-cni-plugin:v1.0.1
+        image: {{ .ImageRepository }}/flannel-cni-plugin:v1.1.0
         command:
         - cp
         args:
@@ -147,6 +158,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: EVENT_QUEUE_DEPTH
+          value: "1000"
         volumeMounts:
         - name: run
           mountPath: /run/flannel

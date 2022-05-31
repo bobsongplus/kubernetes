@@ -7,7 +7,6 @@ package calico
 
 import (
 	"fmt"
-	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/calico"
 	"strings"
 
 	apps "k8s.io/api/apps/v1"
@@ -27,12 +26,12 @@ import (
 func CreateCalicoAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
 	//PHASE 1: create calico node containers
 	var iPAutoDetection, iP6AutoDetection, assignIpv4, assignIpv6 string
-	if calico.GetNetworkMode(defaultSubnet) == calico.NetworkIPV6Mode { // only ipv6
+	if kubeadmconstants.GetNetworkMode(defaultSubnet) == kubeadmconstants.NetworkIPV6Mode { // only ipv6
 		iPAutoDetection = "none"
 		iP6AutoDetection = "autodetect"
 		assignIpv4 = "false"
 		assignIpv6 = "true"
-	} else if calico.GetNetworkMode(defaultSubnet) == calico.NetworkDualStackMode { // ipv4 & ipv6
+	} else if kubeadmconstants.GetNetworkMode(defaultSubnet) == kubeadmconstants.NetworkDualStackMode { // ipv4 & ipv6
 		iPAutoDetection = "autodetect"
 		iP6AutoDetection = "autodetect"
 		assignIpv4 = "true"
@@ -88,11 +87,11 @@ func CreateCalicoAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, 
 		return err
 	}
 	//PHASE 3: create calico ctl job to configure ip pool
-	if calico.GetNetworkMode(defaultSubnet) == calico.NetworkIPV6Mode { // only ipv6
+	if kubeadmconstants.GetNetworkMode(defaultSubnet) == kubeadmconstants.NetworkIPV6Mode { // only ipv6
 		if err := createCalicoIPPool(cfg.Networking.ServiceSubnet, defaultSubnet, "default-ipv6pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
 			return err
 		}
-	} else if calico.GetNetworkMode(defaultSubnet) == calico.NetworkDualStackMode { // ipv4 & ipv6
+	} else if kubeadmconstants.GetNetworkMode(defaultSubnet) == kubeadmconstants.NetworkDualStackMode { // ipv4 & ipv6
 		serviceSubnet := strings.Split(cfg.Networking.ServiceSubnet, ",")
 		podSubnet := strings.Split(defaultSubnet, ",")
 		if err := createCalicoIPPool(serviceSubnet[0], podSubnet[0], "default-ipv4pool", cfg.GetControlPlaneImageRepository(), client); err != nil {

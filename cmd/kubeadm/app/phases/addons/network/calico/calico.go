@@ -7,7 +7,6 @@ package calico
 
 import (
 	"fmt"
-	"net"
 	"strings"
 
 	apps "k8s.io/api/apps/v1"
@@ -28,12 +27,12 @@ import (
 func CreateCalicoAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, client clientset.Interface) error {
 	//PHASE 1: create calico node containers
 	var iPAutoDetection, iP6AutoDetection, assignIpv4, assignIpv6 string
-	if GetNetworkMode(defaultSubnet) == NetworkIPV6Mode { // ipv6
+	if kubeadmconstants.GetNetworkMode(defaultSubnet) == kubeadmconstants.NetworkIPV6Mode { // ipv6
 		iPAutoDetection = "none"
 		iP6AutoDetection = "autodetect"
 		assignIpv4 = "false"
 		assignIpv6 = "true"
-	} else if GetNetworkMode(defaultSubnet) == NetworkDualStackMode { // ipv4 & ipv6
+	} else if kubeadmconstants.GetNetworkMode(defaultSubnet) == kubeadmconstants.NetworkDualStackMode { // ipv4 & ipv6
 		iPAutoDetection = "autodetect"
 		iP6AutoDetection = "autodetect"
 		assignIpv4 = "true"
@@ -89,11 +88,11 @@ func CreateCalicoAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, 
 		return err
 	}
 	//PHASE 3: create calico ctl job to configure ip pool
-	if GetNetworkMode(defaultSubnet) == NetworkIPV6Mode { // ipv6
+	if kubeadmconstants.GetNetworkMode(defaultSubnet) == kubeadmconstants.NetworkIPV6Mode { // ipv6
 		if err := createCalicoIPPool(kubeadmapiv1.DefaultServicesIpv6Subnet, kubeadmapiv1.DefaultPodIpv6Subnet, "default-ipv6pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
 			return err
 		}
-	} else if GetNetworkMode(defaultSubnet) == NetworkDualStackMode { // ipv4 & ipv6
+	} else if kubeadmconstants.GetNetworkMode(defaultSubnet) == kubeadmconstants.NetworkDualStackMode { // ipv4 & ipv6
 		if err := createCalicoIPPool(kubeadmapiv1.DefaultServicesIpv6Subnet, kubeadmapiv1.DefaultPodIpv6Subnet, "default-ipv6pool", cfg.GetControlPlaneImageRepository(), client); err != nil {
 			return err
 		}
@@ -267,31 +266,4 @@ func createCalicoIPPool(serviceSubnet, podSubnet, name, imageRepository string, 
 		return err
 	}
 	return nil
-}
-
-type NetworkMode string
-
-const (
-	//NetworkIPV4Mode IPv4 mode
-	NetworkIPV4Mode NetworkMode = "ipv4"
-	//NetworkIPV6Mode  IPv6 mode
-	NetworkIPV6Mode NetworkMode = "ipv6"
-	//NetworkDualStackMode IPv4/IPv6 dual-stack
-	NetworkDualStackMode NetworkMode = "dual-stack"
-)
-
-func GetNetworkMode(cidr string) NetworkMode {
-	subnets := strings.Split(cidr, ",")
-	if len(subnets) == 2 {
-		return NetworkDualStackMode
-	}
-	ip, _, err := net.ParseCIDR(cidr)
-	if err != nil {
-		fmt.Errorf("error: parseCIDR %s : %v", cidr, err)
-	}
-	if ip.To4() == nil {
-		return NetworkIPV6Mode
-	} else {
-		return NetworkIPV4Mode
-	}
 }

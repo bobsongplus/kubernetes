@@ -32,10 +32,31 @@ func CreateFlannelAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration,
 	if err != nil {
 		return fmt.Errorf("error when parsing flannel daemonset template: %v", err)
 	}
-	configMapBytes, err := kubeadmutil.ParseTemplate(ConfigMap, struct{ PodSubnet, Backend string }{
-		PodSubnet: defaultSubnet,
-		// TODO: FIXME
-		Backend: "vxlan", // vxlan,udp,host-gw,ipip,ali-vpc,aws-vpc,gce,alloc
+
+	var enableIPv4, enableIPv6, ipv4Network, ipv6Network string
+	if kubeadmconstants.GetNetworkMode(defaultSubnet) == kubeadmconstants.NetworkIPV6Mode { // only ipv6
+		enableIPv4 = "false"
+		enableIPv6 = "true"
+		ipv4Network = "172.31.0.0/16" // because enableIPv4=false whatever ipv4Network
+		ipv6Network = defaultSubnet
+	} else if kubeadmconstants.GetNetworkMode(defaultSubnet) == kubeadmconstants.NetworkDualStackMode { // ipv4 & ipv6
+		podSubnets := strings.Split(defaultSubnet, ",")
+		enableIPv4 = "true"
+		enableIPv6 = "true"
+		ipv4Network = podSubnets[0]
+		ipv6Network = podSubnets[1]
+	} else { // only ipv4
+		enableIPv4 = "true"
+		enableIPv6 = "false"
+		ipv4Network = defaultSubnet
+		ipv6Network = "fc00:a51f:f4ae:6ec4:abc4:1234:3f9c::/112" // because enableIPv6=false whatever ipv6Network
+	}
+	configMapBytes, err := kubeadmutil.ParseTemplate(ConfigMap, struct{ EnableIPv4, EnableIPv6, IPv4Network, IPv6Network, Backend string }{
+		EnableIPv4:  enableIPv4,
+		EnableIPv6:  enableIPv6,
+		IPv4Network: ipv4Network,
+		IPv6Network: ipv6Network,
+		Backend:     "vxlan", // vxlan,wireguard,ipip,udp,host-gw,ali-vpc,aws-vpc,gce,alloc
 	})
 	if err != nil {
 		return fmt.Errorf("error when parsing flannel configmap template: %v", err)

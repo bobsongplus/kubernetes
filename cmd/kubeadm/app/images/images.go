@@ -18,8 +18,6 @@ package images
 
 import (
 	"fmt"
-	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/macvlan"
-
 	"k8s.io/klog/v2"
 
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
@@ -27,11 +25,13 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/calico"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/flannel"
+	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/macvlan"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/ovn"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/addons/network/weavenet"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/controlplane/haproxy"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/controlplane/keepalived"
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
+	"strings"
 )
 
 // GetGenericImage generates and returns a platform agnostic image (backed by manifest list)
@@ -100,7 +100,7 @@ func GetEtcdImage(cfg *kubeadmapi.ClusterConfiguration) string {
 func GetNetworkingImage(cfg *kubeadmapi.ClusterConfiguration) []string {
 	imgs := []string{}
 	repoPrefix := cfg.GetControlPlaneImageRepository()
-	if cfg.Networking.Plugin == constants.CalicoK8S {
+	if strings.Contains(cfg.Networking.Plugin, constants.CalicoK8S) {
 		imgs = append(imgs, GetGenericImage(repoPrefix, "node", calico.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "kube-controllers", calico.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "cni", calico.Version))
@@ -108,12 +108,12 @@ func GetNetworkingImage(cfg *kubeadmapi.ClusterConfiguration) []string {
 		imgs = append(imgs, GetGenericImage(repoPrefix, "typha", calico.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "apiserver", calico.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "calico-bootstraper", calico.BootstraperVersion))
-	} else if cfg.Networking.Plugin == constants.Calico {
+	} else if strings.Contains(cfg.Networking.Plugin, constants.Calico) {
 		imgs = append(imgs, GetGenericImage(repoPrefix, "node", calico.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "kube-controllers", calico.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "cni", calico.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "ctl", calico.Version))
-	} else if cfg.Networking.Plugin == constants.CalicoOperator {
+	} else if strings.Contains(cfg.Networking.Plugin, constants.CalicoOperator) {
 		imgs = append(imgs, GetGenericImage(repoPrefix, "node", calico.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "kube-controllers", calico.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "cni", calico.Version))
@@ -122,16 +122,18 @@ func GetNetworkingImage(cfg *kubeadmapi.ClusterConfiguration) []string {
 		imgs = append(imgs, GetGenericImage(repoPrefix, "apiserver", calico.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "calico-operator", calico.OperatorVersion))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "calico-bootstraper", calico.BootstraperVersion))
-	} else if cfg.Networking.Plugin == constants.Flannel {
-		imgs = append(imgs, GetGenericImage(repoPrefix, "flannel", flannel.Version))
-	} else if cfg.Networking.Plugin == constants.Ovn {
+	} else if strings.Contains(cfg.Networking.Plugin, constants.Ovn) {
 		imgs = append(imgs, GetGenericImage(repoPrefix, "ovn", ovn.Version))
-	} else if cfg.Networking.Plugin == constants.Macvlan {
+	} else if strings.Contains(cfg.Networking.Plugin, constants.Macvlan) {
 		imgs = append(imgs, GetGenericImage(repoPrefix, "whereabouts", macvlan.WhereAboutsVersion))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "whereabouts-bootstraper", macvlan.WhereAboutsBootstrapterVersion))
-	} else if cfg.Networking.Plugin == constants.Weave {
+	} else if strings.Contains(cfg.Networking.Plugin, constants.Weave) {
 		imgs = append(imgs, GetGenericImage(repoPrefix, "weave-kube", weavenet.Version))
 		imgs = append(imgs, GetGenericImage(repoPrefix, "weave-npc", weavenet.Version))
+	}
+	// For compatibility multus
+	if strings.Contains(cfg.Networking.Plugin, constants.Flannel) {
+		imgs = append(imgs, GetGenericImage(repoPrefix, "flannel", flannel.Version))
 	}
 	// HA
 	if len(cfg.ControlPlaneEndpoint) != 0 {

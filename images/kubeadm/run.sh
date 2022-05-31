@@ -1,7 +1,7 @@
 #!/bin/bash
 REGISTRY_SERVER="index.tenxcloud.com"
 REGISTRY_USER="system_containers"
-K8S_VERSION="v1.22.8"
+K8S_VERSION="v1.22.10"
 ETCD_VERSION="3.5.4-0"
 INTERNAL_BINDPORT="16443"
 DEFAULT_BINDPORT="6443"
@@ -115,7 +115,6 @@ init_configure() {
     local apiServerUrl=""
     local apiServerCredential=""
     local clusterName=""
-    local networkMode=""
     local networkPlugin="calico"
     local podSubnet=""
     local podExtraSubnet=""
@@ -123,6 +122,10 @@ init_configure() {
     local nodeSubnet=""
     local dnsDomain=""
     local kubeProxyMode="ipvs"
+    local nodeCidrMaskSize=""     # node-cidr-mask-size
+    local nodeCidrMaskSizeIPv4="" # node-cidr-mask-size-ipv4
+    local nodeCidrMaskSizeIPv6="" # node-cidr-mask-size-ipv6
+    local dualStack="false"
 
 
     if [[ -n "${ADDRESS}" ]]; then
@@ -177,13 +180,35 @@ init_configure() {
         clusterName+="clusterName: ${CLUSTERID}"
     fi
 
-    if [[ -n "${NETWORK_MODE}" ]]; then
-        networkMode="mode: ${NETWORK_MODE}"
-    fi
-
     if [[ -n "${POD_CIDR}" ]]; then
         podSubnet+="podSubnet: ${POD_CIDR}"
+        #TODO: ${NETWORK} contains flannel
+        subnets=(${POD_CIDR//,/ })
+        if [[ ${#subnets[@]} == 2 ]]; then  # dual stack(ipv4 and ipv6)
+           local maskSizeIPv4=${subnets[0]#*/}
+           local maskSizeIPv6=${subnets[1]#*/}
+            ((maskSizeIPv4+=8))
+            ((maskSizeIPv6+=8))
+            nodeCidrMaskSizeIPv4+="node-cidr-mask-size-ipv4: \"${maskSizeIPv4}\""
+            nodeCidrMaskSizeIPv6+="node-cidr-mask-size-ipv6: \"${maskSizeIPv6}\""
+            dualStack="true"
+        elif [[ ${#subnets[@]} == 1 ]]; then  # single stack(ipv4 or ipv6)
+          if [[ "${NETWORK}" == "flannel" ]]; then
+             local maskSize=${POD_CIDR#*/}
+             ((maskSize+=8))
+             nodeCidrMaskSize+="node-cidr-mask-size: \"${maskSize}\""
+          fi
+        else
+          echo "Bad POD_CIDR format "
+        fi
+    else # single stack(just ipv4)
+        if [[ "${NETWORK}" == "flannel" ]]; then # setup node-cidr-mask-size when flannel
+            local maskSize=16
+            ((maskSize+=8))
+            nodeCidrMaskSize+="node-cidr-mask-size: \"${maskSize}\""
+        fi
     fi
+
     if [[ -n "${POD_EXTRA_CIDR}" ]]; then
         podExtraSubnet+="podExtraSubnet: ${POD_EXTRA_CIDR}"
     fi
@@ -197,8 +222,8 @@ init_configure() {
         dnsDomain+="dnsDomain: ${SERVICE_DNS_DOMAIN}"
     fi
 
-    if [[ -n "${NETWORK_PLUGIN}" ]]; then
-        networkPlugin="${NETWORK_PLUGIN}"
+    if [[ -n "${NETWORK}" ]]; then
+        networkPlugin="${NETWORK}"
     fi
     if [[ -n "${PROXY_MODE}" ]];then
         kubeProxyMode=${PROXY_MODE}
@@ -213,11 +238,14 @@ init_configure() {
     sed -i  "s@{{REGISTRY_USER}}@${REGISTRY_USER}@g" "${kubeadm_config_file}"
     sed -i  "s@{{certSANs}}@${certSANs}@g" "${kubeadm_config_file}"
     sed -i  "s@{{controlPlaneEndpoint}}@${controlPlaneEndpoint}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{nodeCidrMaskSize}}@${nodeCidrMaskSize}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{nodeCidrMaskSizeIPv4}}@${nodeCidrMaskSizeIPv4}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{nodeCidrMaskSizeIPv6}}@${nodeCidrMaskSizeIPv6}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{ipv6DualStack}}@${dualStack}@g" "${kubeadm_config_file}"
     sed -i  "s@{{serverCertSANs}}@${serverCertSANs}@g" "${kubeadm_config_file}"
     sed -i  "s@{{apiServerUrl}}@${apiServerUrl}@g" "${kubeadm_config_file}"
     sed -i  "s@{{apiServerCredential}}@${apiServerCredential}@g" "${kubeadm_config_file}"
     sed -i  "s@{{clusterName}}@${clusterName}@g" "${kubeadm_config_file}"
-    sed -i  "s@{{networkMode}}@${networkMode}@g" "${kubeadm_config_file}"
     sed -i  "s@{{podSubnet}}@${podSubnet}@g" "${kubeadm_config_file}"
     sed -i  "s@{{podExtraSubnet}}@${podExtraSubnet}@g" "${kubeadm_config_file}"
     sed -i  "s@{{serviceSubnet}}@${serviceSubnet}@g" "${kubeadm_config_file}"

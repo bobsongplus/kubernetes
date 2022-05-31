@@ -1,4 +1,4 @@
-FROM haproxy:2.2.11-alpine
+FROM haproxy:2.2.24-alpine
 
 LABEL vendor="TenxCloud Incorporated" \
       maintainer=weiwei@tenxcloud.com

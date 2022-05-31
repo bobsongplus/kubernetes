@@ -67,8 +67,8 @@ func runCleanupNode(c workflow.RunData) error {
 		if !r.DryRun() {
 			fmt.Println("[reset] Stopping the kubelet service")
 			if err := initSystem.ServiceStop("kubelet"); err != nil {
-				klog.Warningf("[reset] The kubelet service could not be stopped by kubeadm: [%v]\n", err)
-				klog.Warningln("[reset] Please ensure kubelet is stopped manually")
+				//klog.Warningf("[reset] The kubelet service could not be stopped by kubeadm: [%v]\n", err)
+				//klog.Warningln("[reset] Please ensure kubelet is stopped manually")
 			}
 		} else {
 			fmt.Println("[reset] Would stop the kubelet service")
@@ -102,7 +102,7 @@ func runCleanupNode(c workflow.RunData) error {
 		fmt.Println("[reset] Would remove Kubernetes-managed containers")
 	}
 
-	r.AddDirsToClean("/var/lib/dockershim", "/var/run/kubernetes", "/var/lib/cni", "/etc/cni/net.d", "/opt/cni/bin", "/var/lib/calico","/etc/systemd/system/kubelet.service.d")
+	r.AddDirsToClean("/var/lib/dockershim", "/var/run/kubernetes", "/var/lib/cni", "/etc/cni/net.d", "/opt/cni/bin", "/var/lib/calico", "/etc/systemd/system/kubelet.service.d")
 
 	// Remove contents from the config and pki directories
 	if certsDir != kubeadmapiv1.DefaultCertificatesDir {
@@ -174,7 +174,7 @@ func resetConfigDir(configPathDir, pkiPathDir string, isDryRun bool) {
 		filepath.Join(configPathDir, kubeadmconstants.ControllerManagerKubeConfigFileName),
 		filepath.Join(configPathDir, kubeadmconstants.SchedulerKubeConfigFileName),
 		filepath.Join(configPathDir, kubeadmconstants.KeepalivedDirectory),
-		filepath.Join(configPathDir, kubeadmconstants. HaproxyDirectory),
+		filepath.Join(configPathDir, kubeadmconstants.HaproxyDirectory),
 		"/etc/systemd/system/kubelet.service",
 	}
 

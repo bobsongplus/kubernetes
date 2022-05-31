@@ -1,7 +1,7 @@
 package macvlan
 
 const (
-	WhereAboutsVersion             = "latest"
+	WhereAboutsVersion             = "v0.5.3"
 	WhereAboutsBootstrapterVersion = "v1.0"
 	CNIPluginVersion               = "v1.1.1"
 

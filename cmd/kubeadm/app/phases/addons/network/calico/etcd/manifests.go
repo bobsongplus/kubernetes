@@ -7,7 +7,7 @@
 package calico
 
 const (
-	Version = "v3.22.2"
+	Version = "v3.23.2"
 
 	//This ConfigMap is used to configure a self-hosted Calico installation.
 	NodeConfigMap = `
@@ -466,8 +466,8 @@ data:
       name: {{ .Name }}
     spec:
       cidr: {{ .PodSubnet }}
-      ipipMode: Always
-      vxlanMode: Never
+      ipipMode: Never
+      vxlanMode: Always
       natOutgoing: true
 `
 
@@ -567,6 +567,13 @@ rules:
       - nodes/status
     verbs:
       - patch
+  - apiGroups: [""]
+    resources:
+      - serviceaccounts/token
+    resourceNames:
+      - calico-node
+    verbs:
+      - create
 `
 
 	CalicoServiceAccount = `

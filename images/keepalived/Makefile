@@ -1,7 +1,7 @@
 all:
-	docker build -t 172.22.50.227/system_containers/keepalived-amd64:2.2.0 .
+	docker build -t 172.22.50.227/system_containers/keepalived:2.2.7 .
 
 
 arm64:
-	docker build -t 172.22.50.227/arm64/keepalived-arm64:2.2.0 -f Dockerfile-arm64  .
+	docker build --platform=linux/arm64 -t 172.22.50.227/arm64/keepalived:2.2.7 -f Dockerfile-arm64  .
 

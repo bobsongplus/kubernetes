@@ -12,7 +12,7 @@ kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   labels:
-    app: kubectl
+    k8s-app: kubectl
     use: webt
   name: kubectl
   namespace: kube-system
@@ -21,12 +21,12 @@ spec:
     type: OnDelete
   selector:
     matchLabels:
-      app: kubectl
+      k8s-app: kubectl
       use: webt
   template:
     metadata:
       labels:
-        app: kubectl
+        k8s-app: kubectl
         use: webt
     spec:
       serviceAccountName: kubectl
@@ -39,10 +39,10 @@ spec:
           image: {{ .ImageRepository }}/kubectl:{{ .Version }}
           resources:
             limits:
-              cpu: 1000m
+              cpu: 500m
               memory: 512Mi
             requests:
-              cpu: 500m
+              cpu: 200m
               memory: 512Mi
           volumeMounts:
           - name: docker-sock

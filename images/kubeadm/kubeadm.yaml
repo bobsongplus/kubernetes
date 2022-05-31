@@ -21,6 +21,28 @@ imageRepository: {{REGISTRY_SERVER}}/{{REGISTRY_USER}}
 apiServer:
   timeoutForControlPlane: 5m0s
   {{certSANs}}
+controllerManager:
+  extraArgs:
+    node-monitor-period: 5s
+    node-monitor-grace-period: 20s
+    node-startup-grace-period: 30s
+    pod-eviction-timeout: 1m
+    concurrent-deployment-syncs: "5"
+    concurrent-endpoint-syncs: "5"
+    concurrent-gc-syncs: "20"
+    concurrent-namespace-syncs: "10"
+    concurrent-replicaset-syncs: "5"
+    concurrent-service-syncs: "1"
+    concurrent-serviceaccount-token-syncs: "5"
+    deployment-controller-sync-period: 30s
+    pvclaimbinder-sync-period: 15s
+    terminated-pod-gc-threshold: "10"
+    profiling: "false"
+    {{nodeCidrMaskSize}} 
+    {{nodeCidrMaskSizeIPv4}} 
+    {{nodeCidrMaskSizeIPv6}}
+featureGates:
+  IPv6DualStack: {{ipv6DualStack}}
 etcd:
   local:
     extraArgs:
@@ -31,7 +53,6 @@ etcd:
     {{serverCertSANs}}
 networking:
   plugin: {{networkPlugin}}
-  {{networkMode}}
   {{podSubnet}}
   {{podExtraSubnet}}
   {{serviceSubnet}}

@@ -22,6 +22,7 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 )
@@ -45,12 +46,12 @@ func CreateCalicoAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration, 
 	}
 	//PHASE 1: create calico node containers
 	var iPAutoDetection, iP6AutoDetection, assignIpv4, assignIpv6 string
-	if calico.GetNetworkMode(defaultSubnet) == calico.NetworkIPV6Mode { // only ipv6
+	if kubeadmconstants.GetNetworkMode(defaultSubnet) == kubeadmconstants.NetworkIPV6Mode { // only ipv6
 		iPAutoDetection = "none"
 		iP6AutoDetection = "autodetect"
 		assignIpv4 = "false"
 		assignIpv6 = "true"
-	} else if calico.GetNetworkMode(defaultSubnet) == calico.NetworkDualStackMode { // ipv4 & ipv6
+	} else if kubeadmconstants.GetNetworkMode(defaultSubnet) == kubeadmconstants.NetworkDualStackMode { // ipv4 & ipv6
 		iPAutoDetection = "autodetect"
 		iP6AutoDetection = "autodetect"
 		assignIpv4 = "true"

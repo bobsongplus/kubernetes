@@ -1,0 +1,71 @@
+global_defs {
+   script_user root
+   enable_script_security
+   router_id control-plane
+   vrrp_garp_master_delay 2
+   vrrp_garp_master_repeat 3
+   vrrp_garp_master_refresh 30
+   vrrp_garp_interval 0.001
+   vrrp_gna_interval 0.000001
+   vrrp_no_swap
+   checker_no_swap
+}
+
+vrrp_instance master {
+    state BACKUP
+    interface [[.Interface]]
+    virtual_router_id 191
+    priority [[.Priority]]
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass Dream001
+    }
+    virtual_ipaddress {
+        [[.VIP]]
+    }
+   unicast_src_ip [[.HostIP]]
+   unicast_peer { {{range $s := ls "/masterleases"}}
+     {{ if ne $s "[[.HostIP]]" }}{{$s}}{{end}}{{end}}
+   }
+
+}
+
+virtual_server [[.VIP]] 6443 {          #指定虚拟服务器地址(VIP)、端口，定义虚拟服务器和Web服务器池参数
+      delay_loop 6					    #健康检查的间隔时间(秒)
+      lb_algo rr                        #指定调度算法，轮询(wrr、rr、wlc、lc)
+      lb_kind DR                        #指定群集工作模式，直接路由(DR)
+      persistence_timeout 6             #连接保持时间(秒)
+      protocol TCP                      #应用服务采用的是 TCP协议
+
+      #配置真实服务器
+      real_server 192.168.49.11 16443 {    #指定第一个Web节点的地址、端口
+          weight 1                         #节点的权重
+          TCP_CHECK {                      #健康检查方式 常见有 TCP_CHECK, HTTP_GET, SSL_GET, MISC_CHECK(自定义脚本)
+             connect_port 16443            #检测目标端口
+             connect_timeout 3             #连接超时时间(秒)
+             nb_get_retry 3                #重连次数
+             delay_before_retry 3          #重连时间间隔
+          }
+      }
+
+      real_server 192.168.49.12 16443 {
+          weight 1
+          TCP_CHECK {
+              connect_port 16443
+              connect_timeout 3
+              nb_get_retry 3
+              delay_before_retry 3
+          }
+     }
+
+      real_server 192.168.49.13 16443 {
+           weight 1
+           TCP_CHECK {
+               connect_port 16443
+               connect_timeout 3
+               nb_get_retry 3
+               delay_before_retry 3
+           }
+      }
+}

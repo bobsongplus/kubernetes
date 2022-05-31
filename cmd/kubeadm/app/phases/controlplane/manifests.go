@@ -331,34 +331,20 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 	caFile := filepath.Join(cfg.CertificatesDir, kubeadmconstants.CACertName)
 
 	defaultArguments := map[string]string{
-		"port":                                  "0",
-		"leader-elect":                          "true",
-		"kubeconfig":                            kubeconfigFile,
-		"authentication-kubeconfig":             kubeconfigFile,
-		"authorization-kubeconfig":              kubeconfigFile,
-		"client-ca-file":                        caFile,
-		"requestheader-client-ca-file":          filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyCACertName),
-		"root-ca-file":                          caFile,
-		"service-account-private-key-file":      filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),
-		"cluster-signing-cert-file":             caFile,
-		"cluster-signing-key-file":              filepath.Join(cfg.CertificatesDir, kubeadmconstants.CAKeyName),
-		"use-service-account-credentials":       "true",
-		"controllers":                           "*,bootstrapsigner,tokencleaner",
-		"node-monitor-period":                   "5s",
-		"node-monitor-grace-period":             "20s",
-		"node-startup-grace-period":             "30s",
-		"pod-eviction-timeout":                  "1m",
-		"concurrent-deployment-syncs":           "5",
-		"concurrent-endpoint-syncs":             "5",
-		"concurrent-gc-syncs":                   "20",
-		"concurrent-namespace-syncs":            "10",
-		"concurrent-replicaset-syncs":           "5",
-		"concurrent-service-syncs":              "1",
-		"concurrent-serviceaccount-token-syncs": "5",
-		"deployment-controller-sync-period":     "30s",
-		"pvclaimbinder-sync-period":             "15s",
-		"terminated-pod-gc-threshold":           "10",
-		"profiling":                             "false",
+		"port":                             "0",
+		"bind-address":                     "127.0.0.1",
+		"leader-elect":                     "true",
+		"kubeconfig":                       kubeconfigFile,
+		"authentication-kubeconfig":        kubeconfigFile,
+		"authorization-kubeconfig":         kubeconfigFile,
+		"client-ca-file":                   caFile,
+		"requestheader-client-ca-file":     filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyCACertName),
+		"root-ca-file":                     caFile,
+		"service-account-private-key-file": filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),
+		"cluster-signing-cert-file":        caFile,
+		"cluster-signing-key-file":         filepath.Join(cfg.CertificatesDir, kubeadmconstants.CAKeyName),
+		"use-service-account-credentials":  "true",
+		"controllers":                      "*,bootstrapsigner,tokencleaner",
 	}
 
 	// If using external CA, pass empty string to controller manager instead of ca.key/ca.crt path,
@@ -378,12 +364,12 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 		}
 	}
 	//// override subnet
-	//plugins := strings.Split(cfg.Networking.Plugin, ",")
-	//if len(plugins) == 2 {
-	//	if plugins[1] == kubeadmconstants.Flannel {
-	//		defaultArguments["cluster-cidr"] = cfg.Networking.PodExtraSubnet
-	//	}
-	//}
+	plugins := strings.Split(cfg.Networking.Plugin, ",")
+	if len(plugins) == 2 {
+		if plugins[1] == kubeadmconstants.Flannel {
+			defaultArguments["cluster-cidr"] = cfg.Networking.PodExtraSubnet
+		}
+	}
 
 	// Set cluster name
 	if cfg.ClusterName != "" {
@@ -416,7 +402,7 @@ func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 
 //inspired by https://github.com/kubernetes/kubernetes/blob/v1.20.5/cluster/gce/gci/configure-helper.sh#L1112
 const (
-	AuditPolicy = `apiVersion: audit.k8s.io/v1beta1
+	AuditPolicy = `apiVersion: audit.k8s.io/v1
 kind: Policy
 omitStages:
   - "RequestReceived"

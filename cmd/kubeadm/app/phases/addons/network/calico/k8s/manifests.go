@@ -7,7 +7,7 @@
 package calico
 
 const (
-	Version = "v3.22.2"
+	Version = "v3.23.2"
 
 	//This ConfigMap is used to configure a self-hosted Calico installation.
 	NodeConfigMap = `
@@ -529,6 +529,13 @@ rules:
       - daemonsets
     verbs:
       - get
+  - apiGroups: [""]
+    resources:
+      - serviceaccounts/token
+    resourceNames:
+      - calico-node
+    verbs:
+      - create
 `
 
 	CalicoServiceAccount = `
@@ -575,7 +582,6 @@ rules:
       - watch
   - apiGroups: ["crd.projectcalico.org"]
     resources:
-      - ippools
       - ipreservations
     verbs:
       - list
@@ -593,6 +599,12 @@ rules:
       - watch
   - apiGroups: ["crd.projectcalico.org"]
     resources:
+      - ippools
+    verbs:
+      - list
+      - watch
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
       - hostendpoints
     verbs:
       - get
@@ -605,8 +617,10 @@ rules:
       - clusterinformations
     verbs:
       - get
+      - list
       - create
       - update
+      - watch
   - apiGroups: ["crd.projectcalico.org"]
     resources:
       - kubecontrollersconfigurations

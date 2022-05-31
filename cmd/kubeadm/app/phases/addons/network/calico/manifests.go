@@ -7,7 +7,7 @@
 package calico
 
 const (
-	Version            = "v3.22.2"
+	Version            = "v3.23.2"
 	OperatorVersion    = "v1.25.8"
 	BootstraperVersion = "v1.0"
 
@@ -565,6 +565,13 @@ rules:
       - nodes/status
     verbs:
       - patch
+  - apiGroups: [""]
+    resources:
+      - serviceaccounts/token
+    resourceNames:
+      - calico-node
+    verbs:
+      - create
 `
 
 	CalicoServiceAccount = `

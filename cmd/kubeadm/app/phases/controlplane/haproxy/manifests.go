@@ -1,7 +1,7 @@
 package haproxy
 
 const (
-	Version = "2.2.11"
+	Version = "2.2.24"
 
 	DefaultHaproxyCfg = "haproxy.cfg.tmpl"
 	DefaultHaproxy    = "haproxy.yaml"

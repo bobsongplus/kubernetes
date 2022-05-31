@@ -499,6 +499,33 @@ const (
 	Weave string = "weave"
 )
 
+type NetworkMode string
+
+const (
+	//NetworkIPV4Mode IPv4 mode
+	NetworkIPV4Mode NetworkMode = "ipv4"
+	//NetworkIPV6Mode  IPv6 mode
+	NetworkIPV6Mode NetworkMode = "ipv6"
+	//NetworkDualStackMode IPv4/IPv6 dual-stack
+	NetworkDualStackMode NetworkMode = "dual-stack"
+)
+
+func GetNetworkMode(cidr string) NetworkMode {
+	subnets := strings.Split(cidr, ",")
+	if len(subnets) == 2 {
+		return NetworkDualStackMode
+	}
+	ip, _, err := net.ParseCIDR(cidr)
+	if err != nil {
+		fmt.Errorf("error: parseCIDR %s : %v", cidr, err)
+	}
+	if ip.To4() == nil {
+		return NetworkIPV6Mode
+	} else {
+		return NetworkIPV4Mode
+	}
+}
+
 var (
 	// OldControlPlaneTaint is the taint to apply on the PodSpec for being able to run that Pod on the control-plane
 	// DEPRECATED: https://github.com/kubernetes/kubeadm/issues/2200
