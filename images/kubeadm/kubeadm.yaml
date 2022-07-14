@@ -27,6 +27,7 @@ controllerManager:
     node-monitor-grace-period: 20s
     node-startup-grace-period: 30s
     pod-eviction-timeout: 1m
+    cluster-signing-duration: 876000h0m0s
     concurrent-deployment-syncs: "5"
     concurrent-endpoint-syncs: "5"
     concurrent-gc-syncs: "20"
