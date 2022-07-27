@@ -102,7 +102,7 @@ func runCleanupNode(c workflow.RunData) error {
 		fmt.Println("[reset] Would remove Kubernetes-managed containers")
 	}
 
-	r.AddDirsToClean("/var/lib/dockershim", "/var/run/kubernetes", "/var/lib/cni", "/etc/cni/net.d", "/opt/cni/bin", "/var/lib/calico", "/etc/systemd/system/kubelet.service.d")
+	r.AddDirsToClean("/var/lib/dockershim", "/var/run/kubernetes", "/var/lib/cni", "/var/lib/calico", "/etc/systemd/system/kubelet.service.d")
 
 	// Remove contents from the config and pki directories
 	if certsDir != kubeadmapiv1.DefaultCertificatesDir {

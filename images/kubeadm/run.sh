@@ -281,6 +281,11 @@ $(welcome)
 welcome
 ${Clean}
 Clean ${criSocket}
+
+docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubelet:${K8S_VERSION} /kubelet /tmp/kubelet
+rm -f /usr/bin/kubelet
+mv /tmp/kubelet /usr/bin/  >/dev/null
+
 /tmp/kubeadm config images pull --config ${kubeadm_config_file}
 /tmp/kubeadm init  ${KUBEADM_ARGS}  --config ${kubeadm_config_file}
 if [[ \$? -eq 0  ]];then
@@ -299,6 +304,7 @@ EOF
 install_binary() {
     cat <<EOF
     mv /tmp/kubeadm /usr/bin/  >/dev/null
+
 
     docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubectl:${K8S_VERSION} /usr/bin/kubectl /tmp/kubectl
     rm -f /usr/bin/kubectl
@@ -374,6 +380,10 @@ welcome
 ${Clean}
 Clean ${criSocket}
 
+docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubelet:${K8S_VERSION} /kubelet /tmp/kubelet
+rm -f /usr/bin/kubelet
+mv /tmp/kubelet /usr/bin/  >/dev/null
+
 /tmp/kubeadm config images pull --image-repository=${REGISTRY_SERVER}/${REGISTRY_USER}
 /tmp/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint}  ${apiServerAdvertiseAddress}  ${apiServerBindPort} --cri-socket ${criSocket}   --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH}  --control-plane --certificate-key areyoukiddingme
 if [[ \$? -eq 0  ]];then
@@ -401,6 +411,11 @@ ${Clean}
 Clean ${criSocket}
 ${PullImage}
 PullImage ${REGISTRY_SERVER} ${REGISTRY_USER}
+
+docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubelet:${K8S_VERSION} /kubelet /tmp/kubelet
+rm -f /usr/bin/kubelet
+mv /tmp/kubelet /usr/bin/  >/dev/null
+
 /tmp/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint} --cri-socket ${criSocket} --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH}
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"

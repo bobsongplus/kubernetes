@@ -1,0 +1,8 @@
+debug          = false
+debug_full     = false
+address        = "unix:///run/containerd/containerd.sock"
+namespace      = "k8s.io"
+cni_path       = "/opt/cni/bin"
+cni_netconfpath="/etc/cni/net.d/"
+cgroup_manager = "cgroupfs"
+insecure_registry=true

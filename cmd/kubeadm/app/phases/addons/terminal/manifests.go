@@ -45,8 +45,8 @@ spec:
               cpu: 200m
               memory: 512Mi
           volumeMounts:
-          - name: docker-sock
-            mountPath: /var/run/docker.sock
+          - name: cri-socket
+            mountPath: {{.RuntimePath}}
           - name: localtime
             mountPath: /etc/localtime
           - mountPath: /etc/resolv.conf
@@ -54,9 +54,9 @@ spec:
           - mountPath: /etc/kubernetes/manifests/
             name: k8s
       volumes:
-      - name: docker-sock
+      - name: cri-socket
         hostPath:
-          path: /var/run/docker.sock
+          path: {{.RuntimePath}}
           type: Socket
       - name: localtime
         hostPath:
