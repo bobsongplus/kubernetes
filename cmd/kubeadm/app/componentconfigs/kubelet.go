@@ -234,6 +234,8 @@ func (kc *kubeletConfig) Default(cfg *kubeadmapi.ClusterConfiguration, _ *kubead
 	kc.config.SerializeImagePulls = &serializeImagePulls
 	var registryPullQPS int32 = 0
 	kc.config.RegistryPullQPS = &registryPullQPS
+	kc.config.ImageGCHighThresholdPercent = utilpointer.Int32Ptr(75)
+	kc.config.ImageGCLowThresholdPercent = utilpointer.Int32Ptr(65)
 	systemReserved := map[string]string{
 		"cpu":               "500m",
 		"memory":            "512Mi",

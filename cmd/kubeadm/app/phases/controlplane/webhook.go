@@ -55,7 +55,7 @@ func Hook(cfg *kubeadmapi.InitConfiguration) error {
 		return fmt.Errorf("[webhook] Failed to consturct an HTTP request [%v] \n", err)
 	}
 	req.Header.Set("username", credential[0])
-	req.Header.Set("authorization", fmt.Sprintf("token %s", credential[1]))
+	req.Header.Set("authorization", fmt.Sprintf("Bearer %s", credential[1]))
 	//if the url is https, will skip the verify
 	client := &http.Client{}
 	if uri, err := url.Parse(cfg.ApiServerUrl); err == nil && uri.Scheme == "https" {
@@ -68,11 +68,17 @@ func Hook(cfg *kubeadmapi.InitConfiguration) error {
 	if err != nil {
 		return fmt.Errorf("[webhook] Failed to callback Kubernetes Enterprise Platform to register the cluster [%v] \n ", err)
 	}
+
 	defer response.Body.Close()
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return fmt.Errorf("[webhook] Failed to ReadAll cluster info [%v],Body: %v \n", err, string(body))
 	}
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("[webhook] Failed to callback Kubernetes Enterprise Platfom to register the cluster [%v] \n", string(body))
+	}
+
 	fmt.Println("[webhook] This Kubernetes cluster registered to Kubernetes Enterprise Platform Successfully \n ")
 	return nil
 }

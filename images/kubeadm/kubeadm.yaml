@@ -25,7 +25,7 @@ controllerManager:
   extraArgs:
     node-monitor-period: 5s
     node-monitor-grace-period: 20s
-    node-startup-grace-period: 30s
+    node-startup-grace-period: 60s
     pod-eviction-timeout: 1m
     cluster-signing-duration: 876000h0m0s
     concurrent-deployment-syncs: "5"
@@ -46,6 +46,7 @@ featureGates:
   IPv6DualStack: {{ipv6DualStack}}
 etcd:
   local:
+    dataDir: {{etcdDataDir}}
     extraArgs:
       election-timeout: "5000"
       heartbeat-interval: "500"

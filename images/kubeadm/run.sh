@@ -126,6 +126,7 @@ init_configure() {
     local nodeCidrMaskSizeIPv4="" # node-cidr-mask-size-ipv4
     local nodeCidrMaskSizeIPv6="" # node-cidr-mask-size-ipv6
     local dualStack="false"
+    local etcdDataDir="/var/lib/etcd"
 
 
     if [[ -n "${ADDRESS}" ]]; then
@@ -228,6 +229,9 @@ init_configure() {
     if [[ -n "${PROXY_MODE}" ]];then
         kubeProxyMode=${PROXY_MODE}
     fi
+    if [[ -n "${ETCD_DATA_DIR}" ]];then
+        etcdDataDir="${ETCD_DATA_DIR}"
+    fi
 
     cp "${kubeadm_config_tmpl}" "${kubeadm_config_file}" >/dev/null 2>&1
     # mac sed diff linux sed usage
@@ -253,6 +257,7 @@ init_configure() {
     sed -i  "s@{{dnsDomain}}@${dnsDomain}@g" "${kubeadm_config_file}"
     sed -i  "s@{{networkPlugin}}@${networkPlugin}@g" "${kubeadm_config_file}"
     sed -i  "s@{{kubeProxyMode}}@${kubeProxyMode}@g" "${kubeadm_config_file}"
+    sed -i  "s@{{etcdDataDir}}@${etcdDataDir}@g" "${kubeadm_config_file}"
 
 }
 
