@@ -22,8 +22,6 @@ import (
 	"k8s.io/klog/v2"
 	"strings"
 
-
-	"github.com/caddyserver/caddy/caddyfile"
 	"github.com/coredns/corefile-migration/migration"
 	"github.com/pkg/errors"
 	apps "k8s.io/api/apps/v1"
@@ -94,7 +92,7 @@ func EnsureDNSAddon(cfg *kubeadmapi.ClusterConfiguration, client clientset.Inter
 		return err
 	}
 	err = coreDNSAddon(cfg, client, replicas)
-	if err = dnscache.CreateNodeDnsCacheAddOn(cfg,client); err != nil {
+	if err = dnscache.CreateNodeDnsCacheAddOn(cfg, client); err != nil {
 		return err
 	}
 	err = dnsautoscaler.DnsAutoscalerAddOn(cfg, client)

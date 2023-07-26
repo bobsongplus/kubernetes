@@ -1,7 +1,7 @@
 package keepalived
 
 const (
-	Version = "2.2.7"
+	Version = "2.2.8"
 
 	DefaultKeepalivedCfg = "keepalived.conf.tmpl"
 	DefaultKeepalived    = "keepalived.yaml"

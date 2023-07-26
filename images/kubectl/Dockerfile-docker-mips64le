@@ -1,4 +1,4 @@
-FROM mips64le/debian:buster-slim
+FROM mips64le/debian:bullseye-slim
 COPY docker-linux-mips64le-19.03.11.ce /usr/bin/docker
 
 LABEL vendor="TenxCloud Incorporated" \

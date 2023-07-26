@@ -1,4 +1,4 @@
-FROM k8s.gcr.io/build-image/kube-cross:v1.22.0-go1.16.15-buster.0
+FROM registry.k8s.io/build-image/kube-cross:v1.24.0-go1.20.6-bullseye.0
 
 RUN apt-get update && apt-get install -y  gcc-mips64el-linux-gnuabi64 gcc-8-mips64el-linux-gnuabi64
 

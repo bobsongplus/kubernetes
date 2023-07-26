@@ -1,4 +1,4 @@
-FROM  k8s.gcr.io/build-image/debian-base:buster-v1.9.0
+FROM  registry.k8s.io/build-image/debian-base:bullseye-v1.2.0
 
 LABEL vendor="TenxCloud Incorporated" \
       maintainer=weiwei@tenxcloud.com

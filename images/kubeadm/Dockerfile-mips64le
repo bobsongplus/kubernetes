@@ -1,4 +1,4 @@
-FROM mips64le/debian:buster-slim
+FROM mips64le/debian:bullseye-slim
 
 LABEL vendor="TenxCloud Incorporated" \
       maintainer=weiwei@tenxcloud.com

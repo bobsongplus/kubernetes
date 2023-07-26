@@ -1,4 +1,4 @@
-Version=v1.22.10
+Version=v1.24.16
 CNI_VERSION=v1.1.1
 
 ARCH?=amd64

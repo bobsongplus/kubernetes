@@ -1,8 +1,8 @@
-FROM alpine:3.16 AS builder
+FROM alpine:3.18 AS builder
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
     apk update && apk add --no-cache docker
 FROM calico/ctl:v3.23.2 AS ctl
-FROM alpine:3.16
+FROM alpine:3.18
 
 LABEL vendor="TenxCloud Incorporated" \
       maintainer=weiwei@tenxcloud.com

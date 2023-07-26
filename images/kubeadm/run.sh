@@ -1,8 +1,8 @@
 #!/bin/bash
 REGISTRY_SERVER="index.tenxcloud.com"
 REGISTRY_USER="system_containers"
-K8S_VERSION="v1.22.10"
-ETCD_VERSION="3.5.4-0"
+K8S_VERSION="v1.24.16"
+ETCD_VERSION="3.5.6-0"
 INTERNAL_BINDPORT="16443"
 DEFAULT_BINDPORT="6443"
 kubeadm_config_tmpl="kubeadm.yaml"

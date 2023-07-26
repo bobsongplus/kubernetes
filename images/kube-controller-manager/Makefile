@@ -1,4 +1,4 @@
-Version=v1.22.1
+Version=v1.24.16
 
 ARCH?=amd64
 OUT_DIR?=_output

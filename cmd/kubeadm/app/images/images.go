@@ -19,6 +19,7 @@ package images
 import (
 	"fmt"
 	"k8s.io/klog/v2"
+	"runtime"
 
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmapiv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
@@ -44,7 +45,6 @@ func GetGenericImage(prefix, image, tag string) string {
 func GetKubernetesImage(image string, cfg *kubeadmapi.ClusterConfiguration) string {
 	repoPrefix := cfg.GetControlPlaneImageRepository()
 	kubernetesImageTag := kubeadmutil.KubernetesVersionToImageTag(cfg.KubernetesVersion)
-	image = fmt.Sprintf("%s-%s", image, runtime.GOARCH)
 	return GetGenericImage(repoPrefix, image, kubernetesImageTag)
 }
 
