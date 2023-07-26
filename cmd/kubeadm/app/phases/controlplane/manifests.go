@@ -331,7 +331,6 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 	caFile := filepath.Join(cfg.CertificatesDir, kubeadmconstants.CACertName)
 
 	defaultArguments := map[string]string{
-		"port":                             "0",
 		"bind-address":                     "127.0.0.1",
 		"leader-elect":                     "true",
 		"kubeconfig":                       kubeconfigFile,
@@ -386,9 +385,8 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 	kubeconfigFile := filepath.Join(kubeadmconstants.KubernetesDir, kubeadmconstants.SchedulerKubeConfigFileName)
 	defaultArguments := map[string]string{
-		"port":                      "0",
+		"bind-address":              "127.0.0.1",
 		"leader-elect":              "true",
-		"policy-configmap":          "kube-scheduler",
 		"kubeconfig":                kubeconfigFile,
 		"authentication-kubeconfig": kubeconfigFile,
 		"authorization-kubeconfig":  kubeconfigFile,
@@ -400,7 +398,7 @@ func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 	return command
 }
 
-//inspired by https://github.com/kubernetes/kubernetes/blob/v1.20.5/cluster/gce/gci/configure-helper.sh#L1112
+// inspired by https://github.com/kubernetes/kubernetes/blob/v1.20.5/cluster/gce/gci/configure-helper.sh#L1112
 const (
 	AuditPolicy = `apiVersion: audit.k8s.io/v1
 kind: Policy

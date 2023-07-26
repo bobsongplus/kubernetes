@@ -86,13 +86,13 @@ WantedBy=multi-user.target
 	}
 	buf = bytes.Buffer{}
 	buf.WriteString("[Service]\n")
-	buf.WriteString("Environment=\"KUBELET_KUBECONFIG_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf \"\n")
-	buf.WriteString("Environment=\"KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml  \"\n")
-	buf.WriteString("EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env \n")
+	buf.WriteString("Environment=\"KUBELET_KUBECONFIG_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf\"\n")
+	buf.WriteString("Environment=\"KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml\"\n")
+	buf.WriteString("EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env\n")
 	buf.WriteString("ExecStartPre=/usr/bin/docker run --rm -v /opt/tmp:/opt/tmp   ")
 	buf.WriteString(fmt.Sprintf("%s/kubelet:%s", imageRepository, kubernetesVersion))
-	buf.WriteString(" /bin/sh -c \"mkdir -p /opt/tmp/bin && cp /opt/cni/bin/* /opt/tmp/bin/ && cp /usr/bin/nsenter /opt/tmp \" \n")
-	buf.WriteString("ExecStartPre=/bin/sh -c \"mkdir -p /opt/cni/bin && cp -r /opt/tmp/bin/ /opt/cni/ && cp /opt/tmp/nsenter /usr/bin/ && rm -r /opt/tmp\"\n")
+	buf.WriteString(" /bin/sh -c \"mkdir -p /opt/tmp/bin && cp /opt/cni/bin/* /opt/tmp/bin/ \" \n")
+	buf.WriteString("ExecStartPre=/bin/sh -c \"mkdir -p /opt/cni/bin && cp -r /opt/tmp/bin/ /opt/cni/ && rm -r /opt/tmp\"\n")
 	buf.WriteString("ExecStartPre=/bin/sh -c \"docker inspect kubelet >/dev/null 2>&1 && docker rm -f kubelet || true \" \n")
 	buf.WriteString("ExecStart= \n")
 	buf.WriteString("ExecStart=/bin/sh -c \"docker run --name kubelet --net=host --cpu-period=500000 --cpu-quota=1000000 --cpu-shares=1024 --memory=1g --privileged --pid=host -v /:/rootfs:ro ")

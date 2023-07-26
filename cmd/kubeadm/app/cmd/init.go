@@ -553,12 +553,12 @@ func (d *initData) PatchesDir() string {
 }
 
 func printJoinCommand(out io.Writer, adminKubeConfigPath, token string, i *initData) error {
-	joinControlPlaneCommand, err := cmdutil.GetJoinControlPlaneCommand(adminKubeConfigPath, token, i.Cfg().ImageRepository, i.skipTokenPrint, i.skipCertificateKeyPrint)
+	joinControlPlaneCommand, err := cmdutil.GetJoinControlPlaneCommand(adminKubeConfigPath, token, i.Cfg().ImageRepository, i.Cfg().NodeRegistration.CRISocket, i.skipTokenPrint, i.skipCertificateKeyPrint)
 	if err != nil {
 		return err
 	}
 
-	joinWorkerCommand, err := cmdutil.GetJoinWorkerCommand(adminKubeConfigPath, token, i.Cfg().ImageRepository, i.skipTokenPrint)
+	joinWorkerCommand, err := cmdutil.GetJoinWorkerCommand(adminKubeConfigPath, token, i.Cfg().ImageRepository, i.Cfg().NodeRegistration.CRISocket, i.skipTokenPrint)
 	if err != nil {
 		return err
 	}

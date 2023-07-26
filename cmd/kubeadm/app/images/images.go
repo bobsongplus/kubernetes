@@ -19,8 +19,6 @@ package images
 import (
 	"fmt"
 	"k8s.io/klog/v2"
-	"runtime"
-
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmapiv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
@@ -67,9 +65,7 @@ func GetDNSImage(cfg *kubeadmapi.ClusterConfiguration) string {
 	if cfg.DNS.ImageTag != "" {
 		dnsImageTag = cfg.DNS.ImageTag
 	}
-
-	imageName := fmt.Sprintf("%s-%s", constants.CoreDNSImageName, runtime.GOARCH)
-	return GetGenericImage(dnsImageRepository, imageName, dnsImageTag)
+	return GetGenericImage(dnsImageRepository, constants.CoreDNSImageName, dnsImageTag)
 }
 
 // GetEtcdImage generates and returns the image for etcd

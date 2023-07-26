@@ -3,6 +3,7 @@ kind: InitConfiguration
 bootstrapTokens:
   - ttl: 0s
 nodeRegistration:
+  criSocket: {{criSocket}}
   taints:
   - effect: NoSchedule
     key: node-role.kubernetes.io/master
@@ -35,15 +36,12 @@ controllerManager:
     concurrent-replicaset-syncs: "5"
     concurrent-service-syncs: "1"
     concurrent-serviceaccount-token-syncs: "5"
-    deployment-controller-sync-period: 30s
     pvclaimbinder-sync-period: 15s
     terminated-pod-gc-threshold: "10"
     profiling: "false"
     {{nodeCidrMaskSize}} 
     {{nodeCidrMaskSizeIPv4}} 
     {{nodeCidrMaskSizeIPv6}}
-featureGates:
-  IPv6DualStack: {{ipv6DualStack}}
 etcd:
   local:
     dataDir: {{etcdDataDir}}
