@@ -46,7 +46,7 @@ spec:
               memory: 512Mi
           volumeMounts:
           - name: cri-socket
-            mountPath: {{.RuntimePath}}
+            mountPath: {{.CriSocket}}
           - name: localtime
             mountPath: /etc/localtime
           - mountPath: /etc/resolv.conf
@@ -56,7 +56,7 @@ spec:
       volumes:
       - name: cri-socket
         hostPath:
-          path: {{.RuntimePath}}
+          path: {{.CriSocket}}
           type: Socket
       - name: localtime
         hostPath:

@@ -41,7 +41,7 @@ Option:\n
     --port             \t\t kube-apiserver port, if not set, it will use default 6443\n
     --version          \t\t kubernetes version that will be deployed\n
     --token            \t\t kubernetes token \n
-    --ca-cert-hash     \t\t kubernetes certificate hash \n
+    --ca-cert-hash     \t kubernetes certificate hash \n
     --clusterId        \t\t kubernetes cluster name\n
     --control-plane    \t Indicates whether control plane or not \n
     --credential       \t\t credential to access tce api server \n
@@ -54,7 +54,7 @@ EOF
 Clean=$(cat <<EOF
   Clean() {
     cp /kubeadm  /tmp/  1>/dev/null 2>&1
-    /tmp/kubeadm reset -f  --cri-socket \${1}
+    /tmp/kubeadm reset -f
   }
 EOF
 )
@@ -97,15 +97,11 @@ EOF
 uninstall(){
   #copy kubeadm from containers to /tmp
   cp /kubeadm  /tmp/  > /dev/null 2>&1
-  local criSocket=""
-  if [[ -n "${CRISOCKET}" ]];then
-     criSocket="${CRISOCKET}"
-  fi
 
 cat <<EOF
 #!/bin/bash
 ${Clean}
-Clean ${criSocket}
+Clean
 rm /tmp/kubeadm 2>/dev/null
 echo "Uninstall Node Successfully"
 EOF
@@ -241,6 +237,7 @@ init_configure() {
         criSocket="${CRISOCKET}"
     fi
 
+
     cp "${kubeadm_config_tmpl}" "${kubeadm_config_file}" >/dev/null 2>&1
     # mac sed diff linux sed usage
     sed -i  "s@{{advertiseAddress}}@${advertiseAddress}@g" "${kubeadm_config_file}"
@@ -270,21 +267,13 @@ init_configure() {
 }
 
 do_init() {
-    local criSocket=""
-    if [[ -n "${CRISOCKET}" ]];then
-       criSocket="${CRISOCKET}"
-    fi
     cp /kubeadm  /tmp/  > /dev/null 2>&1
     cat <<EOF
 #!/bin/bash
 $(welcome)
 welcome
 ${Clean}
-Clean ${criSocket}
-
-docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubelet:${K8S_VERSION} /kubelet /tmp/kubelet
-rm -f /usr/bin/kubelet
-mv /tmp/kubelet /usr/bin/  >/dev/null
+Clean
 
 /tmp/kubeadm config images pull --config ${kubeadm_config_file}
 /tmp/kubeadm init  ${KUBEADM_ARGS}  --config ${kubeadm_config_file}
@@ -378,11 +367,7 @@ EOF
 $(welcome)
 welcome
 ${Clean}
-Clean ${criSocket}
-
-docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubelet:${K8S_VERSION} /kubelet /tmp/kubelet
-rm -f /usr/bin/kubelet
-mv /tmp/kubelet /usr/bin/  >/dev/null
+Clean
 
 /tmp/kubeadm config images pull --image-repository=${REGISTRY_SERVER}/${REGISTRY_USER}
 /tmp/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint}  ${apiServerAdvertiseAddress}  ${apiServerBindPort} --cri-socket ${criSocket}   --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH}  --control-plane --certificate-key areyoukiddingme
@@ -404,18 +389,13 @@ EOF
 
   #Normal worker node
   cat <<EOF
-#!/bin/bash;
+#!/bin/bash
 $(welcome)
 welcome
 ${Clean}
-Clean ${criSocket}
+Clean
 ${PullImage}
 PullImage ${REGISTRY_SERVER} ${REGISTRY_USER}
-
-docker run --rm -v /tmp:/tmp --entrypoint cp  ${REGISTRY_SERVER}/${REGISTRY_USER}/kubelet:${K8S_VERSION} /kubelet /tmp/kubelet
-rm -f /usr/bin/kubelet
-mv /tmp/kubelet /usr/bin/  >/dev/null
-
 /tmp/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint} --cri-socket ${criSocket} --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH}
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"

@@ -141,7 +141,7 @@ func runTerminalAddon(c workflow.RunData) error {
 	if err != nil {
 		return err
 	}
-	return terminaladdon.EnsureTerminalAddon(&cfg.ClusterConfiguration, client)
+	return terminaladdon.EnsureTerminalAddon(&cfg.ClusterConfiguration, cfg.NodeRegistration.CRISocket, client)
 }
 
 // runNetworkAddon installs network addon to a Kubernetes cluster

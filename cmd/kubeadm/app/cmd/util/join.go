@@ -38,23 +38,23 @@ var joinCommandTemplate = template.Must(template.New("join").Parse(`` +
 ))
 
 var joinCommandCustomTemplate = template.Must(template.New("join").Parse(`` +
-	`sudo bash -c "$(docker run --rm -v /tmp:/tmp {{.ImageRepository}}/tde:v5.6.0-v1.24.16 --registry {{.ImageRepositoryHost}} --cri-socket {{.CriSocket}} --token {{.Token}} {{range $h := .CAPubKeyPins}} --ca-cert-hash {{$h}} {{end}} {{if .ControlPlane}} --control-plane {{end}} Join {{.ControlPlaneHost}})"`,
+	`sudo bash -c "$(docker run --rm -v /tmp:/tmp {{.ImageRepository}}/tde:{{.Version}} --registry {{.ImageRepositoryHost}} --cri-socket {{.CriSocket}} --token {{.Token}} {{range $h := .CAPubKeyPins}} --ca-cert-hash {{$h}} {{end}} {{if .ControlPlane}} --control-plane {{end}} Join {{.ControlPlaneHost}})"`,
 ))
 
 // GetJoinWorkerCommand returns the kubeadm join command for a given token and
 // and Kubernetes cluster (the current cluster in the kubeconfig file)\
 // TODO
-func GetJoinWorkerCommand(kubeConfigFile, token, imageRepository, criSocket string, skipTokenPrint bool) (string, error) {
-	return getJoinCommand(kubeConfigFile, token, imageRepository, criSocket, false, skipTokenPrint, false)
+func GetJoinWorkerCommand(kubeConfigFile, token, imageRepository, criSocket, kubernetesVersion string, skipTokenPrint bool) (string, error) {
+	return getJoinCommand(kubeConfigFile, token, imageRepository, criSocket, kubernetesVersion, false, skipTokenPrint, false)
 }
 
 // GetJoinControlPlaneCommand returns the kubeadm join command for a given token and
 // and Kubernetes cluster (the current cluster in the kubeconfig file)
-func GetJoinControlPlaneCommand(kubeConfigFile, token, imageRepository, criSocket string, skipTokenPrint, skipCertificateKeyPrint bool) (string, error) {
-	return getJoinCommand(kubeConfigFile, token, imageRepository, criSocket, true, skipTokenPrint, skipCertificateKeyPrint)
+func GetJoinControlPlaneCommand(kubeConfigFile, token, imageRepository, criSocket, kubernetesVersion string, skipTokenPrint, skipCertificateKeyPrint bool) (string, error) {
+	return getJoinCommand(kubeConfigFile, token, imageRepository, criSocket, kubernetesVersion, true, skipTokenPrint, skipCertificateKeyPrint)
 }
 
-func getJoinCommand(kubeConfigFile, token, imageRepository, criSocket string, controlPlane, skipTokenPrint, skipCertificateKeyPrint bool) (string, error) {
+func getJoinCommand(kubeConfigFile, token, imageRepository, criSocket, kubernetesVersion string, controlPlane, skipTokenPrint, skipCertificateKeyPrint bool) (string, error) {
 	// load the kubeconfig file to get the CA certificate and endpoint
 	config, err := clientcmd.LoadFromFile(kubeConfigFile)
 	if err != nil {
@@ -94,6 +94,7 @@ func getJoinCommand(kubeConfigFile, token, imageRepository, criSocket string, co
 
 	ctx := map[string]interface{}{
 		"CriSocket":           criSocket,
+		"Version":             kubernetesVersion,
 		"Token":               token,
 		"CAPubKeyPins":        publicKeyPins,
 		"ImageRepository":     imageRepository,

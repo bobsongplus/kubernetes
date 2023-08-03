@@ -24,9 +24,9 @@ data:
   calico_backend: "bird"
   veth_mtu: "0"
   ip: {{ .IPAutoDetection }}
-  ip_autodetection_method: "first-found"
+  ip_autodetection_method: "kubernetes-internal-ip"
   ip6: {{ .IP6AutoDetection }}
-  ip6_autodetection_method: "first-found"
+  ip6_autodetection_method: "kubernetes-internal-ip"
   cni_network_config: |-
     {
         "name": "calico",
