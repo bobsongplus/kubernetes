@@ -87,7 +87,6 @@ PullImage=$(cat <<EOF
   PullImage() {
   echo "Pulling Necessary Images from \${1}"
   docker pull \${1}/\${2}/kube-proxy:${K8S_VERSION}
-  docker pull \${1}/\${2}/kubelet:${K8S_VERSION}
   docker pull \${1}/\${2}/kubectl:${K8S_VERSION}
   }
 EOF

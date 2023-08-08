@@ -220,7 +220,7 @@ spec:
             - name: NO_DEFAULT_POOLS
               value: "true"
             - name: FELIX_IPV6SUPPORT
-              value: "true"
+              value: "false"
             - name: FELIX_IPINIPMTU
               valueFrom:
                 configMapKeyRef:
