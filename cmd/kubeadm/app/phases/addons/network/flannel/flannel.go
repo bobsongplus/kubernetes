@@ -24,9 +24,10 @@ func CreateFlannelAddon(defaultSubnet string, cfg *kubeadmapi.InitConfiguration,
 		return err
 	}
 	endpoints := strings.ReplaceAll(controlPlaneEndpoint, fmt.Sprintf("%d", cfg.LocalAPIEndpoint.BindPort), fmt.Sprintf("%d", kubeadmconstants.EtcdListenClientPort))
-	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Version, EtcdEndPoints string }{
+	daemonSetBytes, err := kubeadmutil.ParseTemplate(DaemonSet, struct{ ImageRepository, Version, PluginVersion, EtcdEndPoints string }{
 		ImageRepository: cfg.GetControlPlaneImageRepository(),
 		Version:         Version,
+		PluginVersion:   PluginVersion,
 		EtcdEndPoints:   endpoints,
 	})
 	if err != nil {

@@ -130,6 +130,7 @@ func GetNetworkingImage(cfg *kubeadmapi.ClusterConfiguration) []string {
 	// For compatibility multus
 	if strings.Contains(cfg.Networking.Plugin, constants.Flannel) {
 		imgs = append(imgs, GetGenericImage(repoPrefix, "flannel", flannel.Version))
+		imgs = append(imgs, GetGenericImage(repoPrefix, "flannel-cni-plugin", flannel.PluginVersion))
 	}
 	// HA
 	if len(cfg.ControlPlaneEndpoint) != 0 {

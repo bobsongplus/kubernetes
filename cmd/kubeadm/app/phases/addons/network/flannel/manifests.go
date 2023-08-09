@@ -17,7 +17,8 @@ package flannel
  */
 
 const (
-	Version = "v0.18.1"
+	Version       = "v0.18.1"
+	PluginVersion = "v1.1.0"
 
 	ConfigMap = `
 kind: ConfigMap
@@ -107,7 +108,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni-plugin
-        image: {{ .ImageRepository }}/flannel-cni-plugin:v1.1.0
+        image: {{ .ImageRepository }}/flannel-cni-plugin:{{ .PluginVersion }}
         command:
         - cp
         args:
