@@ -54,7 +54,7 @@ EOF
 Clean=$(cat <<EOF
   Clean() {
     cp /kubeadm  /tmp/  1>/dev/null 2>&1
-    /tmp/kubeadm reset -f
+    /tmp/kubeadm reset -f  --cri-socket \${1}
   }
 EOF
 )
@@ -96,11 +96,16 @@ EOF
 uninstall(){
   #copy kubeadm from containers to /tmp
   cp /kubeadm  /tmp/  > /dev/null 2>&1
+  local criSocket=""
+  if [[ -n "${CRISOCKET}" ]];then
+     criSocket="${CRISOCKET}"
+  fi
+
 
 cat <<EOF
 #!/bin/bash
 ${Clean}
-Clean
+Clean ${criSocket}
 rm /tmp/kubeadm 2>/dev/null
 echo "Uninstall Node Successfully"
 EOF
@@ -266,15 +271,18 @@ init_configure() {
 }
 
 do_init() {
+    local criSocket=""
+    if [[ -n "${CRISOCKET}" ]];then
+      criSocket="${CRISOCKET}"
+    fi
     cp /kubeadm  /tmp/  > /dev/null 2>&1
     cat <<EOF
 #!/bin/bash
 $(welcome)
 welcome
 ${Clean}
-Clean
+Clean ${criSocket}
 
-/tmp/kubeadm config images pull --config ${kubeadm_config_file}
 /tmp/kubeadm init  ${KUBEADM_ARGS}  --config ${kubeadm_config_file}
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"
@@ -366,9 +374,8 @@ EOF
 $(welcome)
 welcome
 ${Clean}
-Clean
+Clean ${criSocket}
 
-/tmp/kubeadm config images pull --image-repository=${REGISTRY_SERVER}/${REGISTRY_USER}
 /tmp/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint}  ${apiServerAdvertiseAddress}  ${apiServerBindPort} --cri-socket ${criSocket}   --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH}  --control-plane --certificate-key areyoukiddingme
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"
@@ -392,9 +399,8 @@ EOF
 $(welcome)
 welcome
 ${Clean}
-Clean
-${PullImage}
-PullImage ${REGISTRY_SERVER} ${REGISTRY_USER}
+Clean ${criSocket}
+
 /tmp/kubeadm join ${KUBEADM_ARGS} ${controlPlaneEndpoint} --cri-socket ${criSocket} --token ${K8S_TOKEN}  --discovery-token-ca-cert-hash ${CA_CERT_HASH}
 if [[ \$? -eq 0  ]];then
    echo "Kubernetes Enterprise Edition cluster deployed successfully"

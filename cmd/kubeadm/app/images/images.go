@@ -149,7 +149,7 @@ func GetControlPlaneImages(cfg *kubeadmapi.ClusterConfiguration) []string {
 	imgs = append(imgs, GetKubernetesImage(constants.KubeControllerManager, cfg))
 	imgs = append(imgs, GetKubernetesImage(constants.KubeScheduler, cfg))
 	imgs = append(imgs, GetKubernetesImage(constants.KubeProxy, cfg))
-	imgs = append(imgs, GetKubernetesImage(constants.Kubelet, cfg))
+	//imgs = append(imgs, GetKubernetesImage(constants.Kubelet, cfg))
 	imgs = append(imgs, GetKubernetesImage(constants.Kubectl, cfg))
 
 	// pause is not available on the ci image repository so use the default image repository.
