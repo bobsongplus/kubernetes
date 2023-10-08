@@ -7,7 +7,7 @@
 package calico
 
 const (
-	Version            = "v3.23.2"
+	Version            = "v3.24.6"
 	OperatorVersion    = "v1.25.8"
 	BootstraperVersion = "v1.0"
 

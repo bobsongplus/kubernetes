@@ -7,7 +7,7 @@
 package calico
 
 const (
-	Version = "v3.23.2"
+	Version = "v3.24.6"
 
 	//This ConfigMap is used to configure a self-hosted Calico installation.
 	NodeConfigMap = `
@@ -22,6 +22,7 @@ data:
   etcd_cert: "/calico-secrets/etcd-cert"
   etcd_key: "/calico-secrets/etcd-key"
   calico_backend: "bird"
+  chain_insert_mode: "Append"
   veth_mtu: "0"
   ip: {{ .IPAutoDetection }}
   ip_autodetection_method: "kubernetes-internal-ip"
@@ -236,6 +237,11 @@ spec:
                 configMapKeyRef:
                   name: calico-config
                   key: veth_mtu
+            - name: FELIX_CHAININSERTMODE
+              valueFrom:
+                configMapKeyRef:
+                  name: calico-config
+                  key: chain_insert_mode
             - name: CALICO_STARTUP_LOGLEVEL
               value: WARNING
             - name: BGP_LOGSEVERITYSCREEN

@@ -2,7 +2,7 @@ FROM alpine:3.18 AS builder
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
   apk update && apk add --no-cache docker
 
-FROM calico/ctl:v3.23.2 AS ctl
+FROM calico/ctl:v3.24.6 AS ctl
 FROM ghcr.io/containerd/nerdctl:v1.5.0  AS nerdctl
 FROM alpine:3.18
 
