@@ -331,7 +331,7 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 	caFile := filepath.Join(cfg.CertificatesDir, kubeadmconstants.CACertName)
 
 	defaultArguments := map[string]string{
-		"bind-address":                     "127.0.0.1",
+		"bind-address":                     "0.0.0.0",
 		"leader-elect":                     "true",
 		"kubeconfig":                       kubeconfigFile,
 		"authentication-kubeconfig":        kubeconfigFile,

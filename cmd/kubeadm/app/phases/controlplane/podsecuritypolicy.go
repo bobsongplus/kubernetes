@@ -73,7 +73,7 @@ spec:
   hostIPC: true
   hostPID: true
   hostPorts:
-  - min: 10000
+  - min: 30000
     max: 32767
   runAsUser:
     rule: 'RunAsAny'
