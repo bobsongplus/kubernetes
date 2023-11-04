@@ -93,11 +93,11 @@ func GetStaticPodSpecs(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmap
 	}
 
 	// Expose kube-scheduler metrics for prometheus to scrape
-	//KubeScheduler := staticPodSpecs[kubeadmconstants.KubeScheduler]
-	//KubeScheduler.Annotations = map[string]string{"prometheus.io/scrape": "true"}
-	//port := v1.ContainerPort{Name: "scrape", ContainerPort: 10251}
-	//KubeScheduler.Spec.Containers[0].Ports = []v1.ContainerPort{port}
-	//staticPodSpecs[kubeadmconstants.KubeScheduler] = KubeScheduler
+	KubeScheduler := staticPodSpecs[kubeadmconstants.KubeScheduler]
+	KubeScheduler.Annotations = map[string]string{"prometheus.io/scrape": "true"}
+	port := v1.ContainerPort{Name: "scrape", ContainerPort: 10251}
+	KubeScheduler.Spec.Containers[0].Ports = []v1.ContainerPort{port}
+	staticPodSpecs[kubeadmconstants.KubeScheduler] = KubeScheduler
 	return staticPodSpecs
 }
 
