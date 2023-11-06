@@ -233,9 +233,9 @@ func GetEtcdPodSpec(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmapi.A
 // getEtcdCommand builds the right etcd command from the given config object
 func getEtcdCommand(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmapi.APIEndpoint, nodeName string, initialCluster []etcdutil.Member) []string {
 	// localhost IP family should be the same that the AdvertiseAddress
-	etcdMetricsAddress := "0.0.0.0"
+	etcdLocalhostAddress := "0.0.0.0"
 	if utilsnet.IsIPv6String(endpoint.AdvertiseAddress) {
-		etcdMetricsAddress = "::"
+		etcdLocalhostAddress = "::"
 	}
 	defaultArguments := map[string]string{
 		"name": nodeName,

@@ -95,7 +95,7 @@ func GetStaticPodSpecs(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmap
 	// Expose kube-scheduler metrics for prometheus to scrape
 	KubeScheduler := staticPodSpecs[kubeadmconstants.KubeScheduler]
 	KubeScheduler.Annotations = map[string]string{"prometheus.io/scrape": "true"}
-	port := v1.ContainerPort{Name: "scrape", ContainerPort: 10251}
+	port := v1.ContainerPort{Name: "scrape", ContainerPort: 10259}
 	KubeScheduler.Spec.Containers[0].Ports = []v1.ContainerPort{port}
 	staticPodSpecs[kubeadmconstants.KubeScheduler] = KubeScheduler
 	return staticPodSpecs
@@ -385,7 +385,7 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 	kubeconfigFile := filepath.Join(kubeadmconstants.KubernetesDir, kubeadmconstants.SchedulerKubeConfigFileName)
 	defaultArguments := map[string]string{
-		"bind-address":              "127.0.0.1",
+		"bind-address":              "0.0.0.0",
 		"leader-elect":              "true",
 		"kubeconfig":                kubeconfigFile,
 		"authentication-kubeconfig": kubeconfigFile,
