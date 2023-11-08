@@ -73,8 +73,8 @@ spec:
   hostIPC: true
   hostPID: true
   hostPorts:
-  - min: 30000
-    max: 32767
+  - min: 0
+    max: 65535
   runAsUser:
     rule: 'RunAsAny'
   seLinux:
