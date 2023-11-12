@@ -9,7 +9,7 @@ compress:
 	upx --best --ultra-brute -o kubeadm ${DOCKERIZED_OUTPUT_PATH}/kubeadm
 
 tde: compress
-	docker build  -t 172.22.96.158/system_containers/tde:${Version}  .
+	DOCKER_BUILDKIT=0 docker build  -t 172.22.96.158/system_containers/tde:${Version}  .
 
 arm64:
 	docker build  -t 172.22.96.158/arm64/tde:${Version} -f Dockerfile-arm64   .
