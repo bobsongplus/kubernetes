@@ -244,7 +244,7 @@ func (kc *kubeletConfig) Default(cfg *kubeadmapi.ClusterConfiguration, _ *kubead
 	kc.config.SystemReserved = systemReserved
 	kubeReserved := map[string]string{
 		"cpu":               "1",
-		"memory":            "1Gi",
+		"memory":            "2Gi",
 		"ephemeral-storage": "1Gi",
 	}
 	kc.config.KubeReserved = kubeReserved
